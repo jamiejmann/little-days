@@ -24,3 +24,39 @@
 | This version: offline diaper, then a newer release ships while the Feed sheet is open | no reload while the sheet is open; reload right after it closes, "Updated ✨" toast, queue flushed, timer still running |
 | Demo user from v1 opens this version | all 100 demo entries kept, no errors |
 | Offline cold start while signed in | "You're offline" screen; back online → app live with data |
+
+---
+
+# Phase 2: growth, pediatrician summary, "same bottle again" (Nov 22, 2026)
+
+## Database: migration `005_growth_summary.sql` (additive only)
+- `babies.sex`: nullable, `'female'|'male'`, unset by default. It is only used for WHO percentiles.
+- `babies.doctor_notes`: text, default `''`, max 4000 characters. Shared notes for the doctor.
+- New table `public.growth`, one row per measurement: `measured_on`, `weight_g`, `length_cm`, `head_cm`.
+  - Each value is optional, but at least one is required. There are sanity range checks.
+  - Row-level security matches `entries`: members read/edit/delete, and members insert as themselves. No access for anon.
+  - Realtime is on.
+- The only change to an existing object is two new columns on `babies`; no rows are rewritten. The length/head precision was widened while the new table was still empty.
+- Older app versions never send `sex` or `doctor_notes`, so saving the profile from an old version leaves them untouched. This is tested.
+
+## App
+- Service worker cache `little-days-v6`. It precaches `who-lms.js` so percentiles work offline. The update flow is the same as before, and the app won't reload while the pediatrician summary is open.
+- The offline queue key is unchanged (`littledays.queue`). New growth items carry `t:'growth'`; items without `t` (all older ones) are still diary entries.
+- Demo data saved by older versions gets `growth: []`. "Reload sample data" adds sample measurements.
+
+## Upgrade test (current live version → this version, temp accounts, then deleted)
+| Step | Result |
+|---|---|
+| Returning user on current live version, offline: diaper + start sleep | queue = 2 |
+| New version deployed while open | auto-reload with "Updated ✨", queue flushed, sleep timer still running, cache v6 only |
+| Growth measurement added offline | queued as `insert:growth`, flushed when back online |
+| Partner joins on new version | sees growth, sex, doctor notes; live sync both ways for growth and the Again bottle |
+| Same parent on a 2nd phone still on the OLD version renames the baby and logs a diaper | name updated, sex and notes kept, diaper synced |
+| Outsider account / anonymous | outsider reads 0 growth rows, insert blocked (42501), can't read notes; anon gets 401 |
+| Demo user on current version → new | all entries kept, growth starts empty, no errors |
+
+## WHO percentiles
+- Data: WHO Child Growth Standards expanded tables (L, M, S by day, 0–730 days) for weight-for-age, length-for-age and head-circumference-for-age, girls and boys. They were downloaded from who.int and copied unchanged into `who-lms.js`; the sources are in its header.
+- Method: LMS z-score, with WHO's restricted extension beyond ±3 SD, and percentile = Φ(z).
+- Check: the code reproduces 252 published percentile values (P0.1, P3, P15, P50, P85, P97, P99.9 at 6 ages, all 6 tables) within 0.03 percentile points. The tiny difference comes from rounding in the tables.
+- Labelled in the app and on the summary as "for information only, not medical advice".

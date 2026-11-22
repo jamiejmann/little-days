@@ -160,6 +160,56 @@ body.night .due.over{background:#7a4a35;color:#FFE3D3}
 .who b{color:var(--ink)}
 .or{display:flex;align-items:center;gap:10px;color:var(--soft);font-size:13px;margin:14px 0}
 .or:before,.or:after{content:"";flex:1;height:2px;background:var(--line)}
+/* one-tap repeat bottle */
+.again{display:flex;align-items:center;gap:10px;width:100%;border:none;border-radius:999px;padding:9px 10px 9px 16px;margin:-6px 0 16px;background:var(--card);box-shadow:var(--shadow);font:inherit;font-weight:700;font-size:14px;color:var(--ink);cursor:pointer}
+.again b{margin-left:auto;background:var(--peach);border-radius:999px;padding:5px 12px;font-weight:800;white-space:nowrap}
+.again:active{transform:scale(.98)}
+.toast.act{pointer-events:auto;display:flex;align-items:center;white-space:nowrap}
+.toast .undo{background:var(--peach);border:none;border-radius:999px;padding:4px 12px;margin-left:10px;font:inherit;font-weight:800;color:#4A4560;cursor:pointer}
+/* growth */
+.gstat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.gs{border-radius:18px;padding:10px 8px;text-align:center}
+.gs-w{background:var(--peach)}.gs-l{background:var(--mint)}.gs-h{background:var(--blue)}
+.gs .l{font-size:12px;font-weight:700;opacity:.8}.gs .v{font-size:15px;font-weight:800;margin-top:2px;white-space:nowrap}
+.gs .c{font-size:11.5px;font-weight:700;opacity:.75;margin-top:2px}.gs .p{font-size:11.5px;font-weight:800;margin-top:4px;background:rgba(255,255,255,.55);border-radius:999px;padding:2px 6px;display:inline-block}
+body.night .gs .p{background:rgba(0,0,0,.2)}
+.unitin{position:relative}.unitin input{padding-right:46px}.unitin span{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--soft);font-weight:700;font-size:14px;pointer-events:none}
+.disclaim{font-size:12px;color:var(--soft);margin-top:10px;line-height:1.4}
+/* pediatrician summary (always light, prints on one page) */
+#docView{position:fixed;inset:0;z-index:30;background:#F4F1EC;overflow:auto;display:none;-webkit-overflow-scrolling:touch}
+#docView.on{display:block}
+.docbar{position:sticky;top:0;display:flex;gap:8px;padding:10px 14px calc(10px);padding-top:calc(10px + env(safe-area-inset-top));background:rgba(244,241,236,.95);backdrop-filter:blur(6px);z-index:2;justify-content:space-between;align-items:center}
+.docbar .btn{color:#4A4560}
+.doc{max-width:760px;margin:6px auto 40px;background:#fff;color:#2E2B3A;border-radius:18px;padding:26px 24px;box-shadow:0 6px 24px rgba(80,60,100,.10);font-size:14px;line-height:1.4}
+.doc .dh{display:flex;align-items:center;gap:14px;border-bottom:2px solid #EFEAF7;padding-bottom:14px}
+.doc .dh .av{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#FFD9C4,#DCD3F5);display:grid;place-items:center;font-size:26px;flex:none}
+.doc h1{font-size:21px;margin:0;line-height:1.2}.doc .meta{color:#6B6680;font-size:13px}
+.doc h2{font-size:12.5px;text-transform:uppercase;letter-spacing:.07em;color:#7A6FB0;margin:20px 0 6px;padding:0}
+.doc table{width:100%;border-collapse:collapse;font-size:13.5px}
+.doc th,.doc td{text-align:left;padding:6px 8px;border-bottom:1px solid #F0ECE4;vertical-align:top}
+.doc th{color:#6B6680;font-weight:700;font-size:12px;background:#FAF8F4}
+.doc td.n,.doc th.n{text-align:right;white-space:nowrap}
+.doc tr.cur td{color:#6B6680}
+.doc textarea{min-height:110px;background:#FBF9F5;color:#2E2B3A;border-color:#ECE6F5}
+.doc .fine{font-size:11.5px;color:#7C778E;margin-top:14px;line-height:1.45}
+.doc .notesPrint{display:none;white-space:pre-wrap}
+.doc .saved{font-size:12px;color:#5FB394;font-weight:700;min-height:16px;margin-top:4px}
+@media (max-width:560px){.doc{padding:18px 14px;margin:0 0 30px;border-radius:0}.doc table{font-size:12.5px}.doc th,.doc td{padding:5px 4px}.doc .dh{flex-wrap:wrap}}
+@media print{
+  @page{margin:12mm}
+  html,body{background:#fff!important;padding:0!important;min-height:0}
+  body>*:not(#docView){display:none!important}
+  #docView{position:static;display:block!important;background:#fff;overflow:visible}
+  .docbar{display:none!important}
+  .doc{box-shadow:none;margin:0;max-width:none;padding:0;font-size:12.5px;border-radius:0}
+  .doc table{font-size:12px}.doc th,.doc td{padding:4px 6px}
+  .doc h2{margin:14px 0 4px}
+  .doc textarea{display:none}.doc .saved{display:none}
+  .doc .notesPrint{display:block;min-height:50px;border:1px solid #DDD8E8;border-radius:8px;padding:8px}
+  .doc tr,.doc .keep{break-inside:avoid}
+  .doc td br{display:none}.doc .dl{margin-left:6px}
+  .doc .dh{flex-wrap:nowrap}
+}
 </style>
 </head>
 <body>
@@ -241,6 +291,7 @@ body.night .due.over{background:#7a4a35;color:#FFE3D3}
       <button class="bigbtn diaper" id="bDiaper"><div class="em">🧷</div>Diaper<small>pee · poop</small></button>
       <button class="bigbtn sleep" id="bSleep"><div class="em">🌙</div><span id="sleepLbl">Sleep</span><small id="sSleep">start timer</small></button>
     </div>
+    <button class="again hidden" id="bAgain" aria-label="Log the same bottle again"></button>
     <div class="card" id="l24card">
       <div class="l24head"><h3>🕐 Last 24 hours</h3><span class="muted" id="l24when"></span></div>
       <div class="l24grid" id="l24"></div>
@@ -262,7 +313,19 @@ body.night .due.over{background:#7a4a35;color:#FFE3D3}
     <div class="card"><h3>🍼 Feeds per day</h3><div id="chFeeds"></div><div class="legend"><span><i style="background:var(--peach-d)"></i>Breast</span><span><i style="background:#F3B795"></i>Bottle</span></div></div>
     <div class="card"><h3>🧷 Diapers per day</h3><div id="chDiapers"></div><div class="legend"><span><i style="background:#F2D27A"></i>Pee</span><span><i style="background:#C9A27E"></i>Poop</span><span><i style="background:var(--mint-d)"></i>Both</span></div></div>
     <div class="card"><h3>🌙 Sleep hours per day</h3><div id="chSleep"></div></div>
-    <div class="card"><h3>📋 For the pediatrician</h3><div class="muted" id="avgText" style="margin-bottom:10px"></div>
+    <h2>📏 Growth</h2>
+    <div class="card" id="growthCard">
+      <div id="gLatest"></div>
+      <div class="seg" id="gMetric" style="margin:4px 0 8px"><button data-g="w" class="on">Weight</button><button data-g="l">Length</button><button data-g="h">Head</button></div>
+      <div id="gChart"></div>
+      <div class="muted" id="gLegend" style="font-size:12px;text-align:center"></div>
+      <button class="btn full" id="gAdd" style="margin-top:12px">+ Add measurement</button>
+      <ul class="tl" id="gList" style="margin-top:8px"></ul>
+      <div class="disclaim" id="gNote"></div>
+    </div>
+    <div class="card"><h3>📋 For the pediatrician</h3>
+      <button class="btn peach full" id="docBtn" style="margin:4px 0 12px">🩺 Pediatrician summary · print or share</button>
+      <div class="muted" id="avgText" style="margin-bottom:10px"></div>
       <div class="row"><button class="btn mint" id="copySum">Copy summary</button><button class="btn blue" id="csvBtn">Download CSV</button></div></div>
   </section>
 
@@ -275,6 +338,8 @@ body.night .due.over{background:#7a4a35;color:#FFE3D3}
       <label class="f">Each day starts at</label>
       <div class="seg" id="dayStartSeg" style="margin-bottom:6px"><button data-ds="midnight">Midnight</button><button data-ds="birth">Baby's birth time</button></div>
       <div class="muted" id="dayStartHint" style="margin-bottom:12px"></div>
+      <label class="f">Sex <span style="font-weight:600">(optional, only used for WHO growth percentiles)</span></label>
+      <div class="seg" id="sexSeg" style="margin-bottom:12px"><button data-sx="">Not set</button><button data-sx="female">Girl</button><button data-sx="male">Boy</button></div>
       <label class="f">Profile emoji</label>
       <div class="chips" id="emojiChips" style="justify-content:flex-start"></div>
       <button class="btn full" id="saveProfile">Save profile</button>
@@ -315,6 +380,8 @@ body.night .due.over{background:#7a4a35;color:#FFE3D3}
     <div class="card">
       <label class="f">Bottle unit</label>
       <div class="seg" id="unitSeg"><button data-u="oz">oz</button><button data-u="ml">ml</button></div>
+      <label class="f">Growth units</label>
+      <div class="seg" id="gunitSeg"><button data-gu="imperial">lb · oz · in</button><button data-gu="metric">kg · cm</button></div>
       <div class="row" style="flex-wrap:wrap" id="settingsBtns"></div>
     </div>
   </section>
@@ -327,6 +394,16 @@ body.night .due.over{background:#7a4a35;color:#FFE3D3}
 </div></nav>
 
 <div class="scrim" id="scrim"><div class="sheet" id="sheet"></div></div>
+<div id="docView" role="dialog" aria-label="Pediatrician summary">
+  <div class="docbar"><button class="btn sm ghost" id="docClose">✕ Close</button>
+    <div style="display:flex;gap:8px"><button class="btn sm mint" id="docShare">Share</button><button class="btn sm peach" id="docPrint">Print / Save PDF</button></div></div>
+  <div class="doc" id="doc"><div id="docMain"></div>
+    <div class="keep"><h2>Questions for the doctor</h2>
+      <textarea id="docNotes" maxlength="4000" placeholder="Write questions as they come up, e.g. “Is 2 dirty diapers a day OK?”. Shared with your family."></textarea>
+      <div class="notesPrint" id="docNotesPrint"></div><div class="saved" id="docSaved"></div></div>
+    <div class="fine" id="docFine"></div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 <div id="alarmBannerWrap"></div>
 <script>
@@ -362,7 +439,9 @@ function clock(ms){const s=Math.max(0,Math.floor(ms/1000));return (s>=3600?Math.
 function ago(t){const m=Math.round((Date.now()-t)/6e4);if(m<1)return'just now';if(m<60)return m+'m ago';return Math.floor(m/60)+'h '+pad(m%60)+'m ago'}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function toLocalInput(t){const d=new Date(t);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())}
-function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2200)}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.remove('act');t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2200)}
+function toastUndo(m,fn){const t=$('#toast');t.innerHTML=esc(m)+'<button class="undo" id="undoBtn">Undo</button>';t.classList.add('on','act');
+  $('#undoBtn').onclick=()=>{t.classList.remove('on','act');fn()};clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on','act'),5000)}
 function ageText(b){if(!b)return'';const days=Math.floor((Date.now()-new Date(b+'T00:00'))/864e5);if(days<0)return'Arriving soon';if(days<14)return days+' days old';if(days<90)return Math.floor(days/7)+' weeks old';const mo=Math.floor(days/30.44);return mo<24?mo+' months old':Math.floor(mo/12)+' years old'}
 const person=id=>(D&&D.people.find(c=>c.id===id))||{name:'Someone',color:'#eee'};
 const running=(type,sub)=>D.entries.find(e=>e.type===type&&!e.end&&(!sub||e.subtype===sub));
@@ -372,8 +451,12 @@ function setMsg(el,text,ok){el.textContent=text;el.className='msg '+(ok?'ok':'er
 /* ======================= DEMO MODE (this device only) ======================= */
 function demoSeed(){
   const people=[{id:'c1',name:'Mom',role:'owner',color:COLORS[0]},{id:'c2',name:'Dad',role:'caregiver',color:COLORS[1]},{id:'c3',name:'Grandma',role:'caregiver',color:COLORS[2]}];
-  return {baby:{id:'demo',name:'Olive (sample)',birthdate:new Date(Date.now()-42*864e5).toISOString().slice(0,10),emoji:'🐣',birth_time:'15:12',day_start:'midnight',feed_alarm_enabled:true,feed_interval_min:180,feed_alarm_night:true},people,me:'c1',shareCode:'DEMO42',entries:sampleEntries(people)};
+  return {baby:{id:'demo',name:'Olive (sample)',birthdate:new Date(Date.now()-42*864e5).toISOString().slice(0,10),emoji:'🐣',birth_time:'15:12',day_start:'midnight',feed_alarm_enabled:true,feed_interval_min:180,feed_alarm_night:true,sex:'female',doctor_notes:''},people,me:'c1',shareCode:'DEMO42',entries:sampleEntries(people),growth:sampleGrowth(people,new Date(Date.now()-42*864e5).toISOString().slice(0,10))};
 }
+function sampleGrowth(people,birth){ // a typical-looking first six weeks (sample only)
+  const day=n=>{const d=new Date(birth+'T12:00');d.setDate(d.getDate()+n);return localDate(d)};
+  return [[0,3400,50.5,34.5],[4,3260,null,null],[14,3650,52,35.6],[30,4250,54.5,37.1],[41,4720,56,38]]
+    .map(([n,w,l,h],i)=>({id:uuid(),date:day(n),w,l,h,by:people[i%people.length].id,sample:true}))}
 function sampleEntries(people){
   let s=7;const r=()=>{s=(s*9301+49297)%233280;return s/233280};
   const out=[],now=Date.now(),today=startOfDay(new Date()),pick=()=>people[Math.floor(r()*people.length)].id;
@@ -396,12 +479,15 @@ function startDemo(){
   MODE='demo';localStorage.setItem(MODE_KEY,'demo');
   try{D=JSON.parse(localStorage.getItem(DEMO_KEY))}catch(e){D=null}
   if(!D||!D.baby)D=demoSeed();
+  if(!D.growth)D.growth=[]; // demo data saved by older versions
   saveDemo();show('app');render();
 }
 function saveDemo(){if(MODE==='demo')localStorage.setItem(DEMO_KEY,JSON.stringify(D))}
 
 /* ======================= CLOUD MODE (Supabase) ======================= */
 const fromRow=r=>({id:r.id,type:r.type,subtype:r.subtype,start:Date.parse(r.start_at),end:r.end_at?Date.parse(r.end_at):null,amount:r.amount==null?null:+r.amount,unit:r.unit,details:r.details||{},by:r.logged_by});
+const fromG=r=>({id:r.id,date:r.measured_on,w:r.weight_g==null?null:+r.weight_g,l:r.length_cm==null?null:+r.length_cm,h:r.head_cm==null?null:+r.head_cm,by:r.logged_by});
+const toG=g=>({id:g.id,baby_id:D.baby.id,measured_on:g.date,weight_g:g.w,length_cm:g.l,head_cm:g.h});
 const toRow=e=>({id:e.id,baby_id:D.baby.id,type:e.type,subtype:e.subtype||null,start_at:new Date(e.start).toISOString(),end_at:e.end?new Date(e.end).toISOString():null,amount:e.amount??null,unit:e.unit||null,details:e.details||{}});
 
 async function loadSupabase(){
@@ -444,13 +530,14 @@ async function loadBaby(id){
   teardown();localStorage.setItem(BABY_KEY,id);
   const baby=myBabies.find(b=>b.id===id);
   const since=new Date(Date.now()-31*864e5).toISOString();
-  const [mem,ent,inv]=await Promise.all([
+  const [mem,ent,inv,gro]=await Promise.all([
     sb.from('baby_members').select('user_id,role').eq('baby_id',id),
     sb.from('entries').select('*').eq('baby_id',id).or(`start_at.gte.${since},end_at.is.null`).order('start_at',{ascending:false}).limit(2000),
-    sb.from('invites').select('code,expires_at').eq('baby_id',id).gt('expires_at',new Date().toISOString()).order('created_at',{ascending:false}).limit(1)
+    sb.from('invites').select('code,expires_at').eq('baby_id',id).gt('expires_at',new Date().toISOString()).order('created_at',{ascending:false}).limit(1),
+    sb.from('growth').select('*').eq('baby_id',id).order('measured_on')
   ]);
   if(mem.error||ent.error){toast((mem.error||ent.error).message);return}
-  D={baby,me:user.id,people:[],entries:ent.data.map(fromRow)};
+  D={baby,me:user.id,people:[],entries:ent.data.map(fromRow),growth:gro.error?[]:gro.data.map(fromG)};
   invite=(inv.data||[])[0]||null;
   await loadPeople(mem.data);
   applyQueueToView();
@@ -465,10 +552,14 @@ async function loadPeople(members){
 }
 function subscribe(id){
   const upsertLocal=row=>{if(row.baby_id!==D.baby.id)return;const e=fromRow(row),i=D.entries.findIndex(x=>x.id===e.id);if(i>=0)D.entries[i]=e;else D.entries.push(e);render()};
+  const upsertG=row=>{if(row.baby_id!==D.baby.id)return;const g=fromG(row),i=D.growth.findIndex(x=>x.id===g.id);if(i>=0)D.growth[i]=g;else D.growth.push(g);render()};
   channel=sb.channel('baby-'+id+'-'+uuid().slice(0,8))
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'entries',filter:'baby_id=eq.'+id},p=>upsertLocal(p.new))
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'entries',filter:'baby_id=eq.'+id},p=>upsertLocal(p.new))
     .on('postgres_changes',{event:'DELETE',schema:'public',table:'entries'},p=>{const before=D.entries.length;D.entries=D.entries.filter(x=>x.id!==p.old.id);if(D.entries.length!==before)render()})
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'growth',filter:'baby_id=eq.'+id},p=>upsertG(p.new))
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'growth',filter:'baby_id=eq.'+id},p=>upsertG(p.new))
+    .on('postgres_changes',{event:'DELETE',schema:'public',table:'growth'},p=>{const n=D.growth.length;D.growth=D.growth.filter(x=>x.id!==p.old.id);if(D.growth.length!==n)render()})
     .on('postgres_changes',{event:'*',schema:'public',table:'baby_members',filter:'baby_id=eq.'+id},async()=>{await loadPeople();render()})
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'babies',filter:'id=eq.'+id},p=>{Object.assign(D.baby,p.new);render()})
     .subscribe(st=>{live=st==='SUBSCRIBED';renderWho();if(st==='SUBSCRIBED')refreshEntries()});
@@ -477,6 +568,8 @@ async function refreshEntries(){
   if(MODE!=='cloud'||!D)return;
   const since=new Date(Date.now()-31*864e5).toISOString();
   const {data,error}=await sb.from('entries').select('*').eq('baby_id',D.baby.id).or(`start_at.gte.${since},end_at.is.null`).order('start_at',{ascending:false}).limit(2000);
+  const gr=await sb.from('growth').select('*').eq('baby_id',D.baby.id).order('measured_on');
+  if(!gr.error)D.growth=gr.data.map(fromG);
   if(!error){D.entries=data.map(fromRow);applyQueueToView();render()}
 }
 
@@ -485,6 +578,8 @@ let Q=JSON.parse(localStorage.getItem(QUEUE_KEY)||'[]'),flushing=false;
 const saveQ=()=>localStorage.setItem(QUEUE_KEY,JSON.stringify(Q));
 function applyQueueToView(){ // show not-yet-sent changes
   Q.filter(o=>o.baby===D.baby.id).forEach(o=>{
+    if(o.t==='growth'){D.growth=D.growth||[];if(o.op==='delete')D.growth=D.growth.filter(g=>g.id!==o.id);
+      else{const g=fromG(o.row);g.by=g.by||user.id;const i=D.growth.findIndex(x=>x.id===g.id);if(i>=0)D.growth[i]=Object.assign(D.growth[i],g,{by:D.growth[i].by});else D.growth.push(g)}return}
     if(o.op==='delete')D.entries=D.entries.filter(e=>e.id!==o.id);
     else{const e=fromRow(o.row);e.by=e.by||user.id;const i=D.entries.findIndex(x=>x.id===e.id);if(i>=0)D.entries[i]=Object.assign(D.entries[i],e,{by:D.entries[i].by});else D.entries.push(e)}
   });
@@ -495,9 +590,10 @@ async function flushQueue(){
   while(Q.length){
     const o=Q[0];let r;
     try{
-      if(o.op==='insert')r=await sb.from('entries').upsert(Object.assign({},o.row,{logged_by:user.id}),{onConflict:'id',ignoreDuplicates:true});
-      else if(o.op==='update'){const row=Object.assign({},o.row);delete row.id;delete row.baby_id;r=await sb.from('entries').update(row).eq('id',o.row.id)}
-      else r=await sb.from('entries').delete().eq('id',o.id);
+      const tb=o.t==='growth'?'growth':'entries'; // queue items without "t" (older app versions) are diary entries
+      if(o.op==='insert')r=await sb.from(tb).upsert(Object.assign({},o.row,{logged_by:user.id}),{onConflict:'id',ignoreDuplicates:true});
+      else if(o.op==='update'){const row=Object.assign({},o.row);delete row.id;delete row.baby_id;if(tb==='growth')row.updated_at=new Date().toISOString();r=await sb.from(tb).update(row).eq('id',o.row.id)}
+      else r=await sb.from(tb).delete().eq('id',o.id);
     }catch(err){r={error:{message:String(err),network:true}}}
     if(r.error&&(r.error.network||/fetch|network/i.test(r.error.message||''))){break} // offline: keep and retry later
     if(r.error)toast('Could not save: '+r.error.message);
@@ -525,6 +621,12 @@ function delEntry(id){
   if(MODE==='demo')saveDemo();else{Q.push({op:'delete',baby:D.baby.id,id});saveQ();flushQueue()}
   render();
 }
+
+function addGrowth(g){g.id=uuid();g.by=D.me;D.growth=D.growth||[];D.growth.push(g);
+  if(MODE==='demo')saveDemo();else{Q.push({op:'insert',t:'growth',baby:D.baby.id,row:toG(g)});saveQ();flushQueue()}render()}
+function updGrowth(g){if(MODE==='demo')saveDemo();else{Q.push({op:'update',t:'growth',baby:D.baby.id,row:toG(g)});saveQ();flushQueue()}render()}
+function delGrowth(id){D.growth=(D.growth||[]).filter(x=>x.id!==id);
+  if(MODE==='demo')saveDemo();else{Q.push({op:'delete',t:'growth',baby:D.baby.id,id});saveQ();flushQueue()}render()}
 
 /* ======================= RENDER ======================= */
 function describe(e){
@@ -587,7 +689,7 @@ function renderToday(){
   $('#bSleep').classList.toggle('running',!!sl);$('#sleepLbl').textContent=sl?'Wake up':'Sleep';
   $('#sSleep').textContent=sl?clock(Date.now()-sl.start)+' · '+person(sl.by).name:'start timer';
   const ft=running('feed','breast');$('#bFeed').classList.toggle('running',!!ft);$('#sFeed').textContent=ft?'nursing '+clock(feedTotal(ft)*1000):'tap to log';
-  renderL24();renderDue();
+  renderL24();renderDue();renderAgain();
   const ws=shiftWindow(curWindow(),-viewOffset),d0=ws.getTime(),d1=shiftWindow(ws,1).getTime(),isToday=viewOffset===0;
   $('#dayTitle').textContent=windowTitle(ws);$('#daySub').textContent=windowSub(ws);
   $('#nextDay').disabled=isToday;$('#nextDay').style.opacity=isToday?.4:1;
@@ -623,6 +725,7 @@ function renderReports(){
   $('#chDiapers').innerHTML=bars(lbl,days.map(x=>[[x.s.pee,'#F2D27A'],[x.s.poop,'#C9A27E'],[x.s.both,'var(--mint-d)']]));
   $('#chSleep').innerHTML=bars(lbl,days.map(x=>[[Math.round(x.s.sleepMs/36e5*10)/10,'var(--blue-d)']]),'h');
   const n=days.length,avg=k=>days.reduce((a,x)=>a+k(x.s),0)/n;
+  renderGrowth();if($('#docView').classList.contains('on'))renderDoc();
   $('#avgText').innerHTML=`7-day averages: <b>${avg(s=>s.feeds).toFixed(1)}</b> feeds, <b>${avg(s=>s.pee+s.both).toFixed(1)}</b> wet &amp; <b>${avg(s=>s.poop+s.both).toFixed(1)}</b> dirty diapers, <b>${(avg(s=>s.sleepMs)/36e5).toFixed(1)}h</b> sleep per day.`;
 }
 function bars(labels,data,suffix=''){
@@ -673,12 +776,14 @@ function renderFamily(){
     $('#saveMe').onclick=async()=>{const {error}=await sb.from('profiles').update({display_name:$('#meName').value.trim()||'Parent',color:col}).eq('id',user.id);if(error)return toast(error.message);await loadPeople();render();toast('Saved 💜')};
   }else $('#meCard').innerHTML='';
   $$('#unitSeg button').forEach(b=>b.classList.toggle('on',b.dataset.u===P.unit));
+  $$('#gunitSeg button').forEach(b=>b.classList.toggle('on',b.dataset.gu===GU()));
+  $$('#sexSeg button').forEach(b=>b.classList.toggle('on',b.dataset.sx===(D.baby.sex||'')));
   $('#settingsBtns').innerHTML=MODE==='demo'
     ?`<button class="btn ghost" id="loadSample">Reload sample data</button><button class="btn danger" id="clearAll">Clear demo data</button><button class="btn" id="exitDemo">Sign in instead</button>`
     :`<button class="btn ghost" id="addBaby">+ Add or join another baby</button>${isOwner?'':`<button class="btn ghost" id="leaveBaby">Leave this baby</button>`}<button class="btn" id="signOut">Sign out</button>`;
   if(MODE==='demo'){
-    $('#loadSample').onclick=()=>{D.entries=D.entries.filter(e=>!e.sample).concat(sampleEntries(D.people));saveDemo();render();toast('Sample data loaded')};
-    $('#clearAll').onclick=()=>{if(confirm('Remove all demo entries?')){D.entries=[];saveDemo();render();toast('Demo data cleared')}};
+    $('#loadSample').onclick=()=>{D.entries=D.entries.filter(e=>!e.sample).concat(sampleEntries(D.people));D.growth=(D.growth||[]).filter(g=>!g.sample).concat(D.baby.birthdate?sampleGrowth(D.people,D.baby.birthdate):[]);saveDemo();render();toast('Sample data loaded')};
+    $('#clearAll').onclick=()=>{if(confirm('Remove all demo entries?')){D.entries=[];D.growth=[];saveDemo();render();toast('Demo data cleared')}};
     $('#exitDemo').onclick=leaveDemo;
   }else{
     $('#addBaby').onclick=openSetup;
@@ -689,7 +794,7 @@ function renderFamily(){
 }
 async function saveBaby(){
   if(MODE==='demo'){saveDemo();render();return}
-  const {error}=await sb.from('babies').update({name:D.baby.name,birthdate:D.baby.birthdate||null,emoji:D.baby.emoji,birth_time:D.baby.birth_time||null,day_start:D.baby.day_start||'midnight',feed_alarm_enabled:!!D.baby.feed_alarm_enabled,feed_interval_min:D.baby.feed_interval_min||180,feed_alarm_night:D.baby.feed_alarm_night!==false,tz:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'}).eq('id',D.baby.id);
+  const {error}=await sb.from('babies').update({name:D.baby.name,birthdate:D.baby.birthdate||null,emoji:D.baby.emoji,birth_time:D.baby.birth_time||null,day_start:D.baby.day_start||'midnight',feed_alarm_enabled:!!D.baby.feed_alarm_enabled,feed_interval_min:D.baby.feed_interval_min||180,feed_alarm_night:D.baby.feed_alarm_night!==false,sex:D.baby.sex||null,tz:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'}).eq('id',D.baby.id);
   if(error)toast(error.message);else{const b=myBabies.find(x=>x.id===D.baby.id);if(b)Object.assign(b,D.baby)}render();
 }
 async function makeInvite(){
@@ -789,6 +894,14 @@ $$('nav button').forEach(b=>b.onclick=()=>{$$('nav button').forEach(x=>x.classLi
 $('#saveProfile').onclick=()=>{D.baby.name=$('#pName').value.trim()||'Baby';D.baby.birthdate=$('#pBirth').value||null;D.baby.birth_time=$('#pBirthTime').value||null;if(!D.baby.birth_time||!D.baby.birthdate)D.baby.day_start='midnight';viewOffset=0;saveBaby();toast('Profile saved 💜')};
 $('#addCg').onclick=()=>{const n=$('#cgName').value.trim();if(!n)return toast('Type a name first');D.people.push({id:uuid(),name:n,role:'caregiver',color:COLORS[D.people.length%COLORS.length]});$('#cgName').value='';saveDemo();render();toast(n+' added')};
 $$('#unitSeg button').forEach(b=>b.onclick=()=>{P.unit=b.dataset.u;P.lastAmount=null;savePrefs();render()});
+$$('#gunitSeg button').forEach(b=>b.onclick=()=>{P.gunit=b.dataset.gu;savePrefs();render()});
+$$('#sexSeg button').forEach(b=>b.onclick=()=>{D.baby.sex=b.dataset.sx||null;saveBaby();toast(D.baby.sex?'Saved. WHO percentiles are on 📏':'Saved. Percentiles are hidden')});
+$$('#gMetric button').forEach(b=>b.onclick=()=>{gMetric=b.dataset.g;renderGrowth()});
+$('#gAdd').onclick=()=>growthSheet();
+$('#bAgain').onclick=repeatBottle;
+$('#docBtn').onclick=openDoc;$('#docClose').onclick=closeDoc;$('#docPrint').onclick=()=>window.print();$('#docShare').onclick=shareDoc;
+$('#docNotes').oninput=()=>{notesDirty=true;$('#docNotesPrint').textContent=$('#docNotes').value;$('#docSaved').textContent='';clearTimeout(notesT);notesT=setTimeout(saveNotes,800)};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#docView').classList.contains('on'))closeDoc()});
 $('#copySum').onclick=()=>{const now=Date.now(),cw=curWindow();
   const txt=`${D.baby.name}${lifeDay(cw)?' · Day '+lifeDay(cw)+' of life':''} · summary at ${new Date(now).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}\n`+
   `Last 24 hours (since ${fmtT(now-864e5)} yesterday): ${summaryLine(dayStats(now-864e5,now))}\n`+
@@ -797,6 +910,212 @@ $('#copySum').onclick=()=>{const now=Date.now(),cw=curWindow();
   copy(txt,'Summary copied')};
 $('#csvBtn').onclick=()=>{const rows=[['date','time','day_of_life','day_window','type','details','logged_by']].concat(D.entries.slice().sort((a,b)=>a.start-b.start).map(e=>{const x=describe(e),ws=windowStart(e.start);return [new Date(e.start).toLocaleDateString(),fmtT(e.start),lifeDay(ws)??'',useBirthDay()?ws.toLocaleDateString()+' '+fmtT(ws)+' – '+shiftWindow(ws,1).toLocaleDateString()+' '+fmtT(shiftWindow(ws,1)):ws.toLocaleDateString(),x.t.replace(/<[^>]+>/g,''),x.d,person(e.by).name]}));
   const blob=new Blob([rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='baby-log.csv';a.click()};
+/* ======================= ONE-TAP "AGAIN" (repeat the last bottle) ======================= */
+let againAt=0;
+function lastBottle(){let b=null;for(const e of D.entries)if(e.type==='feed'&&e.subtype==='bottle'&&e.amount!=null&&(!b||e.start>b.start))b=e;return b}
+function renderAgain(){const b=lastBottle(),el=$('#bAgain');el.classList.toggle('hidden',!b);if(!b)return;
+  el.innerHTML=`<span>🍼 Same bottle again</span><b>${esc(b.amount+' '+(b.unit||'')+(b.details&&b.details.milk?' · '+b.details.milk:''))}</b>`}
+function repeatBottle(){const b=lastBottle();if(!b||Date.now()-againAt<2000)return;againAt=Date.now(); // ignore accidental double taps
+  const t=Date.now(),e={type:'feed',subtype:'bottle',start:t,end:t,amount:b.amount,unit:b.unit,details:b.details&&b.details.milk?{milk:b.details.milk}:{}};
+  addEntry(e);const id=e.id;toastUndo('Bottle saved 🍼 '+b.amount+' '+(b.unit||''),()=>{delEntry(id);toast('Removed')})}
+
+/* ======================= GROWTH ======================= */
+/* WHO percentiles. Data: who-lms.js = WHO Child Growth Standards expanded tables (L, M, S by day, 0-730 days),
+   https://www.who.int/tools/child-growth-standards/standards (weight-for-age, length/height-for-age, head-circumference-for-age).
+   LMS method (WHO Child Growth Standards: Methods and development, 2006):
+     z = ((X/M)^L - 1) / (L*S)            (L != 0)      z = ln(X/M) / S   (L = 0)
+   Beyond +/-3 SD WHO's "restricted application" is used: the distance past 3 SD is measured in units of the 2-3 SD gap at that age.
+   percentile = 100 * Phi(z). Informational only, not medical advice. */
+let whoP=null,gMetric='w',showAllG=false;
+function loadWHO(){if(window.WHO_LMS)return Promise.resolve();if(!whoP)whoP=new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='who-lms.js';sc.onload=res;sc.onerror=()=>{whoP=null;rej()};document.head.appendChild(sc)});return whoP}
+const WHO_KIND={w:'wfa',l:'lhfa',h:'hcfa'};
+function lmsAt(kind,sex,day){const T=window.WHO_LMS&&WHO_LMS[kind]&&WHO_LMS[kind][sex==='female'?'f':'m'];if(!T||day<0||day>730)return null;const d=Math.round(day);return {L:typeof T.L==='number'?T.L:T.L[d],M:T.M[d],S:T.S[d]}}
+function lmsX(p,z){return p.L?p.M*Math.pow(1+p.L*p.S*z,1/p.L):p.M*Math.exp(p.S*z)}
+function lmsZ(p,X){let z=p.L?(Math.pow(X/p.M,p.L)-1)/(p.L*p.S):Math.log(X/p.M)/p.S;
+  if(z>3){const s3=lmsX(p,3),s2=lmsX(p,2);z=3+(X-s3)/(s3-s2)}else if(z<-3){const s3=lmsX(p,-3),s2=lmsX(p,-2);z=-3+(X-s3)/(s2-s3)}return z}
+function normCdf(z){const x=Math.abs(z)/Math.SQRT2,t=1/(1+0.3275911*x),erf=1-((((1.061405429*t-1.453152027)*t+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return z>=0?(1+erf)/2:(1-erf)/2}
+function ageDays(date){return D.baby.birthdate?Math.round((Date.parse(date+'T12:00')-Date.parse(D.baby.birthdate+'T12:00'))/864e5):null}
+function whoPct(m,g){const b=D.baby,v=g&&g[m];if(!b.sex||!b.birthdate||!window.WHO_LMS||v==null)return null;
+  const p=lmsAt(WHO_KIND[m],b.sex,ageDays(g.date));if(!p)return null;return 100*normCdf(lmsZ(p,m==='w'?v/1000:v))}
+function ordinal(n){if(n%1)return n+'th';const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0])}
+function pctText(p){if(p==null)return'';if(p<0.1)return'below 0.1st';if(p>99.9)return'above 99.9th';return ordinal(p<1||p>99?Math.round(p*10)/10:Math.round(p))}
+const GU=()=>P.gunit||(P.unit==='ml'?'metric':'imperial');
+const OZ=28.349523125;
+function fmtW(g){if(g==null)return'—';if(GU()==='metric')return (g/1000).toFixed(2)+' kg';const oz=g/OZ;let lb=Math.floor(oz/16),r=Math.round((oz-lb*16)*10)/10;if(r>=16){lb++;r=0}return lb+' lb '+r+' oz'}
+function fmtL(cm){if(cm==null)return'—';return GU()==='metric'?Math.round(cm*10)/10+' cm':Math.round(cm/2.54*100)/100+' in'}
+function fmtWDiff(dg){const sg=dg<0?'−':'+',a=Math.abs(dg);if(GU()==='metric')return sg+Math.round(a)+' g';const oz=a/OZ;return sg+(oz>=16?Math.floor(oz/16)+' lb '+Math.round((oz%16)*10)/10+' oz':Math.round(oz*10)/10+' oz')}
+function fmtLDiff(d){const sg=d<0?'−':'+',a=Math.abs(d);return sg+(GU()==='metric'?Math.round(a*10)/10+' cm':Math.round(a/2.54*100)/100+' in')}
+const fmtGV=(m,v)=>m==='w'?fmtW(v):fmtL(v);
+function fmtD(d,yr){return new Date(d+'T12:00').toLocaleDateString([], yr?{month:'short',day:'numeric',year:'numeric'}:{month:'short',day:'numeric'})}
+function localDate(t){const d=new Date(t);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function ageShort(days){if(days==null||days<0)return'';if(days<14)return days+'d';if(days<92)return Math.floor(days/7)+'w '+(days%7?days%7+'d':'').trim();return Math.floor(days/30.4375)+'mo'}
+function gSeries(m){return (D.growth||[]).filter(g=>g[m]!=null).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0)}
+function gChange(m){const s=gSeries(m);if(!s.length)return null;const cur=s[s.length-1],prev=s.length>1?s[s.length-2]:null;
+  return {cur,prev,days:prev?Math.round((Date.parse(cur.date+'T12:00')-Date.parse(prev.date+'T12:00'))/864e5):0,diff:prev?cur[m]-prev[m]:null}}
+function changeText(m,c){if(!c||!c.prev)return'first measurement';let t=(m==='w'?fmtWDiff(c.diff):fmtLDiff(c.diff))+' in '+c.days+' day'+(c.days===1?'':'s');
+  if(m==='w'&&c.days>=3){const pd=c.diff/c.days;t+=' (about '+(GU()==='metric'?Math.round(pd)+' g':Math.round(pd/OZ*10)/10+' oz')+' a day)'}return t}
+const GNAME={w:'Weight',l:'Length',h:'Head'},GICON={w:'⚖️',l:'📏',h:'🎀'};
+function renderGrowth(){
+  const G=D.growth||[];
+  if(D.baby.sex&&D.baby.birthdate&&G.length&&!window.WHO_LMS)loadWHO().then(()=>render()).catch(()=>{});
+  $('#gLatest').innerHTML=G.length?`<div class="gstat">${['w','l','h'].map(m=>{const c=gChange(m),p=c?whoPct(m,c.cur):null;
+    return `<div class="gs gs-${m}"><div class="l">${GICON[m]} ${GNAME[m]}</div><div class="v">${c?fmtGV(m,c.cur[m]):'—'}</div><div class="c">${c?(c.prev?(m==='w'?fmtWDiff(c.diff):fmtLDiff(c.diff))+' · '+c.days+'d':fmtD(c.cur.date)):''}</div>${p!=null?`<div class="p">${pctText(p)} %ile</div>`:''}</div>`}).join('')}</div>`:'';
+  $$('#gMetric button').forEach(b=>b.classList.toggle('on',b.dataset.g===gMetric));
+  $('#gMetric').classList.toggle('hidden',!G.length);
+  $('#gChart').innerHTML=growthChart(gMetric);
+  const sorted=G.slice().sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
+  $('#gList').innerHTML=sorted.slice(0,showAllG?999:4).map(g=>{const c=person(g.by),a=ageDays(g.date);
+    return `<li data-gid="${g.id}"><div class="dot" style="background:var(--lav)">📏</div><div><div class="t">${fmtD(g.date,true)}${g.sample?'<span class="sample">sample</span>':''}</div><div class="d">${esc([g.w!=null?fmtW(g.w):null,g.l!=null?'length '+fmtL(g.l):null,g.h!=null?'head '+fmtL(g.h):null].filter(Boolean).join(' · '))} <span class="by" style="background:${c.color}">${esc(c.name)}</span></div></div><div class="time">${a!=null&&a>=0?ageShort(a):''}</div></li>`}).join('')
+    +(G.length>4&&!showAllG?`<li id="gMore" style="justify-content:center;color:var(--soft);font-weight:700">Show all ${G.length}</li>`:'');
+  $$('#gList li[data-gid]').forEach(li=>li.onclick=()=>growthSheet(li.dataset.gid));
+  if($('#gMore'))$('#gMore').onclick=()=>{showAllG=true;renderGrowth()};
+  $('#gNote').innerHTML=!G.length?'':(D.baby.sex&&D.baby.birthdate
+    ?'Percentiles compare with the WHO Child Growth Standards (birth to 2 years). <b>For information only, not medical advice.</b> Your pediatrician can tell you what your baby’s growth means.'
+    :'Optional: add a birthdate and sex in <b>Family</b> to compare with the WHO growth standards (for information only, not medical advice).');
+}
+function growthChart(m){
+  const s=gSeries(m);if(!s.length)return `<div class="empty">No ${GNAME[m].toLowerCase()} logged yet. Add one after a weigh-in or check-up 🩺</div>`;
+  const b=D.baby,hasB=!!b.birthdate,x=g=>hasB?ageDays(g.date):Math.round((Date.parse(g.date)-Date.parse(s[0].date))/864e5);
+  const met=GU()==='metric',conv=v=>m==='w'?(met?v/1000:v/453.59237):(met?v:v/2.54),unit=m==='w'?(met?'kg':'lb'):(met?'cm':'in');
+  const xs=s.map(x),ys=s.map(g=>conv(g[m]));let x0=hasB?0:Math.min(...xs),x1=Math.max(...xs,x0)+7;x1=Math.max(x1,x0+28);
+  let band=null;const useWho=!!(b.sex&&hasB&&window.WHO_LMS&&x0<=730);
+  if(useWho){band=[];const end=Math.min(x1,730),st=Math.max(1,Math.round(end/48));for(let d=0;d<=end+st-1;d+=st){const dd=Math.min(d,end),p=lmsAt(WHO_KIND[m],b.sex,dd),k=m==='w'?1000:1;band.push([dd,conv(lmsX(p,-1.8808)*k),conv(p.M*k),conv(lmsX(p,1.8808)*k)])}}
+  let y0=Math.min(...ys),y1=Math.max(...ys);if(band){y0=Math.min(y0,...band.map(r=>r[1]));y1=Math.max(y1,...band.map(r=>r[3]))}
+  const padY=(y1-y0)*.08||1;y0-=padY;y1+=padY;
+  const W=330,H=190,pl=34,pr=10,pt=10,pb=24,X=v=>pl+(v-x0)/(x1-x0)*(W-pl-pr),Y=v=>H-pb-(v-y0)/(y1-y0)*(H-pt-pb);
+  let g='';const step=[0.25,0.5,1,2,5,10,20].find(t=>(y1-y0)/t<=5)||50;
+  for(let v=Math.ceil(y0/step)*step;v<=y1;v+=step){g+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-dasharray="3 4"/><text x="${pl-5}" y="${Y(v)+4}" text-anchor="end" font-size="10" fill="var(--soft)">${Math.round(v*100)/100}</text>`}
+  const span=x1-x0,xt=span<=84?14:span<=200?28:61;
+  for(let d=Math.ceil(x0/xt)*xt;d<=x1;d+=xt)g+=`<text x="${X(d)}" y="${H-6}" text-anchor="middle" font-size="10" fill="var(--soft)">${hasB?(xt<61?Math.round(d/7)+'w':Math.round(d/30.4375)+'mo'):fmtD(localDate(Date.parse(s[0].date+'T12:00')+d*864e5))}</text>`;
+  if(band){g+=`<path d="M${band.map(r=>X(r[0])+','+Y(r[1])).join('L')}L${band.slice().reverse().map(r=>X(r[0])+','+Y(r[3])).join('L')}Z" fill="var(--lav)" opacity=".55"/>`;
+    g+=`<path d="M${band.map(r=>X(r[0])+','+Y(r[2])).join('L')}" fill="none" stroke="var(--lav-d)" stroke-width="1.5" stroke-dasharray="4 4"/>`}
+  g+=`<path d="M${s.map((q,i)=>X(xs[i])+','+Y(ys[i])).join('L')}" fill="none" stroke="var(--peach-d)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`;
+  g+=s.map((q,i)=>`<circle cx="${X(xs[i])}" cy="${Y(ys[i])}" r="4.5" fill="var(--card)" stroke="var(--peach-d)" stroke-width="2.5"/>`).join('');
+  g+=`<text x="${pl}" y="${pt+2}" font-size="10" font-weight="700" fill="var(--soft)" dx="4">${unit}</text>`;
+  $('#gLegend').innerHTML=useWho?`Shaded: WHO 3rd–97th percentile · dashed: 50th (${b.sex==='female'?'girls':'boys'})`:'';
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${GNAME[m]} over time">${g}</svg>`;
+}
+const num=v=>{v=String(v==null?'':v).trim().replace(',','.');return v===''?null:+v};
+function growthSheet(id,draft){
+  const g=id?(D.growth||[]).find(x=>x.id===id):null,imp=GU()==='imperial',src=draft||g||{},today=localDate(Date.now());
+  let wlb='',woz='',wkg='',len='',hd='';
+  if(src.w!=null){if(imp){const oz=src.w/OZ;wlb=Math.floor(oz/16);woz=Math.round((oz-wlb*16)*10)/10;if(woz>=16){wlb++;woz=0}}else wkg=Math.round(src.w)/1000}
+  if(src.l!=null)len=imp?Math.round(src.l/2.54*100)/100:Math.round(src.l*100)/100;
+  if(src.h!=null)hd=imp?Math.round(src.h/2.54*100)/100:Math.round(src.h*100)/100;
+  const cu=imp?'in':'cm';
+  openSheet(`<h2 style="text-align:center">${g?'Edit':'Add'} measurement</h2>
+    <label class="f">Date</label><input type="date" id="gDate" max="${today}" value="${esc(src.date||today)}">
+    <label class="f">Weight</label>${imp?`<div class="row"><div class="unitin"><input id="gLb" inputmode="numeric" value="${wlb}" aria-label="pounds"><span>lb</span></div><div class="unitin"><input id="gOz" inputmode="decimal" value="${woz}" aria-label="ounces"><span>oz</span></div></div>`
+      :`<div class="unitin"><input id="gKg" inputmode="decimal" value="${wkg}" placeholder="e.g. 4.25" aria-label="kilograms"><span>kg</span></div>`}
+    <div class="row"><div><label class="f">Length</label><div class="unitin"><input id="gLen" inputmode="decimal" value="${len}" aria-label="length"><span>${cu}</span></div></div>
+      <div><label class="f">Head</label><div class="unitin"><input id="gHead" inputmode="decimal" value="${hd}" aria-label="head circumference"><span>${cu}</span></div></div></div>
+    <div class="muted" style="margin-top:8px">Fill in any of them. <button class="btn sm ghost" id="gSwap" style="padding:4px 10px">${imp?'Use kg · cm':'Use lb · oz · in'}</button></div>
+    <div class="msg err hidden" id="gMsg"></div>
+    <button class="btn peach full" id="gSave" style="margin-top:14px">Save</button>${g?'<button class="btn sm ghost full" id="gDel" style="margin-top:10px">Delete measurement</button>':''}`,()=>{
+    const read=()=>{const o={date:$('#gDate').value||today,w:null,l:null,h:null};
+      if(imp){const lb=num($('#gLb').value),oz=num($('#gOz').value);if(lb!=null||oz!=null)o.w=((lb||0)*16+(oz||0))*OZ}else{const kg=num($('#gKg').value);if(kg!=null)o.w=kg*1000}
+      const L=num($('#gLen').value),Hd=num($('#gHead').value);if(L!=null)o.l=imp?L*2.54:L;if(Hd!=null)o.h=imp?Hd*2.54:Hd;
+      if(o.w!=null)o.w=Math.round(o.w*10)/10;if(o.l!=null)o.l=Math.round(o.l*100)/100;if(o.h!=null)o.h=Math.round(o.h*100)/100;return o};
+    $('#gSwap').onclick=()=>{const o=read();P.gunit=imp?'metric':'imperial';savePrefs();growthSheet(id,o);render()};
+    $('#gSave').onclick=()=>{const o=read(),m=$('#gMsg');
+      if([o.w,o.l,o.h].some(v=>v!=null&&isNaN(v)))return setMsg(m,'Please use numbers only.');
+      if(o.w==null&&o.l==null&&o.h==null)return setMsg(m,'Add a weight, length or head size.');
+      if(o.w!=null&&(o.w<300||o.w>40000))return setMsg(m,'That weight looks off. Please check it.');
+      if(o.l!=null&&(o.l<20||o.l>130))return setMsg(m,'That length looks off. Please check it.');
+      if(o.h!=null&&(o.h<15||o.h>70))return setMsg(m,'That head size looks off. Please check it.');
+      if(o.date>today)return setMsg(m,"The date can't be in the future.");
+      if(g){Object.assign(g,o);updGrowth(g)}else addGrowth(o);closeSheet();toast('Measurement saved 📏')};
+    if(g)$('#gDel').onclick=()=>{if(confirm('Delete this measurement?')){delGrowth(g.id);closeSheet();toast('Deleted')}};
+  });
+}
+
+/* ======================= PEDIATRICIAN SUMMARY ======================= */
+let notesT=null,notesDirty=false;
+function ageLong(){const b=D.baby.birthdate;if(!b)return'';const d=Math.floor((Date.now()-new Date(b+'T00:00'))/864e5);if(d<0)return'';
+  if(d<14)return d+' day'+(d===1?'':'s')+' old';if(d<91){const w=Math.floor(d/7),r=d%7;return w+' weeks'+(r?' '+r+' day'+(r>1?'s':''):'')+' old'}
+  const mo=Math.floor(d/30.4375);return mo+' months old'}
+function docStats(from,to){const s=dayStats(from,to),f=D.entries.filter(e=>e.type==='feed'&&e.start>=from&&e.start<to).map(e=>e.start).sort((a,b)=>a-b);
+  const gaps=[];for(let i=1;i<f.length;i++)gaps.push(f[i]-f[i-1]);s.avgInt=gaps.length?gaps.reduce((a,b)=>a+b,0)/gaps.length:null;s.maxInt=gaps.length?Math.max(...gaps):null;return s}
+function docData(){const now=Date.now(),first=D.entries.reduce((a,e)=>Math.min(a,e.start),now),from7=now-7*864e5;
+  const span=Math.min(7,Math.max(1,(now-Math.max(from7,first))/864e5)),d24=docStats(now-864e5,now),d7=docStats(from7,now),cw=curWindow(),days=[];
+  for(let i=6;i>=0;i--){const ws=shiftWindow(cw,-i);days.push({ws,cur:i===0,s:dayStats(ws.getTime(),Math.min(shiftWindow(ws,1).getTime(),now))})}
+  return {now,span,d24,d7,days}}
+function dayLabel(ws,cur){const n=lifeDay(ws),dt=ws.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'});
+  return (useBirthDay()?(n?'Day '+n+' · ':'')+dt+' '+fmtT(ws):dt+(n?' · day '+n:''))+(cur?' (so far)':'')}
+function dayCell(ws,cur){const n=lifeDay(ws),dt=ws.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'});
+  return `<b style="white-space:nowrap">${esc(useBirthDay()&&n?'Day '+n:dt)}</b><br><span class="dl" style="color:#7C778E;font-size:11.5px;white-space:nowrap">${esc(useBirthDay()?dt+' '+fmtT(ws):(n?'day '+n+' of life':''))}${cur?' · so far':''}</span>`}
+const bt=(s,k=1)=>s.oz||s.ml?bottleTotal({oz:s.oz/k,ml:s.ml/k}):'—';
+const mins=v=>Math.round(v)+' min';
+const per=(v,k)=>(Math.round(v/k*10)/10);
+function docText(){const {d24,d7,span,days}=docData(),b=D.baby,n=lifeDay(curWindow()),L=[];
+  L.push('Little Days · Pediatrician summary');
+  L.push(`${b.name}${b.birthdate?' · born '+fmtD(b.birthdate,true)+(b.birth_time?' at '+fmtT(Date.parse(b.birthdate+'T'+String(b.birth_time).slice(0,5))):''):''}${ageLong()?' · '+ageLong():''}${n?' · day '+n+' of life':''}${b.sex?' · '+(b.sex==='female'?'girl':'boy'):''}`);
+  L.push('Prepared '+new Date().toLocaleString([], {month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}));
+  const blk=(t,s,k)=>{L.push('',t);
+    L.push(`Feeds: ${k>1?per(s.feeds,k)+' a day':s.feeds}${s.avgInt?' · every '+dur(s.avgInt)+' on average (longest gap '+dur(s.maxInt)+')':''}`);
+    L.push(`Bottle: ${bt(s,k)}${k>1&&(s.oz||s.ml)?' a day':''} · Nursing: ${mins(s.breastMin/k)}${k>1?' a day':''}`);
+    L.push(`Diapers: ${k>1?per(s.pee+s.both,k):s.pee+s.both} wet, ${k>1?per(s.poop+s.both,k):s.poop+s.both} dirty${k>1?' a day':''}`);
+    L.push(`Sleep: ${dur(s.sleepMs/k)}${k>1?' a day':''}`)};
+  blk('LAST 24 HOURS',d24,1);blk(`LAST 7 DAYS (daily average${span<6.95?', over '+Math.round(span*10)/10+' days of logs':''})`,d7,span);
+  L.push('','BY DAY');days.forEach(x=>{const s=x.s;L.push(`${dayLabel(x.ws,x.cur)}: ${s.feeds} feeds, bottle ${bt(s)}, nursing ${mins(s.breastMin)}, ${s.pee+s.both} wet, ${s.poop+s.both} dirty, sleep ${dur(s.sleepMs)}`)});
+  const gl=['w','l','h'].map(m=>{const c=gChange(m);if(!c)return null;const p=whoPct(m,c.cur);return `${GNAME[m]}${m==='h'?' circumference':''}: ${fmtGV(m,c.cur[m])} (${fmtD(c.cur.date)}) · ${changeText(m,c)}${p!=null?' · WHO '+pctText(p)+' percentile':''}`}).filter(Boolean);
+  if(gl.length){L.push('','GROWTH (latest)',...gl);if(gl.some(x=>x.includes('WHO')))L.push('Percentiles: WHO Child Growth Standards, for information only, not medical advice.')}
+  const nt=(b.doctor_notes||'').trim();if(nt)L.push('','QUESTIONS FOR THE DOCTOR',nt);
+  return L.join('\n')}
+function renderDoc(){
+  const {d24,d7,span,days}=docData(),b=D.baby,n=lifeDay(curWindow()),k=span;
+  const row=(lab,a,c)=>`<tr><td>${lab}</td><td class="n">${a}</td><td class="n">${c}</td></tr>`;
+  const born=b.birthdate?'Born '+fmtD(b.birthdate,true)+(b.birth_time?' at '+fmtT(Date.parse(b.birthdate+'T'+String(b.birth_time).slice(0,5))):''):'';
+  const who=D.people.map(p=>p.name).join(', ');
+  const gRows=['w','l','h'].map(m=>{const c=gChange(m);if(!c)return'';const p=whoPct(m,c.cur);
+    return `<tr><td>${GNAME[m]}${m==='h'?' circ.':''}</td><td class="n"><b>${fmtGV(m,c.cur[m])}</b><br><span style="color:#7C778E">${fmtD(c.cur.date,true)}</span></td><td>${changeText(m,c)}</td><td class="n">${p!=null?pctText(p):'—'}</td></tr>`}).join('');
+  $('#docMain').innerHTML=`<div class="dh"><div class="av">${esc(b.emoji||'🐣')}</div><div style="flex:1"><h1>${esc(b.name)}</h1>
+      <div class="meta">${[born,ageLong(),n?'Day '+n+' of life':'',b.sex?(b.sex==='female'?'Girl':'Boy'):''].filter(Boolean).map(esc).join(' · ')}</div></div>
+      <div class="meta" style="text-align:right">Pediatrician summary<br>${esc(new Date().toLocaleString([], {month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}))}</div></div>
+    <div class="keep"><h2>Feeding, diapers &amp; sleep</h2>
+    <table><thead><tr><th></th><th class="n">Last 24 hours</th><th class="n">Last 7 days · per day</th></tr></thead><tbody>
+      ${row('Feeds',d24.feeds,per(d7.feeds,k))}
+      ${row('Average time between feeds',d24.avgInt?dur(d24.avgInt):'—',d7.avgInt?dur(d7.avgInt):'—')}
+      ${row('Longest stretch between feeds',d24.maxInt?dur(d24.maxInt):'—',d7.maxInt?dur(d7.maxInt):'—')}
+      ${row('Bottle total',bt(d24),bt(d7,k))}
+      ${row('Nursing time',mins(d24.breastMin),mins(d7.breastMin/k))}
+      ${row('Wet diapers',d24.pee+d24.both,per(d7.pee+d7.both,k))}
+      ${row('Dirty diapers',d24.poop+d24.both,per(d7.poop+d7.both,k))}
+      ${row('Sleep',dur(d24.sleepMs),dur(d7.sleepMs/k))}
+    </tbody></table>${k<6.95?`<div class="fine" style="margin-top:4px">Daily averages use the ${Math.round(k*10)/10} days that have logs.</div>`:''}</div>
+    <div class="keep"><h2>Day by day${useBirthDay()?' (days start at birth time)':''}</h2>
+    <table><thead><tr><th>Day</th><th class="n">Feeds</th><th class="n">Bottle</th><th class="n">Nursing</th><th class="n">Wet</th><th class="n">Dirty</th><th class="n">Sleep</th></tr></thead><tbody>
+      ${days.slice().reverse().map(x=>{const s=x.s;return `<tr class="${x.cur?'cur':''}"><td>${dayCell(x.ws,x.cur)}</td><td class="n">${s.feeds}</td><td class="n">${bt(s)}</td><td class="n">${mins(s.breastMin)}</td><td class="n">${s.pee+s.both}</td><td class="n">${s.poop+s.both}</td><td class="n">${dur(s.sleepMs)}</td></tr>`}).join('')}
+    </tbody></table></div>
+    <div class="keep"><h2>Growth</h2>${gRows?`<table><thead><tr><th></th><th class="n">Latest</th><th>Change since last measurement</th><th class="n">WHO percentile</th></tr></thead><tbody>${gRows}</tbody></table>`:'<div class="meta">No measurements logged yet.</div>'}</div>`;
+  $('#docFine').innerHTML=`Logged at home by ${esc(who||'family')} with Little Days. A “wet” or “dirty” count includes diapers that were both.${gRows?' Percentiles compare with the WHO Child Growth Standards (birth to 2 years)'+(b.sex?'':' and need the baby’s sex to be set')+'. They are for information only and are not medical advice.':''}`;
+  if(document.activeElement!==$('#docNotes')&&!notesDirty){$('#docNotes').value=b.doctor_notes||'';$('#docNotesPrint').textContent=b.doctor_notes||''}
+}
+async function openDoc(){try{if(D.baby.sex&&D.baby.birthdate)await loadWHO()}catch(e){}renderDoc();$('#docView').classList.add('on');$('#docView').scrollTop=0;document.body.style.overflow='hidden'}
+function closeDoc(){if(notesDirty){clearTimeout(notesT);saveNotes()}$('#docView').classList.remove('on');document.body.style.overflow=''}
+async function saveNotes(){const v=$('#docNotes').value.slice(0,4000);notesDirty=true;D.baby.doctor_notes=v;
+  if(MODE==='demo'){saveDemo();notesDirty=false;$('#docSaved').textContent='Saved on this phone';return}
+  const {error}=await sb.from('babies').update({doctor_notes:v}).eq('id',D.baby.id);
+  if(error){$('#docSaved').textContent='Not saved yet (offline?). Will retry.';setTimeout(()=>{if(notesDirty)saveNotes()},15000);return}
+  notesDirty=false;$('#docSaved').textContent='Saved · shared with your family';const bb=myBabies.find(x=>x.id===D.baby.id);if(bb)bb.doctor_notes=v}
+function docImage(text){ // a calm, simple PNG of the summary text for the Share sheet
+  const W=1080,P=64,c=document.createElement('canvas'),x=c.getContext('2d'),font=(w,s)=>`${w} ${s}px Nunito, "Segoe UI", system-ui, sans-serif`;
+  const lines=[];text.split('\n').forEach((ln,i)=>{const head=/^(LAST 24|LAST 7|BY DAY|GROWTH|QUESTIONS)/.test(ln);const f=i===0?font(800,40):i===1?font(800,34):head?font(800,26):font(500,27);
+    x.font=f;const words=ln.split(' ');let cur='';words.forEach(w=>{const t=cur?cur+' '+w:w;if(x.measureText(t).width>W-2*P&&cur){lines.push([cur,f,head,i]);cur=w}else cur=t});lines.push([cur,f,head,i])});
+  const lh=l=>l[3]===0?56:l[3]===1?48:l[0]===''?18:40;c.width=W;c.height=P*2+lines.reduce((a,l)=>a+lh(l),0)+30;
+  x.fillStyle='#FBF7F0';x.fillRect(0,0,W,c.height);x.fillStyle='#FFFFFF';x.beginPath();x.roundRect?x.roundRect(24,24,W-48,c.height-48,36):x.rect(24,24,W-48,c.height-48);x.fill();
+  x.fillStyle='#FFD9C4';x.fillRect(24,24,W-48,10);let y=P+20;
+  lines.forEach(l=>{x.font=l[1];x.fillStyle=l[3]===0?'#9483CF':l[2]?'#7A6FB0':'#2E2B3A';y+=lh(l);x.fillText(l[0],P,y-12)});
+  return new Promise(res=>c.toBlob(res,'image/png'))}
+async function shareDoc(){if(notesDirty){clearTimeout(notesT);await saveNotes()}
+  const text=docText(),title=D.baby.name+': summary for the pediatrician';
+  try{let files=null;
+    try{const blob=await docImage(text);const f=new File([blob],'little-days-summary.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))files=[f]}catch(e){}
+    if(navigator.share){await navigator.share(files?{files,title,text}:{title,text});return}
+  }catch(e){if(e&&e.name==='AbortError')return}
+  copy(text,'Summary copied. Paste it into a message or email')}
+window.__ldtest={docText:()=>docText(),docImage:t=>docImage(t||docText()),whoPct:(m,g)=>whoPct(m,g),loadWHO:()=>loadWHO(),lmsAt,lmsZ,normCdf};
+
 function copy(t,msg){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast(msg),()=>prompt('Copy this:',t))}
 
 // auth screen
@@ -933,7 +1252,7 @@ async function dropThisDevice(){
 }
 // App updates: the service worker activates new versions right away; we reload only when nothing is being typed
 // or edited (timers live in saved entries and the offline queue lives in localStorage, so a reload loses nothing).
-const updSafe=()=>!$('#scrim').classList.contains('on')&&!(document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
+const updSafe=()=>!$('#scrim').classList.contains('on')&&!$('#docView').classList.contains('on')&&!(document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
 function applyUpdate(){if(!updSafe()){setTimeout(applyUpdate,4000);return}try{saveQ()}catch(e){}sessionStorage.setItem('littledays.updated','1');location.reload()}
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
   const hadCtrl=!!navigator.serviceWorker.controller;let reloading=false;
