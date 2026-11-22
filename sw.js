@@ -1,5 +1,6 @@
 // Little Days service worker: offline app shell + feeding-alarm notifications
-const CACHE = 'little-days-v4';
+// bump this version on every release; old caches are removed on activate
+const CACHE = 'little-days-v5';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => {
@@ -10,7 +11,9 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   if (url.origin === location.origin) {
     // network first (always fresh when online), cached copy when offline
-    e.respondWith(fetch(req).then((r) => { const c = r.clone(); caches.open(CACHE).then((x) => x.put(req, c)); return r; })
+    // pages bypass the browser's HTTP cache so a new version shows up on the next open
+    const fresh = req.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('.html') || url.pathname.endsWith('sw.js');
+    e.respondWith((fresh ? fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' }) : fetch(req)).then((r) => { const c = r.clone(); caches.open(CACHE).then((x) => x.put(req, c)); return r; })
       .catch(() => caches.match(req).then((r) => r || caches.match('./index.html'))));
   } else if (url.hostname === 'esm.sh') {
     // the database library: use cached copy if present, refresh in background

@@ -166,6 +166,14 @@ body.night .due.over{background:#7a4a35;color:#FFE3D3}
 <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
 
 <!-- SIGN IN / SIGN UP -->
+<div class="wrap hidden" id="offlineScreen">
+  <div class="auth">
+    <div class="logo">☁️</div>
+    <h1>You're offline</h1>
+    <p class="msg ok" style="margin-top:14px">You're still signed in, and anything saved on this phone is safe. Little Days will open and sync as soon as you're back online.</p>
+    <button class="btn" id="offRetry" style="margin-top:16px">Try again</button>
+  </div>
+</div>
 <div class="wrap hidden" id="authScreen">
   <div class="auth">
     <div class="logo">🐣</div>
@@ -358,7 +366,7 @@ function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clea
 function ageText(b){if(!b)return'';const days=Math.floor((Date.now()-new Date(b+'T00:00'))/864e5);if(days<0)return'Arriving soon';if(days<14)return days+' days old';if(days<90)return Math.floor(days/7)+' weeks old';const mo=Math.floor(days/30.44);return mo<24?mo+' months old':Math.floor(mo/12)+' years old'}
 const person=id=>(D&&D.people.find(c=>c.id===id))||{name:'Someone',color:'#eee'};
 const running=(type,sub)=>D.entries.find(e=>e.type===type&&!e.end&&(!sub||e.subtype===sub));
-function show(id){['authScreen','setupScreen','app'].forEach(x=>$('#'+x).classList.toggle('hidden',x!==id));$('#nav').classList.toggle('hidden',id!=='app')}
+function show(id){['offlineScreen','authScreen','setupScreen','app'].forEach(x=>$('#'+x).classList.toggle('hidden',x!==id));$('#nav').classList.toggle('hidden',id!=='app')}
 function setMsg(el,text,ok){el.textContent=text;el.className='msg '+(ok?'ok':'err');el.classList.toggle('hidden',!text)}
 
 /* ======================= DEMO MODE (this device only) ======================= */
@@ -413,7 +421,7 @@ let cloudStarting=null;
 function startCloud(){if(!cloudStarting)cloudStarting=startCloudInner().finally(()=>{cloudStarting=null});return cloudStarting}
 async function startCloudInner(){
   MODE='cloud';localStorage.setItem(MODE_KEY,'cloud');
-  const {data:{user:u}}=await sb.auth.getUser(); if(!u){showAuth();return} user=u;
+  const {data:{user:u},error:ue}=await sb.auth.getUser(); if(!u){if(isNetErr(ue))return showOffline();showAuth();return} user=u;
   const code=localStorage.getItem('littledays.pendingInvite');
   if(code){const {data,error}=await sb.rpc('join_baby_with_code',{code});
     localStorage.removeItem('littledays.pendingInvite');history.replaceState(null,'',location.pathname);
@@ -923,12 +931,29 @@ $('#pushTest').onclick=async()=>{
 async function dropThisDevice(){
   try{const sub=await currentSub();if(!sub)return;if(sb&&user)await sb.from('push_subscriptions').delete().eq('endpoint',sub.endpoint);await sub.unsubscribe()}catch(e){}
 }
-if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+// App updates: the service worker activates new versions right away; we reload only when nothing is being typed
+// or edited (timers live in saved entries and the offline queue lives in localStorage, so a reload loses nothing).
+const updSafe=()=>!$('#scrim').classList.contains('on')&&!(document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
+function applyUpdate(){if(!updSafe()){setTimeout(applyUpdate,4000);return}try{saveQ()}catch(e){}sessionStorage.setItem('littledays.updated','1');location.reload()}
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
+  const hadCtrl=!!navigator.serviceWorker.controller;let reloading=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!hadCtrl||reloading)return;reloading=true;applyUpdate()});
+  navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(reg=>{
+    const chk=()=>reg.update().catch(()=>{});
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')chk()});
+    setInterval(chk,30*60*1000);window.__swCheck=chk;
+  }).catch(()=>{});
+}
+if(sessionStorage.getItem('littledays.updated')){sessionStorage.removeItem('littledays.updated');setTimeout(()=>toast('Updated ✨ Little Days is up to date'),600)}
 
+// Offline cold start while signed in: keep the session, mode and offline queue; reopen when the network is back.
+const isNetErr=e=>!navigator.onLine||!!(e&&(e.name==='AuthRetryableFetchError'||/fetch|network/i.test(e.message||'')));
+function showOffline(){show('offlineScreen');$('#offRetry').onclick=()=>location.reload();window.addEventListener('online',()=>location.reload(),{once:true})}
 async function boot(forceAuth){
   document.body.classList.toggle('night',!!P.night);
   if(!forceAuth&&localStorage.getItem(MODE_KEY)==='demo'&&!urlInvite){startDemo();return}
   try{await loadSupabase()}catch(e){ // offline / CDN unreachable
+    if(localStorage.getItem(MODE_KEY)==='cloud')return showOffline();
     if(localStorage.getItem(DEMO_KEY)){startDemo();toast('Offline: showing demo')}else showAuth();return}
   const {data}=await sb.auth.getSession();
   if(data.session){user=data.session.user;startCloud()}else showAuth();
