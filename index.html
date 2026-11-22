@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FBF7F0">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Little Days">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Little Days · Baby Tracker</title>
 <style>
 :root{
@@ -120,6 +127,19 @@ svg text{fill:var(--soft);font-family:inherit}
 .toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:700;font-size:14px;opacity:0;transition:.25s;z-index:20;pointer-events:none}
 .toast.on{opacity:1;transform:translateX(-50%)}
 .hidden{display:none!important}
+.due{display:flex;align-items:center;gap:10px;border-radius:999px;padding:12px 18px;margin-bottom:14px;font-weight:800;font-size:15px;background:var(--mint);box-shadow:var(--shadow);cursor:pointer;border:none;width:100%;color:var(--ink);font-family:inherit;text-align:left}
+.due small{margin-left:auto;font-weight:700;font-size:12px;color:var(--soft)}
+.due.soon{background:var(--yellow)}
+.due.over{background:#F4B79A;color:#5a3020}.due.over small{color:#7a4a35}
+body.night .due.over{background:#7a4a35;color:#FFE3D3}
+.alarmBanner{position:fixed;top:12px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:500px;z-index:15;background:#FFE3D3;color:#5a3020;border-radius:24px;padding:14px 16px;box-shadow:0 12px 34px rgba(160,90,60,.25);display:flex;gap:12px;align-items:center;animation:up .3s ease}
+.alarmBanner b{display:block;font-size:16px}.alarmBanner span{font-size:13px}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;font-weight:700}
+.switch input{appearance:none;width:52px;height:30px;border-radius:999px;background:var(--line);position:relative;cursor:pointer;flex:none;border:none;padding:0;transition:.2s}
+.switch input:before{content:"";position:absolute;width:24px;height:24px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.switch input:checked{background:var(--mint-d)}.switch input:checked:before{left:25px}
+.steps{background:var(--bg);border-radius:18px;padding:12px 14px;font-size:14px;line-height:1.5;margin-top:10px}
+.steps ol{margin:6px 0 0;padding-left:20px}
 .l24head{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
 .l24head h3{margin:0}
 .l24grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
@@ -206,6 +226,7 @@ svg text{fill:var(--soft);font-family:inherit}
       <div class="gl"><div class="l">🧷 Last diaper</div><div class="v" id="gDiaper">—</div></div>
       <div class="gl"><div class="l">🌙 Sleep</div><div class="v" id="gSleep">—</div></div>
     </div>
+    <button class="due hidden" id="feedDue"></button>
     <div class="big">
       <button class="bigbtn feed" id="bFeed"><div class="em">🍼</div>Feed<small id="sFeed">tap to log</small></button>
       <button class="bigbtn diaper" id="bDiaper"><div class="em">🧷</div>Diaper<small>pee · poop</small></button>
@@ -249,6 +270,26 @@ svg text{fill:var(--soft);font-family:inherit}
       <div class="chips" id="emojiChips" style="justify-content:flex-start"></div>
       <button class="btn full" id="saveProfile">Save profile</button>
     </div>
+    <h2>⏰ Feeding alarm</h2>
+    <div class="card" id="alarmCard">
+      <label class="switch">Remind us when a feed is due<input type="checkbox" id="alOn"></label>
+      <div id="alOpts">
+        <label class="f">Alert if no feed for</label>
+        <select id="alInt"></select>
+        <label class="switch">Alert at night too <span class="muted" style="font-weight:600">(10 PM – 6 AM)</span><input type="checkbox" id="alNight"></label>
+        <div class="muted">Shared with everyone in the family. Counted from the start of the last feed.</div>
+      </div>
+      <div style="border-top:2px dashed var(--line);margin:14px 0 4px"></div>
+      <h3 style="margin-top:10px">🔔 Alerts on this phone</h3>
+      <div class="muted" id="pushStatus">Get a gentle notification even when Little Days is closed.</div>
+      <div class="row" style="margin-top:10px"><button class="btn peach" id="pushOn">Enable alerts</button><button class="btn ghost hidden" id="pushTest">Send test</button></div>
+      <div class="steps hidden" id="iosSteps"><b>On iPhone (iOS 16.4 or newer):</b><ol>
+        <li>Tap the <b>Share</b> button <span style="font-size:16px">⬆️</span> at the bottom of Safari.</li>
+        <li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+        <li>Open <b>Little Days</b> from your home screen and sign in.</li>
+        <li>Come back here and tap <b>Enable alerts</b>, then <b>Allow</b>.</li></ol>
+        <div class="muted">Apple only allows website notifications from apps added to the Home Screen.</div></div>
+    </div>
     <h2>Family &amp; caregivers</h2>
     <div class="card" id="inviteCard"></div>
     <div class="card">
@@ -278,12 +319,15 @@ svg text{fill:var(--soft);font-family:inherit}
 
 <div class="scrim" id="scrim"><div class="sheet" id="sheet"></div></div>
 <div class="toast" id="toast"></div>
+<div id="alarmBannerWrap"></div>
 <script>
 (function(){
 /* ======== CONFIG (public values only: the publishable key is safe in a web page; RLS protects the data) ======== */
 const SUPABASE_URL='https://dpuzbskjivrbfapadewy.supabase.co';
 const SUPABASE_KEY='sb_publishable_D4r76K6cH2xcEhwnJYyNMw_JSJKhg4k';
 const SUPABASE_CDN='https://esm.sh/@supabase/supabase-js@2';
+const VAPID_PUBLIC_KEY='BJbwZLxJLiYgjQ9YIhb3STsQ8kFhXaZN_hD685Vziz6kq-byEsmx1TZjdokl0Gk9sLCPB9bLlUfDjSTrkK7aSwo'; // public half only; the private key lives in Supabase Vault
+const ALARM_FN=SUPABASE_URL+'/functions/v1/feed-alarm';
 
 const DEMO_KEY='littledays.v2.demo', PREF_KEY='littledays.prefs', MODE_KEY='littledays.mode', QUEUE_KEY='littledays.queue', BABY_KEY='littledays.baby';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -319,7 +363,7 @@ function setMsg(el,text,ok){el.textContent=text;el.className='msg '+(ok?'ok':'er
 /* ======================= DEMO MODE (this device only) ======================= */
 function demoSeed(){
   const people=[{id:'c1',name:'Mom',role:'owner',color:COLORS[0]},{id:'c2',name:'Dad',role:'caregiver',color:COLORS[1]},{id:'c3',name:'Grandma',role:'caregiver',color:COLORS[2]}];
-  return {baby:{id:'demo',name:'Olive (sample)',birthdate:new Date(Date.now()-42*864e5).toISOString().slice(0,10),emoji:'🐣',birth_time:'15:12',day_start:'midnight'},people,me:'c1',shareCode:'DEMO42',entries:sampleEntries(people)};
+  return {baby:{id:'demo',name:'Olive (sample)',birthdate:new Date(Date.now()-42*864e5).toISOString().slice(0,10),emoji:'🐣',birth_time:'15:12',day_start:'midnight',feed_alarm_enabled:true,feed_interval_min:180,feed_alarm_night:true},people,me:'c1',shareCode:'DEMO42',entries:sampleEntries(people)};
 }
 function sampleEntries(people){
   let s=7;const r=()=>{s=(s*9301+49297)%233280;return s/233280};
@@ -534,7 +578,7 @@ function renderToday(){
   $('#bSleep').classList.toggle('running',!!sl);$('#sleepLbl').textContent=sl?'Wake up':'Sleep';
   $('#sSleep').textContent=sl?clock(Date.now()-sl.start)+' · '+person(sl.by).name:'start timer';
   const ft=running('feed','breast');$('#bFeed').classList.toggle('running',!!ft);$('#sFeed').textContent=ft?'nursing '+clock(feedTotal(ft)*1000):'tap to log';
-  renderL24();
+  renderL24();renderDue();
   const ws=shiftWindow(curWindow(),-viewOffset),d0=ws.getTime(),d1=shiftWindow(ws,1).getTime(),isToday=viewOffset===0;
   $('#dayTitle').textContent=windowTitle(ws);$('#daySub').textContent=windowSub(ws);
   $('#nextDay').disabled=isToday;$('#nextDay').style.opacity=isToday?.4:1;
@@ -586,6 +630,7 @@ function bars(labels,data,suffix=''){
 }
 function inviteLink(code){return location.origin+location.pathname+'?invite='+code}
 function renderFamily(){
+  renderAlarmCard();
   const isOwner=MODE==='cloud'&&(D.people.find(p=>p.id===D.me)||{}).role==='owner';
   if(document.activeElement!==$('#pName'))$('#pName').value=D.baby.name;if(document.activeElement!==$('#pBirth'))$('#pBirth').value=D.baby.birthdate||'';if(document.activeElement!==$('#pBirthTime'))$('#pBirthTime').value=String(D.baby.birth_time||'').slice(0,5);
   $$('#dayStartSeg button').forEach(b=>b.classList.toggle('on',b.dataset.ds===(D.baby.day_start||'midnight')));
@@ -628,14 +673,14 @@ function renderFamily(){
     $('#exitDemo').onclick=leaveDemo;
   }else{
     $('#addBaby').onclick=openSetup;
-    $('#signOut').onclick=async()=>{await sb.auth.signOut();showAuth()};
+    $('#signOut').onclick=async()=>{await dropThisDevice();await sb.auth.signOut();showAuth()};
     if($('#leaveBaby'))$('#leaveBaby').onclick=async()=>{if(!confirm('Leave '+D.baby.name+'? You will stop seeing its log.'))return;
       const {error}=await sb.from('baby_members').delete().eq('baby_id',D.baby.id).eq('user_id',user.id);if(error)return toast(error.message);localStorage.removeItem(BABY_KEY);user=null;await sb.auth.getSession().then(({data})=>{user=data.session.user});startCloud()};
   }
 }
 async function saveBaby(){
   if(MODE==='demo'){saveDemo();render();return}
-  const {error}=await sb.from('babies').update({name:D.baby.name,birthdate:D.baby.birthdate||null,emoji:D.baby.emoji,birth_time:D.baby.birth_time||null,day_start:D.baby.day_start||'midnight'}).eq('id',D.baby.id);
+  const {error}=await sb.from('babies').update({name:D.baby.name,birthdate:D.baby.birthdate||null,emoji:D.baby.emoji,birth_time:D.baby.birth_time||null,day_start:D.baby.day_start||'midnight',feed_alarm_enabled:!!D.baby.feed_alarm_enabled,feed_interval_min:D.baby.feed_interval_min||180,feed_alarm_night:D.baby.feed_alarm_night!==false,tz:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'}).eq('id',D.baby.id);
   if(error)toast(error.message);else{const b=myBabies.find(x=>x.id===D.baby.id);if(b)Object.assign(b,D.baby)}render();
 }
 async function makeInvite(){
@@ -781,6 +826,103 @@ $('#sOut').onclick=async()=>{await sb.auth.signOut();showAuth()};
 
 setInterval(()=>{if(D&&D.entries.some(e=>!e.end))renderToday()},1000);
 setInterval(()=>{if(D){renderToday();renderReports()}},60000);
+
+/* ======================= FEEDING ALARM ======================= */
+const isNightHour=()=>{const h=new Date().getHours();return h>=22||h<6};
+function feedDueInfo(){
+  if(!D||!D.baby.feed_alarm_enabled)return null;
+  if(running('feed'))return {state:'feeding'};
+  const last=D.entries.filter(e=>e.type==='feed').reduce((m,e)=>Math.max(m,e.start),0);
+  if(!last)return {state:'none'};
+  const due=last+(D.baby.feed_interval_min||180)*6e4;
+  return {state:Date.now()>=due?'over':'wait',due,last,left:due-Date.now()};
+}
+function renderDue(){
+  const el=$('#feedDue'),i=feedDueInfo();if(!el)return;
+  el.classList.toggle('hidden',!i);if(!i)return;
+  el.className='due'+(i.state==='over'?' over':i.state==='wait'&&i.left<20*6e4?' soon':'');
+  el.innerHTML=i.state==='feeding'?'🤱 Feeding now<small>alarm paused</small>'
+    :i.state==='none'?'⏰ Feeding alarm is on<small>log a feed to start</small>'
+    :i.state==='over'?`⏰ Feed overdue by ${dur(-i.left)}<small>last fed ${fmtT(i.last)}</small>`
+    :`⏰ Next feed due in ${dur(i.left)}<small>around ${fmtT(i.due)}</small>`;
+  if(i.state==='over')checkAlarm();
+}
+$('#feedDue').onclick=()=>feedSheet();
+let audioCtx=null;
+document.addEventListener('pointerdown',()=>{try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume()}catch(e){}},{passive:true});
+function chime(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();const t=audioCtx.currentTime;
+  [[659.25,0],[880,.32],[1046.5,.64]].forEach(([f,o])=>{const g=audioCtx.createGain(),osc=audioCtx.createOscillator();osc.type='sine';osc.frequency.value=f;
+    g.gain.setValueAtTime(0,t+o);g.gain.linearRampToValueAtTime(.18,t+o+.04);g.gain.exponentialRampToValueAtTime(.001,t+o+1.4);osc.connect(g).connect(audioCtx.destination);osc.start(t+o);osc.stop(t+o+1.5)})}catch(e){}}
+let alarmSeen=JSON.parse(sessionStorage.getItem('littledays.alarmSeen')||'{}');
+function checkAlarm(){
+  const i=feedDueInfo();if(!i||i.state!=='over')return hideAlarmBanner();
+  if(isNightHour()&&D.baby.feed_alarm_night===false)return;
+  const key=D.baby.id+':'+i.last,stage=Date.now()>=i.due+15*6e4?2:1;
+  if((alarmSeen[key]||0)>=stage)return;
+  alarmSeen[key]=stage;sessionStorage.setItem('littledays.alarmSeen',JSON.stringify(alarmSeen));
+  window.__alarmFired=(window.__alarmFired||0)+1;chime();showAlarmBanner(i,stage);
+}
+function showAlarmBanner(i,stage){
+  $('#alarmBannerWrap').innerHTML=`<div class="alarmBanner" id="alarmBanner"><div style="font-size:30px">⏰</div><div style="flex:1"><b>${esc(D.baby.name)}'s feed is ${stage>1?'still ':''}due</b><span>Last fed ${dur(Date.now()-i.last)} ago</span></div><button class="btn sm peach" id="abLog">Log feed</button><button class="btn sm ghost" id="abX" aria-label="Dismiss">✕</button></div>`;
+  $('#abLog').onclick=()=>{hideAlarmBanner();feedSheet()};$('#abX').onclick=hideAlarmBanner;
+}
+function hideAlarmBanner(){const w=$('#alarmBannerWrap');if(w)w.innerHTML=''}
+setInterval(()=>{if(D){renderDue();checkAlarm()}},15000);
+
+const INTERVALS=[];for(let m=60;m<=360;m+=15)INTERVALS.push(m);
+const hm=m=>Math.floor(m/60)+'h'+(m%60?' '+pad(m%60)+'m':'');
+function renderAlarmCard(){
+  if(!D)return;const b=D.baby;
+  $('#alOn').checked=!!b.feed_alarm_enabled;$('#alNight').checked=b.feed_alarm_night!==false;
+  $('#alInt').innerHTML=INTERVALS.map(m=>`<option value="${m}" ${m===(b.feed_interval_min||180)?'selected':''}>${hm(m)}</option>`).join('');
+  $('#alOpts').style.opacity=b.feed_alarm_enabled?1:.45;
+  refreshPushStatus();
+}
+$('#alOn').onchange=e=>{D.baby.feed_alarm_enabled=e.target.checked;saveBaby();toast(e.target.checked?'Feeding alarm on ⏰':'Feeding alarm off')};
+$('#alInt').onchange=e=>{D.baby.feed_interval_min=+e.target.value;saveBaby();toast('Alert after '+hm(+e.target.value)+' without a feed')};
+$('#alNight').onchange=e=>{D.baby.feed_alarm_night=e.target.checked;saveBaby()};
+
+const isIOS=()=>/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const isStandalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const pushSupported=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+function b64ToU8(b){const p='='.repeat((4-b.length%4)%4),s=atob((b+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(s,c=>c.charCodeAt(0))}
+async function currentSub(){if(!pushSupported())return null;const reg=await navigator.serviceWorker.getRegistration();return reg?reg.pushManager.getSubscription():null}
+async function refreshPushStatus(){
+  const st=$('#pushStatus'),on=$('#pushOn'),test=$('#pushTest');if(!st)return;
+  $('#iosSteps').classList.toggle('hidden',!(isIOS()&&!isStandalone()));
+  if(MODE!=='cloud'){st.textContent='Phone alerts need a free account (the demo only chimes while open).';on.textContent='Create account';test.classList.add('hidden');return}
+  if(!pushSupported()){st.textContent=isIOS()?'Add Little Days to your Home Screen first (steps below).':'This browser can\'t show notifications. The app will still chime while it\'s open.';on.classList.toggle('hidden',!isIOS());on.textContent='Enable alerts';test.classList.add('hidden');return}
+  const sub=await currentSub().catch(()=>null);
+  if(Notification.permission==='denied'){st.textContent='Notifications are blocked for this site. Turn them on in your phone\'s Settings → Notifications.';test.classList.add('hidden');return}
+  if(sub&&Notification.permission==='granted'){st.innerHTML='✅ <b>Alerts are on for this phone.</b>';on.textContent='Turn off';test.classList.remove('hidden')}
+  else{st.textContent='Get a gentle notification even when Little Days is closed.';on.textContent='Enable alerts';test.classList.add('hidden')}
+}
+$('#pushOn').onclick=async()=>{
+  if(MODE!=='cloud')return leaveDemo();
+  const sub0=await currentSub().catch(()=>null);
+  if(sub0&&Notification.permission==='granted'){await dropThisDevice();toast('Alerts off for this phone');return refreshPushStatus()}
+  if(!pushSupported()){if(isIOS()){$('#iosSteps').classList.remove('hidden');toast('Add to Home Screen first ⬆️')}else toast('This browser can\'t show notifications');return}
+  try{
+    const perm=await Notification.requestPermission();if(perm!=='granted'){toast('Notifications were not allowed');return refreshPushStatus()}
+    const reg=await navigator.serviceWorker.ready;
+    const sub=(await reg.pushManager.getSubscription())||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(VAPID_PUBLIC_KEY)});
+    const j=sub.toJSON();
+    const {error}=await sb.from('push_subscriptions').upsert({user_id:user.id,endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,user_agent:navigator.userAgent.slice(0,200)},{onConflict:'endpoint'});
+    if(error)throw error;
+    if(!D.baby.feed_alarm_enabled){D.baby.feed_alarm_enabled=true;saveBaby()}
+    toast('Alerts on 🔔');
+  }catch(e){toast('Could not turn on alerts: '+(e.message||e))}
+  refreshPushStatus();
+};
+$('#pushTest').onclick=async()=>{
+  const {data}=await sb.auth.getSession();if(!data.session)return;
+  const r=await fetch(ALARM_FN,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+data.session.access_token,apikey:SUPABASE_KEY},body:JSON.stringify({action:'test'})}).then(r=>r.json()).catch(e=>({error:String(e)}));
+  toast(r.error?'Test failed: '+r.error:'Test sent to '+r.devices+' device'+(r.devices===1?'':'s')+' 🔔');
+};
+async function dropThisDevice(){
+  try{const sub=await currentSub();if(!sub)return;if(sb&&user)await sb.from('push_subscriptions').delete().eq('endpoint',sub.endpoint);await sub.unsubscribe()}catch(e){}
+}
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 
 async function boot(forceAuth){
   document.body.classList.toggle('night',!!P.night);
