@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FBF7F0">
+<title>Little Days · Baby Tracker</title>
+<style>
+:root{
+  --bg:#FBF7F0; --card:#FFFFFF; --ink:#4A4560; --soft:#8C87A3; --line:#EFE8DD;
+  --blue:#BFDDF5; --blue-d:#6FA8D6; --mint:#C6EBDD; --mint-d:#5FB394;
+  --peach:#FFD9C4; --peach-d:#E8946B; --lav:#DCD3F5; --lav-d:#9483CF;
+  --yellow:#FFF0BF; --shadow:0 6px 20px rgba(120,100,140,.10); --r:24px;
+}
+body.night{
+  --bg:#1E1B2A; --card:#29253A; --ink:#E9E4F5; --soft:#A39DBB; --line:#3A3550;
+  --blue:#3B4F6B; --mint:#2F5348; --peach:#5C4033; --lav:#463D66; --yellow:#544B2E;
+  --shadow:0 6px 20px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Nunito","Quicksand","Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;transition:background .3s}
+body{min-height:100vh;padding-bottom:96px;position:relative;overflow-x:hidden}
+/* soft background shapes */
+.blob{position:fixed;border-radius:50%;filter:blur(2px);opacity:.55;z-index:0;pointer-events:none}
+.b1{width:260px;height:260px;background:var(--lav);top:-90px;right:-80px}
+.b2{width:200px;height:200px;background:var(--mint);bottom:80px;left:-90px}
+.b3{width:120px;height:120px;background:var(--peach);top:240px;right:-50px;opacity:.35}
+body.night .blob{display:none}
+.wrap{max-width:520px;margin:0 auto;padding:16px 18px;position:relative;z-index:1}
+header{display:flex;align-items:center;gap:12px;margin:6px 0 14px}
+.avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--peach),var(--lav));display:grid;place-items:center;font-size:26px;flex:none;box-shadow:var(--shadow)}
+.hname{font-size:22px;font-weight:800;line-height:1.1}
+.hage{font-size:14px;color:var(--soft)}
+.iconbtn{margin-left:auto;border:none;background:var(--card);width:44px;height:44px;border-radius:50%;font-size:20px;box-shadow:var(--shadow);cursor:pointer;color:var(--ink)}
+.who{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:999px;padding:6px 6px 6px 14px;box-shadow:var(--shadow);margin-bottom:14px;font-size:14px;color:var(--soft)}
+.who select{flex:1;border:none;background:var(--lav);color:var(--ink);font:inherit;font-weight:700;border-radius:999px;padding:8px 12px;appearance:none;cursor:pointer}
+.banner{background:var(--yellow);border-radius:18px;padding:10px 14px;font-size:14px;display:flex;gap:10px;align-items:center;margin-bottom:14px}
+.banner button{margin-left:auto;flex:none}
+.card{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+h2{font-size:17px;margin:4px 2px 10px;font-weight:800}
+h3{font-size:15px;margin:0 0 8px;font-weight:800}
+.muted{color:var(--soft);font-size:13px}
+.glance{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.gl{background:var(--card);border-radius:20px;padding:12px 10px;text-align:center;box-shadow:var(--shadow)}
+.gl .v{font-size:17px;font-weight:800;margin-top:2px}
+.gl .l{font-size:12px;color:var(--soft)}
+.big{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.bigbtn{border:none;border-radius:28px;padding:18px 6px 14px;font:inherit;font-weight:800;font-size:16px;color:var(--ink);cursor:pointer;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;gap:6px;transition:transform .1s}
+.bigbtn:active{transform:scale(.96)}
+.bigbtn .em{width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.65);display:grid;place-items:center;font-size:30px}
+body.night .bigbtn .em{background:rgba(255,255,255,.08)}
+.feed{background:var(--peach)} .diaper{background:var(--mint)} .sleep{background:var(--blue)}
+.bigbtn small{font-weight:600;font-size:12px;color:var(--soft)}
+.running{outline:3px solid var(--lav-d);animation:pulse 2s infinite}
+@keyframes pulse{50%{outline-color:transparent}}
+.tl{list-style:none;margin:0;padding:0}
+.tl li{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px dashed var(--line);cursor:pointer}
+.tl li:last-child{border-bottom:none}
+.dot{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:20px;flex:none}
+.tl .t{font-weight:800;font-size:15px}
+.tl .d{font-size:13px;color:var(--soft)}
+.tl .time{margin-left:auto;text-align:right;font-size:13px;color:var(--soft);white-space:nowrap}
+.by{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700;color:#4A4560}
+.sample{font-size:10px;background:var(--yellow);border-radius:6px;padding:1px 5px;margin-left:4px;color:var(--ink)}
+.empty{text-align:center;color:var(--soft);padding:18px 0;font-size:14px}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:5;display:flex;justify-content:center;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 35%)}
+nav .bar{display:flex;gap:6px;background:var(--card);border-radius:999px;padding:6px;box-shadow:0 8px 28px rgba(120,100,140,.18);width:100%;max-width:420px}
+nav button{flex:1;border:none;background:none;border-radius:999px;padding:10px 4px;font:inherit;font-size:13px;font-weight:700;color:var(--soft);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button span{font-size:20px}
+nav button.on{background:var(--lav);color:var(--ink)}
+.view{display:none}.view.on{display:block}
+.btn{border:none;border-radius:999px;padding:12px 18px;font:inherit;font-weight:800;font-size:15px;cursor:pointer;background:var(--lav);color:var(--ink)}
+.btn.sm{padding:7px 12px;font-size:13px}
+.btn.ghost{background:transparent;border:2px solid var(--line)}
+.btn.danger{background:#F8D3D3;color:#7A3A3A}
+.btn.mint{background:var(--mint)} .btn.peach{background:var(--peach)} .btn.blue{background:var(--blue)}
+.btn.full{width:100%}
+.row{display:flex;gap:10px;align-items:center}
+.row>*{flex:1}
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(60,50,80,.35);z-index:10;display:none;align-items:flex-end;justify-content:center}
+.scrim.on{display:flex}
+.sheet{background:var(--card);width:100%;max-width:520px;border-radius:30px 30px 0 0;padding:14px 20px calc(24px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto;animation:up .22s ease}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.grab{width:44px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 12px}
+.seg{display:flex;background:var(--bg);border-radius:999px;padding:4px;margin-bottom:16px}
+.seg button{flex:1;border:none;background:none;border-radius:999px;padding:10px;font:inherit;font-weight:800;color:var(--soft);cursor:pointer}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.sides{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0 14px}
+.side{border:none;border-radius:50%;aspect-ratio:1;background:var(--peach);font:inherit;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:var(--shadow)}
+.side b{font-size:34px}
+.side .tm{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.side.on{background:var(--peach-d);color:#fff;animation:pulse2 1.6s infinite}
+@keyframes pulse2{50%{box-shadow:0 0 0 10px rgba(232,148,107,.18)}}
+.amount{display:flex;align-items:center;justify-content:center;gap:18px;margin:10px 0}
+.amount .n{font-size:44px;font-weight:800;min-width:120px;text-align:center;font-variant-numeric:tabular-nums}
+.round{width:58px;height:58px;border-radius:50%;border:none;background:var(--peach);font-size:28px;font-weight:800;color:var(--ink);cursor:pointer}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:14px}
+.chip{border:2px solid var(--line);background:none;border-radius:999px;padding:8px 14px;font:inherit;font-weight:700;color:var(--ink);cursor:pointer}
+.chip.on{background:var(--lav);border-color:var(--lav)}
+.dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:8px 0 16px}
+.dbtn{border:none;border-radius:26px;padding:20px 4px;background:var(--mint);font:inherit;font-weight:800;font-size:16px;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px}
+.dbtn b{font-size:34px}
+.bigtime{font-size:46px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;margin:10px 0 4px}
+label.f{display:block;font-size:13px;font-weight:700;color:var(--soft);margin:10px 0 4px}
+input,select,textarea{width:100%;border:2px solid var(--line);border-radius:16px;padding:11px 14px;font:inherit;background:var(--bg);color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--lav-d)}
+/* reports */
+.totals{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.tot{border-radius:20px;padding:12px 14px}
+.tot .v{font-size:22px;font-weight:800}
+.tot .l{font-size:12px;color:var(--soft);font-weight:700}
+svg text{fill:var(--soft);font-family:inherit}
+.legend{display:flex;gap:12px;font-size:12px;color:var(--soft);margin-top:4px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.cg{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.cg:last-child{border-bottom:none}
+.cg .ini{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#4A4560}
+.code{font-size:30px;letter-spacing:6px;font-weight:800;text-align:center;background:var(--bg);border-radius:18px;padding:12px;margin:8px 0;font-variant-numeric:tabular-nums}
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:700;font-size:14px;opacity:0;transition:.25s;z-index:20;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.hidden{display:none!important}
+.auth{max-width:420px;margin:0 auto;padding-top:28px;text-align:center}
+.logo{width:96px;height:96px;border-radius:50%;margin:0 auto 10px;background:linear-gradient(135deg,var(--peach),var(--lav));display:grid;place-items:center;font-size:48px;box-shadow:var(--shadow)}
+.auth h1{margin:6px 0 2px;font-size:28px}
+.auth .card{text-align:left}
+.msg{border-radius:16px;padding:10px 14px;font-size:14px;margin-top:10px}
+.msg.err{background:#F8D3D3;color:#7A3A3A}.msg.ok{background:var(--mint)}
+.link{background:none;border:none;color:var(--lav-d);font:inherit;font-weight:700;cursor:pointer;padding:6px;text-decoration:underline}
+.sync{margin-left:auto;font-size:12px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--mint);color:#2f5a4b;white-space:nowrap}
+.sync.off{background:var(--yellow);color:#6b5a1e}
+.who b{color:var(--ink)}
+.or{display:flex;align-items:center;gap:10px;color:var(--soft);font-size:13px;margin:14px 0}
+.or:before,.or:after{content:"";flex:1;height:2px;background:var(--line)}
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+
+<!-- SIGN IN / SIGN UP -->
+<div class="wrap hidden" id="authScreen">
+  <div class="auth">
+    <div class="logo">🐣</div>
+    <h1>Little Days</h1>
+    <div class="muted" style="margin-bottom:16px">Feeds, diapers &amp; sleep, shared by everyone who loves your baby</div>
+    <div class="msg ok hidden" id="inviteNote">💌 You've been invited to join a baby! Sign in or create an account and you'll be added automatically.</div>
+    <div class="card" style="margin-top:14px">
+      <div class="seg" id="authSeg"><button data-a="in" class="on">Sign in</button><button data-a="up">Create account</button></div>
+      <div id="nameRow" class="hidden"><label class="f">Your name</label><input id="aName" placeholder="e.g. Jamie" autocomplete="name"></div>
+      <label class="f">Email</label><input id="aEmail" type="email" placeholder="you@example.com" autocomplete="email">
+      <label class="f">Password</label><input id="aPass" type="password" placeholder="At least 8 characters" autocomplete="current-password">
+      <button class="btn full" id="aGo" style="margin-top:16px">Sign in</button>
+      <div style="text-align:center"><button class="link" id="aMagic">Email me a sign-in link instead</button></div>
+      <div class="msg hidden" id="aMsg"></div>
+    </div>
+    <div class="or">or</div>
+    <button class="btn ghost full" id="tryDemo">👀 Try the demo with sample data (no account)</button>
+  </div>
+</div>
+
+<!-- FIRST RUN: CREATE OR JOIN -->
+<div class="wrap hidden" id="setupScreen">
+  <div class="auth">
+    <div class="logo">🍼</div>
+    <h1>Welcome<span id="setupName"></span>!</h1>
+    <div class="muted" style="margin-bottom:16px">Let's set up your little one</div>
+    <div class="card">
+      <h3>✨ Create your baby</h3>
+      <label class="f">Baby's name</label><input id="sName" placeholder="e.g. Olive">
+      <label class="f">Birthdate (or due date)</label><input id="sBirth" type="date">
+      <label class="f">Pick an emoji</label><div class="chips" id="sEmoji" style="justify-content:flex-start"></div>
+      <button class="btn peach full" id="sCreate">Create baby</button>
+    </div>
+    <div class="or">or</div>
+    <div class="card">
+      <h3>💌 Join with an invite code</h3>
+      <div class="muted">Your partner can find it on their Family screen.</div>
+      <input id="sCode" placeholder="ABC123" maxlength="7" style="text-transform:uppercase;letter-spacing:4px;font-weight:800;text-align:center;margin-top:10px">
+      <button class="btn mint full" id="sJoin" style="margin-top:10px">Join baby</button>
+    </div>
+    <div class="msg hidden" id="sMsg"></div>
+    <button class="link" id="sBack">Back to my baby</button> <button class="link" id="sOut">Sign out</button>
+  </div>
+</div>
+
+<div class="wrap hidden" id="app">
+  <header>
+    <div class="avatar" id="avatar">🐣</div>
+    <div><div class="hname" id="hname">Baby</div><div class="hage" id="hage"></div></div>
+    <button class="iconbtn" id="nightBtn" title="Night mode (dim for 3am)">🌙</button>
+  </header>
+
+  <div class="who" id="whoBar"></div>
+  <div id="banner"></div>
+
+  <section class="view on" id="v-today">
+    <div class="glance">
+      <div class="gl"><div class="l">🍼 Last feed</div><div class="v" id="gFeed">—</div></div>
+      <div class="gl"><div class="l">🧷 Last diaper</div><div class="v" id="gDiaper">—</div></div>
+      <div class="gl"><div class="l">🌙 Sleep</div><div class="v" id="gSleep">—</div></div>
+    </div>
+    <div class="big">
+      <button class="bigbtn feed" id="bFeed"><div class="em">🍼</div>Feed<small id="sFeed">tap to log</small></button>
+      <button class="bigbtn diaper" id="bDiaper"><div class="em">🧷</div>Diaper<small>pee · poop</small></button>
+      <button class="bigbtn sleep" id="bSleep"><div class="em">🌙</div><span id="sleepLbl">Sleep</span><small id="sSleep">start timer</small></button>
+    </div>
+    <div class="card">
+      <div class="row" style="margin-bottom:6px"><h3 style="margin:0" id="dayTitle">Today</h3>
+        <div style="flex:none;display:flex;gap:6px"><button class="btn sm ghost" id="prevDay">‹</button><button class="btn sm ghost" id="nextDay">›</button></div></div>
+      <ul class="tl" id="timeline"></ul>
+      <div class="muted" style="text-align:center;margin-top:6px">Tap any entry to edit or delete</div>
+    </div>
+  </section>
+
+  <section class="view" id="v-reports">
+    <h2>Today at a glance</h2>
+    <div class="card"><div class="totals" id="totals"></div></div>
+    <h2>Last 7 days</h2>
+    <div class="card"><h3>🍼 Feeds per day</h3><div id="chFeeds"></div><div class="legend"><span><i style="background:var(--peach-d)"></i>Breast</span><span><i style="background:#F3B795"></i>Bottle</span></div></div>
+    <div class="card"><h3>🧷 Diapers per day</h3><div id="chDiapers"></div><div class="legend"><span><i style="background:#F2D27A"></i>Pee</span><span><i style="background:#C9A27E"></i>Poop</span><span><i style="background:var(--mint-d)"></i>Both</span></div></div>
+    <div class="card"><h3>🌙 Sleep hours per day</h3><div id="chSleep"></div></div>
+    <div class="card"><h3>📋 For the pediatrician</h3><div class="muted" id="avgText" style="margin-bottom:10px"></div>
+      <div class="row"><button class="btn mint" id="copySum">Copy summary</button><button class="btn blue" id="csvBtn">Download CSV</button></div></div>
+  </section>
+
+  <section class="view" id="v-family">
+    <h2>Baby profile</h2>
+    <div class="card">
+      <div id="babySwitch"></div>
+      <label class="f">Baby's name</label><input id="pName">
+      <label class="f">Birthdate</label><input id="pBirth" type="date">
+      <label class="f">Profile emoji</label>
+      <div class="chips" id="emojiChips" style="justify-content:flex-start"></div>
+      <button class="btn full" id="saveProfile">Save profile</button>
+    </div>
+    <h2>Family &amp; caregivers</h2>
+    <div class="card" id="inviteCard"></div>
+    <div class="card">
+      <h3>People who can log</h3>
+      <div id="cgList"></div>
+      <div id="demoAdd">
+        <label class="f">Add a caregiver (demo)</label>
+        <div class="row"><input id="cgName" placeholder="Name, e.g. Grandma"><select id="cgRole" style="flex:.7"><option>Parent</option><option>Grandparent</option><option>Nanny</option><option>Other</option></select></div>
+        <button class="btn mint full" id="addCg" style="margin-top:10px">+ Add caregiver</button>
+      </div>
+    </div>
+    <div id="meCard"></div>
+    <h2>Settings</h2>
+    <div class="card">
+      <label class="f">Bottle unit</label>
+      <div class="seg" id="unitSeg"><button data-u="oz">oz</button><button data-u="ml">ml</button></div>
+      <div class="row" style="flex-wrap:wrap" id="settingsBtns"></div>
+    </div>
+  </section>
+</div>
+
+<nav class="hidden" id="nav"><div class="bar">
+  <button data-v="today" class="on"><span>🏡</span>Today</button>
+  <button data-v="reports"><span>📊</span>Reports</button>
+  <button data-v="family"><span>👨‍👩‍👧</span>Family</button>
+</div></nav>
+
+<div class="scrim" id="scrim"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+<script>
+(function(){
+/* ======== CONFIG (public values only: the publishable key is safe in a web page; RLS protects the data) ======== */
+const SUPABASE_URL='https://dpuzbskjivrbfapadewy.supabase.co';
+const SUPABASE_KEY='sb_publishable_D4r76K6cH2xcEhwnJYyNMw_JSJKhg4k';
+const SUPABASE_CDN='https://esm.sh/@supabase/supabase-js@2';
+
+const DEMO_KEY='littledays.v2.demo', PREF_KEY='littledays.prefs', MODE_KEY='littledays.mode', QUEUE_KEY='littledays.queue', BABY_KEY='littledays.baby';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const uuid=()=>crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)});
+const COLORS=['#FFD9C4','#BFDDF5','#C6EBDD','#DCD3F5','#FFF0BF','#F8D3E3'];
+const EMOJIS=['🐣','🌸','⭐','🌙','🐻','🐰','🦋','🍓'];
+
+let P=Object.assign({unit:'oz',night:false},JSON.parse(localStorage.getItem(PREF_KEY)||'{}'));
+const savePrefs=()=>localStorage.setItem(PREF_KEY,JSON.stringify(P));
+let MODE=null;          // 'demo' | 'cloud'
+let D=null;             // current data: {baby, people:[{id,name,color,role}], me, entries:[]}
+let sb=null, user=null, channel=null, myBabies=[], invite=null, live=false;
+let viewDay=startOfDay(new Date());
+const urlInvite=(new URLSearchParams(location.search).get('invite')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+if(urlInvite)localStorage.setItem('littledays.pendingInvite',urlInvite);
+
+/* ---------- helpers ---------- */
+function startOfDay(d){const x=new Date(d);x.setHours(0,0,0,0);return x}
+const pad=n=>String(n).padStart(2,'0');
+const fmtT=t=>new Date(t).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+function dur(ms){ms=Math.max(0,ms);const m=Math.round(ms/6e4);if(m<60)return m+'m';return Math.floor(m/60)+'h '+pad(m%60)+'m'}
+function clock(ms){const s=Math.max(0,Math.floor(ms/1000));return (s>=3600?Math.floor(s/3600)+':':'')+pad(Math.floor(s/60)%60)+':'+pad(s%60)}
+function ago(t){const m=Math.round((Date.now()-t)/6e4);if(m<1)return'just now';if(m<60)return m+'m ago';return Math.floor(m/60)+'h '+pad(m%60)+'m ago'}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function toLocalInput(t){const d=new Date(t);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2200)}
+function ageText(b){if(!b)return'';const days=Math.floor((Date.now()-new Date(b+'T00:00'))/864e5);if(days<0)return'Arriving soon';if(days<14)return days+' days old';if(days<90)return Math.floor(days/7)+' weeks old';const mo=Math.floor(days/30.44);return mo<24?mo+' months old':Math.floor(mo/12)+' years old'}
+const person=id=>(D&&D.people.find(c=>c.id===id))||{name:'Someone',color:'#eee'};
+const running=(type,sub)=>D.entries.find(e=>e.type===type&&!e.end&&(!sub||e.subtype===sub));
+function show(id){['authScreen','setupScreen','app'].forEach(x=>$('#'+x).classList.toggle('hidden',x!==id));$('#nav').classList.toggle('hidden',id!=='app')}
+function setMsg(el,text,ok){el.textContent=text;el.className='msg '+(ok?'ok':'err');el.classList.toggle('hidden',!text)}
+
+/* ======================= DEMO MODE (this device only) ======================= */
+function demoSeed(){
+  const people=[{id:'c1',name:'Mom',role:'owner',color:COLORS[0]},{id:'c2',name:'Dad',role:'caregiver',color:COLORS[1]},{id:'c3',name:'Grandma',role:'caregiver',color:COLORS[2]}];
+  return {baby:{id:'demo',name:'Olive (sample)',birthdate:new Date(Date.now()-42*864e5).toISOString().slice(0,10),emoji:'🐣'},people,me:'c1',shareCode:'DEMO42',entries:sampleEntries(people)};
+}
+function sampleEntries(people){
+  let s=7;const r=()=>{s=(s*9301+49297)%233280;return s/233280};
+  const out=[],now=Date.now(),today=startOfDay(new Date()),pick=()=>people[Math.floor(r()*people.length)].id;
+  for(let d=6;d>=0;d--){
+    const day=today.getTime()-d*864e5;
+    const ns=day-(2+r()*1.5)*36e5, ne=day+(5+r()*2)*36e5;
+    if(ns<now) out.push({id:uuid(),type:'sleep',start:ns,end:Math.min(ne,now-6e5),details:{},by:people[r()<.5?0:1].id,sample:true});
+    for(let h=7;h<23;h+=2.5+r()){
+      const t=day+h*36e5; if(t>now) break; const who=pick();
+      if(r()<.55){const L=Math.round(6+r()*10),R=Math.round(5+r()*9);
+        out.push({id:uuid(),type:'feed',subtype:'breast',start:t,end:t+(L+R)*6e4,details:{left:L*60,right:R*60},by:who,sample:true});}
+      else out.push({id:uuid(),type:'feed',subtype:'bottle',start:t,end:t,amount:Math.round((2.5+r()*2)*2)/2,unit:'oz',details:{milk:r()<.5?'Formula':'Breast milk'},by:who,sample:true});
+      const dt=t+25*6e4; if(dt<now){const x=r();out.push({id:uuid(),type:'diaper',subtype:x<.5?'pee':x<.78?'poop':'both',start:dt,end:dt,details:{},by:who,sample:true});}
+      if(h>8&&h<19&&r()<.6){const ss=t+50*6e4,se=ss+(35+r()*70)*6e4; if(se<now) out.push({id:uuid(),type:'sleep',start:ss,end:se,details:{},by:who,sample:true});}
+    }
+  }
+  return out;
+}
+function startDemo(){
+  MODE='demo';localStorage.setItem(MODE_KEY,'demo');
+  try{D=JSON.parse(localStorage.getItem(DEMO_KEY))}catch(e){D=null}
+  if(!D||!D.baby)D=demoSeed();
+  saveDemo();show('app');render();
+}
+function saveDemo(){if(MODE==='demo')localStorage.setItem(DEMO_KEY,JSON.stringify(D))}
+
+/* ======================= CLOUD MODE (Supabase) ======================= */
+const fromRow=r=>({id:r.id,type:r.type,subtype:r.subtype,start:Date.parse(r.start_at),end:r.end_at?Date.parse(r.end_at):null,amount:r.amount==null?null:+r.amount,unit:r.unit,details:r.details||{},by:r.logged_by});
+const toRow=e=>({id:e.id,baby_id:D.baby.id,type:e.type,subtype:e.subtype||null,start_at:new Date(e.start).toISOString(),end_at:e.end?new Date(e.end).toISOString():null,amount:e.amount??null,unit:e.unit||null,details:e.details||{}});
+
+async function loadSupabase(){
+  if(sb)return sb;
+  const mod=await import(SUPABASE_CDN);
+  sb=mod.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  sb.auth.onAuthStateChange((ev,session)=>{
+    if(ev==='SIGNED_OUT'){user=null;teardown();if(MODE==='cloud')showAuth()}
+    else if(session&&(!user||user.id!==session.user.id)&&ev!=='INITIAL_SESSION'){user=session.user;setTimeout(startCloud,0)}
+  });
+  return sb;
+}
+function showAuth(){MODE=null;localStorage.removeItem(MODE_KEY);$('#inviteNote').classList.toggle('hidden',!localStorage.getItem('littledays.pendingInvite'));show('authScreen')}
+function teardown(){if(channel&&sb)sb.removeChannel(channel);channel=null;live=false}
+
+let cloudStarting=null;
+function startCloud(){if(!cloudStarting)cloudStarting=startCloudInner().finally(()=>{cloudStarting=null});return cloudStarting}
+async function startCloudInner(){
+  MODE='cloud';localStorage.setItem(MODE_KEY,'cloud');
+  const {data:{user:u}}=await sb.auth.getUser(); if(!u){showAuth();return} user=u;
+  const code=localStorage.getItem('littledays.pendingInvite');
+  if(code){const {data,error}=await sb.rpc('join_baby_with_code',{code});
+    localStorage.removeItem('littledays.pendingInvite');history.replaceState(null,'',location.pathname);
+    if(error)toast('Invite: '+error.message);else{localStorage.setItem(BABY_KEY,data);toast('You joined the family! 💜')}}
+  const {data:babies,error}=await sb.from('babies').select('*').order('created_at');
+  if(error){toast(error.message);return}
+  myBabies=babies||[];
+  if(!myBabies.length){openSetup();return}
+  const want=localStorage.getItem(BABY_KEY);
+  await loadBaby((myBabies.find(b=>b.id===want)||myBabies[0]).id);
+}
+async function openSetup(){
+  const {data:p}=await sb.from('profiles').select('display_name').eq('id',user.id).maybeSingle();
+  $('#setupName').textContent=p?', '+p.display_name:'';$('#sBack').classList.toggle('hidden',!myBabies.length);
+  $('#sEmoji').innerHTML=EMOJIS.map((e,i)=>`<button class="chip ${i?'':'on'}" data-e="${e}">${e}</button>`).join('');
+  $$('#sEmoji .chip').forEach(b=>b.onclick=()=>$$('#sEmoji .chip').forEach(x=>x.classList.toggle('on',x===b)));
+  setMsg($('#sMsg'),'');show('setupScreen');
+}
+async function loadBaby(id){
+  teardown();localStorage.setItem(BABY_KEY,id);
+  const baby=myBabies.find(b=>b.id===id);
+  const since=new Date(Date.now()-31*864e5).toISOString();
+  const [mem,ent,inv]=await Promise.all([
+    sb.from('baby_members').select('user_id,role').eq('baby_id',id),
+    sb.from('entries').select('*').eq('baby_id',id).or(`start_at.gte.${since},end_at.is.null`).order('start_at',{ascending:false}).limit(2000),
+    sb.from('invites').select('code,expires_at').eq('baby_id',id).gt('expires_at',new Date().toISOString()).order('created_at',{ascending:false}).limit(1)
+  ]);
+  if(mem.error||ent.error){toast((mem.error||ent.error).message);return}
+  D={baby,me:user.id,people:[],entries:ent.data.map(fromRow)};
+  invite=(inv.data||[])[0]||null;
+  await loadPeople(mem.data);
+  applyQueueToView();
+  show('app');render();subscribe(id);flushQueue();
+}
+async function loadPeople(members){
+  if(!members){const r=await sb.from('baby_members').select('user_id,role').eq('baby_id',D.baby.id);members=r.data||[]}
+  const ids=members.map(m=>m.user_id);
+  const {data:profs}=await sb.from('profiles').select('id,display_name,color').in('id',ids);
+  D.people=members.map((m,i)=>{const p=(profs||[]).find(x=>x.id===m.user_id)||{};return {id:m.user_id,role:m.role,name:p.display_name||'Caregiver',color:p.color||COLORS[i%COLORS.length]}})
+    .sort((a,b)=>(a.role==='owner'?-1:1)-(b.role==='owner'?-1:1));
+}
+function subscribe(id){
+  const upsertLocal=row=>{if(row.baby_id!==D.baby.id)return;const e=fromRow(row),i=D.entries.findIndex(x=>x.id===e.id);if(i>=0)D.entries[i]=e;else D.entries.push(e);render()};
+  channel=sb.channel('baby-'+id+'-'+uuid().slice(0,8))
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'entries',filter:'baby_id=eq.'+id},p=>upsertLocal(p.new))
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'entries',filter:'baby_id=eq.'+id},p=>upsertLocal(p.new))
+    .on('postgres_changes',{event:'DELETE',schema:'public',table:'entries'},p=>{const before=D.entries.length;D.entries=D.entries.filter(x=>x.id!==p.old.id);if(D.entries.length!==before)render()})
+    .on('postgres_changes',{event:'*',schema:'public',table:'baby_members',filter:'baby_id=eq.'+id},async()=>{await loadPeople();render()})
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'babies',filter:'id=eq.'+id},p=>{Object.assign(D.baby,p.new);render()})
+    .subscribe(st=>{live=st==='SUBSCRIBED';renderWho();if(st==='SUBSCRIBED')refreshEntries()});
+}
+async function refreshEntries(){
+  if(MODE!=='cloud'||!D)return;
+  const since=new Date(Date.now()-31*864e5).toISOString();
+  const {data,error}=await sb.from('entries').select('*').eq('baby_id',D.baby.id).or(`start_at.gte.${since},end_at.is.null`).order('start_at',{ascending:false}).limit(2000);
+  if(!error){D.entries=data.map(fromRow);applyQueueToView();render()}
+}
+
+/* ---- offline-friendly write queue: changes are saved on the phone first, then sent ---- */
+let Q=JSON.parse(localStorage.getItem(QUEUE_KEY)||'[]'),flushing=false;
+const saveQ=()=>localStorage.setItem(QUEUE_KEY,JSON.stringify(Q));
+function applyQueueToView(){ // show not-yet-sent changes
+  Q.filter(o=>o.baby===D.baby.id).forEach(o=>{
+    if(o.op==='delete')D.entries=D.entries.filter(e=>e.id!==o.id);
+    else{const e=fromRow(o.row);e.by=e.by||user.id;const i=D.entries.findIndex(x=>x.id===e.id);if(i>=0)D.entries[i]=Object.assign(D.entries[i],e,{by:D.entries[i].by});else D.entries.push(e)}
+  });
+}
+async function flushQueue(){
+  if(flushing||!sb||!user||!Q.length)return renderWho();
+  flushing=true;
+  while(Q.length){
+    const o=Q[0];let r;
+    try{
+      if(o.op==='insert')r=await sb.from('entries').upsert(Object.assign({},o.row,{logged_by:user.id}),{onConflict:'id',ignoreDuplicates:true});
+      else if(o.op==='update'){const row=Object.assign({},o.row);delete row.id;delete row.baby_id;r=await sb.from('entries').update(row).eq('id',o.row.id)}
+      else r=await sb.from('entries').delete().eq('id',o.id);
+    }catch(err){r={error:{message:String(err),network:true}}}
+    if(r.error&&(r.error.network||/fetch|network/i.test(r.error.message||''))){break} // offline: keep and retry later
+    if(r.error)toast('Could not save: '+r.error.message);
+    Q.shift();saveQ();
+  }
+  flushing=false;renderWho();
+}
+window.addEventListener('online',()=>{flushQueue();refreshEntries()});
+window.addEventListener('offline',renderWho);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){flushQueue();refreshEntries()}});
+setInterval(flushQueue,15000);
+
+/* ======================= DATA OPERATIONS (both modes) ======================= */
+function addEntry(e){
+  e.id=uuid();e.by=D.me;e.details=e.details||{};D.entries.push(e);
+  if(MODE==='demo')saveDemo();else{Q.push({op:'insert',baby:D.baby.id,row:toRow(e)});saveQ();flushQueue()}
+  render();
+}
+function updEntry(e){
+  if(MODE==='demo')saveDemo();else{Q.push({op:'update',baby:D.baby.id,row:toRow(e)});saveQ();flushQueue()}
+  render();
+}
+function delEntry(id){
+  D.entries=D.entries.filter(x=>x.id!==id);
+  if(MODE==='demo')saveDemo();else{Q.push({op:'delete',baby:D.baby.id,id});saveQ();flushQueue()}
+  render();
+}
+
+/* ======================= RENDER ======================= */
+function describe(e){
+  const d=e.details||{};
+  if(e.type==='feed'){
+    if(e.subtype==='breast'){if(!e.end)return {i:'🤱',bg:'var(--peach)',t:'Nursing now',d:'timer running · '+(d.side?'on '+d.side:'paused')};
+      return {i:'🤱',bg:'var(--peach)',t:'Breastfeed',d:'L '+Math.round((d.left||0)/60)+'m · R '+Math.round((d.right||0)/60)+'m'}}
+    return {i:'🍼',bg:'var(--peach)',t:'Bottle',d:(e.amount??'?')+' '+(e.unit||'')+(d.milk?' · '+d.milk:'')}}
+  if(e.type==='diaper'){const m={pee:['💧','Wet diaper'],poop:['💩','Dirty diaper'],both:['<span style="font-size:14px">💧💩</span>','Wet + dirty']}[e.subtype]||['🧷','Diaper'];return {i:m[0],bg:'var(--mint)',t:m[1],d:''}}
+  return {i:'🌙',bg:'var(--blue)',t:e.end?'Sleep':'Sleeping now',d:e.end?dur(e.end-e.start)+' · until '+fmtT(e.end):'since '+fmtT(e.start)+' · '+dur(Date.now()-e.start)}
+}
+function render(){
+  if(!D)return;
+  document.body.classList.toggle('night',!!P.night);
+  $('#hname').textContent=D.baby.name||'Baby';$('#hage').textContent=ageText(D.baby.birthdate);$('#avatar').textContent=D.baby.emoji||'🐣';
+  renderWho();
+  const hasSample=MODE==='demo'&&D.entries.some(e=>e.sample);
+  $('#banner').innerHTML=MODE==='demo'?`<div class="banner">✨ <span><b>Demo mode</b>${hasSample?' with sample data':''}. It stays on this device only.</span><button class="btn sm" id="goReal">Make it real</button></div>`:'';
+  if(MODE==='demo')$('#goReal').onclick=leaveDemo;
+  renderToday();renderReports();renderFamily();
+}
+function renderWho(){
+  if(!D||!$('#whoBar'))return;
+  if(MODE==='demo'){
+    $('#whoBar').innerHTML=`<span>Logging as</span><select id="whoSel" aria-label="Who is logging">${D.people.map(c=>`<option value="${c.id}" ${c.id===D.me?'selected':''}>${esc(c.name)}</option>`).join('')}</select>`;
+    $('#whoSel').onchange=e=>{D.me=e.target.value;saveDemo();render();toast('Now logging as '+person(D.me).name)};
+  }else{
+    const pending=Q.length,off=!navigator.onLine||!live;
+    $('#whoBar').innerHTML=`<span>Signed in as <b>${esc(person(D.me).name)}</b></span><span class="sync ${off||pending?'off':''}" id="syncPill">${pending?'⏳ '+pending+' to sync':off?'○ offline':'● live'}</span>`;
+  }
+}
+function renderToday(){
+  const E=D.entries.slice().sort((a,b)=>b.start-a.start);
+  const lf=E.find(e=>e.type==='feed'),ld=E.find(e=>e.type==='diaper');
+  $('#gFeed').textContent=lf?ago(lf.start):'—';$('#gDiaper').textContent=ld?ago(ld.start):'—';
+  const sl=running('sleep'), ls=E.find(e=>e.type==='sleep'&&e.end);
+  $('#gSleep').textContent=sl?'asleep '+dur(Date.now()-sl.start):(ls?'awake '+dur(Date.now()-ls.end):'—');
+  $('#bSleep').classList.toggle('running',!!sl);$('#sleepLbl').textContent=sl?'Wake up':'Sleep';
+  $('#sSleep').textContent=sl?clock(Date.now()-sl.start)+' · '+person(sl.by).name:'start timer';
+  const ft=running('feed','breast');$('#bFeed').classList.toggle('running',!!ft);$('#sFeed').textContent=ft?'nursing '+clock(feedTotal(ft)*1000):'tap to log';
+  const d0=viewDay.getTime(),d1=d0+864e5,isToday=d0===startOfDay(new Date()).getTime();
+  $('#dayTitle').textContent=isToday?'Today':viewDay.toLocaleDateString([], {weekday:'long',month:'short',day:'numeric'});
+  $('#nextDay').disabled=isToday;$('#nextDay').style.opacity=isToday?.4:1;
+  const list=E.filter(e=>(e.start>=d0&&e.start<d1)||(isToday&&!e.end));
+  $('#timeline').innerHTML=list.length?list.map(e=>{const x=describe(e),c=person(e.by);
+    return `<li data-id="${e.id}"><div class="dot" style="background:${x.bg}">${x.i}</div><div><div class="t">${x.t}${e.sample?'<span class="sample">sample</span>':''}</div><div class="d">${esc(x.d)} <span class="by" style="background:${c.color}">${esc(c.name)}</span></div></div><div class="time">${fmtT(e.start)}</div></li>`}).join('')
+    :'<div class="empty">Nothing logged yet. Tap a big button above ☁️</div>';
+  $$('#timeline li').forEach(li=>li.onclick=()=>editEntry(li.dataset.id));
+}
+function dayStats(d0){
+  const d1=d0+864e5,r={feeds:0,breast:0,bottle:0,oz:0,ml:0,breastMin:0,pee:0,poop:0,both:0,sleepMs:0};
+  D.entries.forEach(e=>{
+    const d=e.details||{};
+    if(e.type==='feed'&&e.start>=d0&&e.start<d1){r.feeds++;if(e.subtype==='breast'){r.breast++;r.breastMin+=((d.left||0)+(d.right||0))/60}else{r.bottle++;if(e.unit==='ml'||e.unit==='oz')r[e.unit]+=+e.amount||0}}
+    if(e.type==='diaper'&&e.start>=d0&&e.start<d1&&r[e.subtype]!=null)r[e.subtype]++;
+    if(e.type==='sleep'){const end=e.end||Date.now(),o=Math.min(end,d1)-Math.max(e.start,d0);if(o>0)r.sleepMs+=o}
+  });return r}
+function bottleTotal(r){return P.unit==='oz'?Math.round((r.oz+r.ml/29.57)*10)/10+' oz':Math.round(r.ml+r.oz*29.57)+' ml'}
+function renderReports(){
+  const t=dayStats(startOfDay(new Date()).getTime());
+  $('#totals').innerHTML=[
+    ['🍼 Feeds',t.feeds,'var(--peach)'],['🥛 Bottle total',bottleTotal(t),'var(--peach)'],
+    ['🧷 Diapers',t.pee+t.poop+t.both,'var(--mint)'],['💧 Wet · 💩 Dirty',(t.pee+t.both)+' · '+(t.poop+t.both),'var(--mint)'],
+    ['🌙 Sleep',dur(t.sleepMs),'var(--blue)'],['🤱 Nursing time',Math.round(t.breastMin)+'m','var(--lav)']
+  ].map(x=>`<div class="tot" style="background:${x[2]}"><div class="l">${x[0]}</div><div class="v">${x[1]}</div></div>`).join('');
+  const days=[];for(let i=6;i>=0;i--){const d=startOfDay(new Date(Date.now()-i*864e5));days.push({d,s:dayStats(d.getTime())})}
+  const lbl=days.map(x=>x.d.toLocaleDateString([], {weekday:'short'}).slice(0,2));
+  $('#chFeeds').innerHTML=bars(lbl,days.map(x=>[[x.s.breast,'var(--peach-d)'],[x.s.bottle,'#F3B795']]));
+  $('#chDiapers').innerHTML=bars(lbl,days.map(x=>[[x.s.pee,'#F2D27A'],[x.s.poop,'#C9A27E'],[x.s.both,'var(--mint-d)']]));
+  $('#chSleep').innerHTML=bars(lbl,days.map(x=>[[Math.round(x.s.sleepMs/36e5*10)/10,'var(--blue-d)']]),'h');
+  const n=days.length,avg=k=>days.reduce((a,x)=>a+k(x.s),0)/n;
+  $('#avgText').innerHTML=`7-day averages: <b>${avg(s=>s.feeds).toFixed(1)}</b> feeds, <b>${avg(s=>s.pee+s.both).toFixed(1)}</b> wet &amp; <b>${avg(s=>s.poop+s.both).toFixed(1)}</b> dirty diapers, <b>${(avg(s=>s.sleepMs)/36e5).toFixed(1)}h</b> sleep per day.`;
+}
+function bars(labels,data,suffix=''){
+  const W=320,H=150,pb=22,pt=16,bw=26,gap=(W-bw*7)/7;
+  const max=Math.max(1,...data.map(d=>d.reduce((a,x)=>a+x[0],0)));
+  let g='';
+  for(let k=0;k<=2;k++){const y=pt+(H-pb-pt)*k/2;g+=`<line x1="0" x2="${W}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-dasharray="3 4"/>`}
+  data.forEach((stack,i)=>{const x=gap/2+i*(bw+gap);let y=H-pb,tot=0;
+    stack.forEach(([v,c])=>{if(!v)return;const h=(H-pb-pt)*v/max;y-=h;tot+=v;g+=`<rect x="${x}" y="${y}" width="${bw}" height="${Math.max(h,2)}" rx="7" fill="${c}"/>`});
+    tot=Math.round(tot*10)/10;
+    g+=`<text x="${x+bw/2}" y="${y-4}" text-anchor="middle" font-size="11" font-weight="700">${tot||''}${tot&&suffix?suffix:''}</text>`;
+    g+=`<text x="${x+bw/2}" y="${H-5}" text-anchor="middle" font-size="11">${labels[i]}</text>`});
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img">${g}</svg>`;
+}
+function inviteLink(code){return location.origin+location.pathname+'?invite='+code}
+function renderFamily(){
+  const isOwner=MODE==='cloud'&&(D.people.find(p=>p.id===D.me)||{}).role==='owner';
+  if(document.activeElement!==$('#pName'))$('#pName').value=D.baby.name;$('#pBirth').value=D.baby.birthdate||'';
+  $('#emojiChips').innerHTML=EMOJIS.map(e=>`<button class="chip ${e===D.baby.emoji?'on':''}" data-e="${e}">${e}</button>`).join('');
+  $$('#emojiChips .chip').forEach(b=>b.onclick=()=>{D.baby.emoji=b.dataset.e;saveBaby()});
+  $('#babySwitch').innerHTML=MODE==='cloud'&&myBabies.length>1?`<label class="f">Switch baby</label><select id="babySel">${myBabies.map(b=>`<option value="${b.id}" ${b.id===D.baby.id?'selected':''}>${esc(b.emoji+' '+b.name)}</option>`).join('')}</select>`:'';
+  if($('#babySel'))$('#babySel').onchange=e=>loadBaby(e.target.value);
+  // invite card
+  if(MODE==='demo'){
+    $('#inviteCard').innerHTML=`<div class="muted">In the real app, everyone gets their <b>own login</b> and joins this baby with a code like this:</div><div class="code">${D.shareCode}</div><button class="btn peach full" id="goReal2">Create a real account to invite your partner</button>`;
+    $('#goReal2').onclick=leaveDemo;
+  }else{
+    const valid=invite&&Date.parse(invite.expires_at)>Date.now();
+    $('#inviteCard').innerHTML=`<div class="muted">Invite your partner, grandparents or nanny. They sign in with <b>their own account</b> and see everything live.</div>
+      ${valid?`<div class="code" id="shareCode">${invite.code}</div><div class="muted" style="text-align:center;margin-bottom:10px">Expires ${new Date(invite.expires_at).toLocaleDateString([], {month:'short',day:'numeric'})}</div>
+      <div class="row"><button class="btn peach" id="copyLink">Copy invite link</button><button class="btn ghost" id="newCode">New code</button></div>`
+      :`<button class="btn peach full" id="newCode" style="margin-top:12px">💌 Make an invite code</button>`}`;
+    $('#newCode').onclick=makeInvite;
+    if(valid)$('#copyLink').onclick=()=>copy(`Join ${D.baby.name} on Little Days 🍼 Open ${inviteLink(invite.code)} (or enter code ${invite.code})`,'Invite link copied');
+  }
+  $('#cgList').innerHTML=D.people.map(c=>{const n=D.entries.filter(e=>e.by===c.id).length;
+    const canRm=MODE==='demo'?D.people.length>1:(isOwner&&c.id!==D.me);
+    return `<div class="cg"><div class="ini" style="background:${c.color}">${esc((c.name||'?')[0])}</div><div style="flex:1"><b>${esc(c.name)}</b>${c.id===D.me?' <span class="muted">(you)</span>':''}<div class="muted">${c.role==='owner'?'Owner':'Caregiver'} · ${n} entries logged</div></div>${canRm?`<button class="btn sm ghost" data-rm="${c.id}">Remove</button>`:''}</div>`}).join('');
+  $$('[data-rm]').forEach(b=>b.onclick=()=>removePerson(b.dataset.rm));
+  $('#demoAdd').classList.toggle('hidden',MODE!=='demo');
+  // me card
+  if(MODE==='cloud'){const me=person(D.me);
+    $('#meCard').innerHTML=`<h2>You</h2><div class="card"><label class="f">Your name (shown on entries)</label><input id="meName" value="${esc(me.name)}"><label class="f">Your color</label><div class="chips" style="justify-content:flex-start">${COLORS.map(c=>`<button class="chip ${c===me.color?'on':''}" data-c="${c}" style="background:${c};width:40px;height:40px"></button>`).join('')}</div><button class="btn full" id="saveMe">Save</button><div class="muted" style="margin-top:8px">${esc(user.email)}</div></div>`;
+    let col=me.color;$$('[data-c]').forEach(b=>b.onclick=()=>{col=b.dataset.c;$$('[data-c]').forEach(x=>x.classList.toggle('on',x===b))});
+    $('#saveMe').onclick=async()=>{const {error}=await sb.from('profiles').update({display_name:$('#meName').value.trim()||'Parent',color:col}).eq('id',user.id);if(error)return toast(error.message);await loadPeople();render();toast('Saved 💜')};
+  }else $('#meCard').innerHTML='';
+  $$('#unitSeg button').forEach(b=>b.classList.toggle('on',b.dataset.u===P.unit));
+  $('#settingsBtns').innerHTML=MODE==='demo'
+    ?`<button class="btn ghost" id="loadSample">Reload sample data</button><button class="btn danger" id="clearAll">Clear demo data</button><button class="btn" id="exitDemo">Sign in instead</button>`
+    :`<button class="btn ghost" id="addBaby">+ Add or join another baby</button>${isOwner?'':`<button class="btn ghost" id="leaveBaby">Leave this baby</button>`}<button class="btn" id="signOut">Sign out</button>`;
+  if(MODE==='demo'){
+    $('#loadSample').onclick=()=>{D.entries=D.entries.filter(e=>!e.sample).concat(sampleEntries(D.people));saveDemo();render();toast('Sample data loaded')};
+    $('#clearAll').onclick=()=>{if(confirm('Remove all demo entries?')){D.entries=[];saveDemo();render();toast('Demo data cleared')}};
+    $('#exitDemo').onclick=leaveDemo;
+  }else{
+    $('#addBaby').onclick=openSetup;
+    $('#signOut').onclick=async()=>{await sb.auth.signOut();showAuth()};
+    if($('#leaveBaby'))$('#leaveBaby').onclick=async()=>{if(!confirm('Leave '+D.baby.name+'? You will stop seeing its log.'))return;
+      const {error}=await sb.from('baby_members').delete().eq('baby_id',D.baby.id).eq('user_id',user.id);if(error)return toast(error.message);localStorage.removeItem(BABY_KEY);user=null;await sb.auth.getSession().then(({data})=>{user=data.session.user});startCloud()};
+  }
+}
+async function saveBaby(){
+  if(MODE==='demo'){saveDemo();render();return}
+  const {error}=await sb.from('babies').update({name:D.baby.name,birthdate:D.baby.birthdate||null,emoji:D.baby.emoji}).eq('id',D.baby.id);
+  if(error)toast(error.message);else{const b=myBabies.find(x=>x.id===D.baby.id);if(b)Object.assign(b,D.baby)}render();
+}
+async function makeInvite(){
+  const {data,error}=await sb.from('invites').insert({baby_id:D.baby.id,created_by:user.id}).select('code,expires_at').single();
+  if(error)return toast(error.message);invite=data;render();toast('New invite code ready 💌');
+}
+async function removePerson(id){
+  const c=person(id);if(!confirm('Remove '+c.name+'? Their past entries stay.'))return;
+  if(MODE==='demo'){D.people=D.people.filter(x=>x.id!==id);if(D.me===id)D.me=D.people[0].id;saveDemo();render();return}
+  const {error}=await sb.from('baby_members').delete().eq('baby_id',D.baby.id).eq('user_id',id);
+  if(error)return toast(error.message);await loadPeople();render();toast(c.name+' removed');
+}
+function leaveDemo(){teardown();MODE=null;localStorage.removeItem(MODE_KEY);boot(true)}
+
+/* ======================= SHEETS ======================= */
+let sheetTick;
+function openSheet(html,bind){$('#sheet').innerHTML='<div class="grab"></div>'+html;$('#scrim').classList.add('on');bind&&bind()}
+function closeSheet(){$('#scrim').classList.remove('on');clearInterval(sheetTick)}
+$('#scrim').onclick=e=>{if(e.target.id==='scrim')closeSheet()};
+function feedSide(e,s){const d=e.details;return (d.acc?.[s]||0)+(d.side===s?(Date.now()-d.since)/1000:0)}
+function feedTotal(e){return feedSide(e,'L')+feedSide(e,'R')}
+function feedSheet(tab){
+  tab=tab||(running('feed','breast')?'breast':(P.lastFeedTab||'breast'));P.lastFeedTab=tab;savePrefs();
+  let amt=P.lastAmount||(P.unit==='oz'?3:90),milk=P.lastMilk||'Formula';
+  openSheet(`<h2 style="text-align:center">Feed</h2><div class="seg"><button data-t="breast" class="${tab==='breast'?'on':''}">🤱 Breast</button><button data-t="bottle" class="${tab==='bottle'?'on':''}">🍼 Bottle</button></div>
+  ${tab==='breast'?`<div class="muted" style="text-align:center">Tap a side to start · tap the other side to switch</div>
+    <div class="sides"><button class="side" data-s="L"><b>L</b><span class="tm" id="tmL">00:00</span></button><button class="side" data-s="R"><b>R</b><span class="tm" id="tmR">00:00</span></button></div>
+    <div class="row"><button class="btn ghost" id="fPause">Pause</button><button class="btn peach" id="fSave">Done · Save</button></div>
+    <button class="btn sm ghost full" id="fCancel" style="margin-top:10px">Discard timer</button>`
+  :`<div class="amount"><button class="round" id="aMinus">−</button><div class="n"><span id="aVal">${amt}</span><div class="muted" style="font-size:14px">${P.unit}</div></div><button class="round" id="aPlus">+</button></div>
+    <div class="chips">${['Formula','Breast milk'].map(m=>`<button class="chip ${m===milk?'on':''}" data-m="${m}">${m}</button>`).join('')}</div>
+    <button class="btn peach full" id="bSave">Save bottle</button>`}`,()=>{
+    $$('.seg [data-t]').forEach(b=>b.onclick=()=>feedSheet(b.dataset.t));
+    if(tab==='breast'){
+      const paint=()=>{const ft=running('feed','breast');['L','R'].forEach(s=>{$('#tm'+s).textContent=clock((ft?feedSide(ft,s):0)*1000);$(`.side[data-s=${s}]`).classList.toggle('on',!!ft&&ft.details.side===s)});
+        $('#fPause').textContent=ft&&!ft.details.side?'Resume':'Pause'};
+      const bank=ft=>{const d=ft.details;if(d.side){d.acc[d.side]=(d.acc[d.side]||0)+(Date.now()-d.since)/1000;d.lastSide=d.side;d.side=null;d.since=null}};
+      $$('.side').forEach(b=>b.onclick=()=>{const s=b.dataset.s;let ft=running('feed','breast');
+        if(!ft){addEntry({type:'feed',subtype:'breast',start:Date.now(),end:null,details:{acc:{L:0,R:0},side:s,since:Date.now()}});paint();return}
+        const was=ft.details.side;bank(ft);if(was!==s){ft.details.side=s;ft.details.since=Date.now()}updEntry(ft);paint()});
+      $('#fPause').onclick=()=>{const ft=running('feed','breast');if(!ft)return;if(ft.details.side)bank(ft);else{ft.details.side=ft.details.lastSide||'L';ft.details.since=Date.now()}updEntry(ft);paint()};
+      $('#fSave').onclick=()=>{const ft=running('feed','breast');if(!ft){toast('Tap L or R to start');return}
+        bank(ft);const d=ft.details;d.left=Math.max(Math.round(d.acc.L||0),d.acc.R?0:60);d.right=Math.round(d.acc.R||0);ft.end=Date.now();updEntry(ft);closeSheet();toast('Feed saved 🤱')};
+      $('#fCancel').onclick=()=>{const ft=running('feed','breast');if(ft)delEntry(ft.id);closeSheet()};
+      paint();clearInterval(sheetTick);sheetTick=setInterval(paint,1000);
+    }else{
+      const step=P.unit==='oz'?.5:10;
+      $('#aMinus').onclick=()=>{amt=Math.max(0,Math.round((amt-step)*10)/10);$('#aVal').textContent=amt};
+      $('#aPlus').onclick=()=>{amt=Math.round((amt+step)*10)/10;$('#aVal').textContent=amt};
+      $$('[data-m]').forEach(b=>b.onclick=()=>{milk=b.dataset.m;$$('[data-m]').forEach(x=>x.classList.toggle('on',x===b))});
+      $('#bSave').onclick=()=>{P.lastAmount=amt;P.lastMilk=milk;savePrefs();const t=Date.now();addEntry({type:'feed',subtype:'bottle',start:t,end:t,amount:amt,unit:P.unit,details:{milk}});closeSheet();toast('Bottle saved 🍼')};
+    }
+  });
+}
+function diaperSheet(){
+  openSheet(`<h2 style="text-align:center">Diaper</h2><div class="muted" style="text-align:center">One tap saves it</div>
+    <div class="dgrid"><button class="dbtn" data-k="pee"><b>💧</b>Pee</button><button class="dbtn" data-k="poop"><b>💩</b>Poop</button><button class="dbtn" data-k="both"><b>💧💩</b>Both</button></div>`,
+  ()=>$$('.dbtn').forEach(b=>b.onclick=()=>{const t=Date.now();addEntry({type:'diaper',subtype:b.dataset.k,start:t,end:t});closeSheet();toast('Diaper saved 🧷')}));
+}
+function toggleSleep(){
+  const s=running('sleep');
+  if(s){s.end=Date.now();updEntry(s);toast('Good morning! Slept '+dur(s.end-s.start)+' ☀️')}
+  else{addEntry({type:'sleep',start:Date.now(),end:null});toast('Sweet dreams 🌙')}
+}
+function editEntry(id){
+  const e=D.entries.find(x=>x.id===id);if(!e)return;const x=describe(e),d=e.details||{};
+  if(!e.end&&e.type==='feed')return feedSheet('breast');
+  let f=`<label class="f">Time</label><input type="datetime-local" id="eStart" value="${toLocalInput(e.start)}">`;
+  if(e.type==='sleep')f+=`<label class="f">Woke up</label><input type="datetime-local" id="eEnd" value="${e.end?toLocalInput(e.end):''}">`;
+  if(e.type==='feed'&&e.subtype==='breast')f+=`<div class="row"><div><label class="f">Left (min)</label><input type="number" id="eL" value="${Math.round((d.left||0)/60)}"></div><div><label class="f">Right (min)</label><input type="number" id="eR" value="${Math.round((d.right||0)/60)}"></div></div>`;
+  if(e.type==='feed'&&e.subtype==='bottle')f+=`<div class="row"><div><label class="f">Amount</label><input type="number" step="0.5" id="eAmt" value="${e.amount??''}"></div><div><label class="f">Unit</label><select id="eUnit"><option ${e.unit==='oz'?'selected':''}>oz</option><option ${e.unit==='ml'?'selected':''}>ml</option></select></div></div>`;
+  if(e.type==='diaper')f+=`<label class="f">Type</label><select id="eKind">${['pee','poop','both'].map(k=>`<option ${k===e.subtype?'selected':''}>${k}</option>`).join('')}</select>`;
+  f+=MODE==='demo'?`<label class="f">Logged by</label><select id="eBy">${D.people.map(c=>`<option value="${c.id}" ${c.id===e.by?'selected':''}>${esc(c.name)}</option>`).join('')}</select>`:`<div class="muted" style="margin-top:10px">Logged by <b>${esc(person(e.by).name)}</b></div>`;
+  openSheet(`<h2 style="text-align:center">${x.i} Edit ${x.t.toLowerCase()}</h2>${f}<div class="row" style="margin-top:16px"><button class="btn danger" id="eDel">Delete</button><button class="btn mint" id="eSave">Save</button></div>`,()=>{
+    $('#eSave').onclick=()=>{
+      if($('#eStart').value!==toLocalInput(e.start)){const v=new Date($('#eStart').value).getTime();if(!isNaN(v)){if(e.end&&e.type!=='sleep')e.end=v;e.start=v}}
+      if($('#eEnd')&&$('#eEnd').value!==(e.end?toLocalInput(e.end):'')){const en=new Date($('#eEnd').value).getTime();if(!isNaN(en)&&en>e.start)e.end=en}
+      if($('#eL')){d.left=(+$('#eL').value||0)*60;d.right=(+$('#eR').value||0)*60;e.details=d}
+      if($('#eAmt')){e.amount=+$('#eAmt').value||0;e.unit=$('#eUnit').value}
+      if($('#eKind'))e.subtype=$('#eKind').value;
+      if($('#eBy'))e.by=$('#eBy').value;
+      updEntry(e);closeSheet();toast('Updated ✓')};
+    $('#eDel').onclick=()=>{if(confirm('Delete this entry?')){delEntry(id);closeSheet();toast('Deleted')}};
+  });
+}
+
+/* ======================= WIRING ======================= */
+$('#bFeed').onclick=()=>feedSheet();$('#bDiaper').onclick=diaperSheet;$('#bSleep').onclick=toggleSleep;
+$('#nightBtn').onclick=()=>{P.night=!P.night;savePrefs();render()};
+$('#prevDay').onclick=()=>{viewDay=new Date(viewDay.getTime()-864e5);renderToday()};
+$('#nextDay').onclick=()=>{const n=new Date(viewDay.getTime()+864e5);if(n<=new Date()){viewDay=startOfDay(n);renderToday()}};
+$$('nav button').forEach(b=>b.onclick=()=>{$$('nav button').forEach(x=>x.classList.toggle('on',x===b));
+  $$('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+b.dataset.v));window.scrollTo(0,0);render()});
+$('#saveProfile').onclick=()=>{D.baby.name=$('#pName').value.trim()||'Baby';D.baby.birthdate=$('#pBirth').value||null;saveBaby();toast('Profile saved 💜')};
+$('#addCg').onclick=()=>{const n=$('#cgName').value.trim();if(!n)return toast('Type a name first');D.people.push({id:uuid(),name:n,role:'caregiver',color:COLORS[D.people.length%COLORS.length]});$('#cgName').value='';saveDemo();render();toast(n+' added')};
+$$('#unitSeg button').forEach(b=>b.onclick=()=>{P.unit=b.dataset.u;P.lastAmount=null;savePrefs();render()});
+$('#copySum').onclick=()=>copy($('#avgText').textContent+' (Today: '+$$('#totals .tot').map(t=>t.querySelector('.l').textContent+' '+t.querySelector('.v').textContent).join(', ')+')','Summary copied');
+$('#csvBtn').onclick=()=>{const rows=[['date','time','type','details','logged_by']].concat(D.entries.slice().sort((a,b)=>a.start-b.start).map(e=>{const x=describe(e);return [new Date(e.start).toLocaleDateString(),fmtT(e.start),x.t.replace(/<[^>]+>/g,''),x.d,person(e.by).name]}));
+  const blob=new Blob([rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='baby-log.csv';a.click()};
+function copy(t,msg){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast(msg),()=>prompt('Copy this:',t))}
+
+// auth screen
+let authMode='in';
+$$('#authSeg button').forEach(b=>b.onclick=()=>{authMode=b.dataset.a;$$('#authSeg button').forEach(x=>x.classList.toggle('on',x===b));
+  $('#nameRow').classList.toggle('hidden',authMode!=='up');$('#aGo').textContent=authMode==='up'?'Create account':'Sign in';$('#aPass').autocomplete=authMode==='up'?'new-password':'current-password';setMsg($('#aMsg'),'')});
+$('#aGo').onclick=async()=>{
+  const email=$('#aEmail').value.trim(),password=$('#aPass').value,m=$('#aMsg');
+  if(!email||!password)return setMsg(m,'Please enter your email and password.');
+  if(authMode==='up'&&password.length<8)return setMsg(m,'Please use at least 8 characters for your password.');
+  $('#aGo').disabled=true;setMsg(m,'One moment…',true);
+  try{await loadSupabase()}catch(e){$('#aGo').disabled=false;return setMsg(m,"Can't reach the internet right now. You can still try the demo.")}
+  let r;
+  if(authMode==='up')r=await sb.auth.signUp({email,password,options:{data:{display_name:$('#aName').value.trim()||email.split('@')[0]},emailRedirectTo:location.origin+location.pathname}});
+  else r=await sb.auth.signInWithPassword({email,password});
+  $('#aGo').disabled=false;
+  if(r.error)return setMsg(m,r.error.message);
+  if(!r.data.session)return setMsg(m,'Almost there! Check your email and tap the confirmation link, then come back and sign in. 💌',true);
+  setMsg(m,''); // onAuthStateChange starts the app
+};
+$('#aMagic').onclick=async()=>{const email=$('#aEmail').value.trim(),m=$('#aMsg');if(!email)return setMsg(m,'Type your email first.');
+  try{await loadSupabase()}catch(e){return setMsg(m,"Can't reach the internet right now.")}
+  const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:true}});
+  setMsg(m,error?error.message:'Check your email for a sign-in link ✨',!error)};
+$('#tryDemo').onclick=startDemo;
+// setup screen
+$('#sCreate').onclick=async()=>{const name=$('#sName').value.trim(),m=$('#sMsg');if(!name)return setMsg(m,"Please type your baby's name.");
+  const emoji=($('#sEmoji .chip.on')||{}).dataset?.e||'🐣';
+  const {data,error}=await sb.rpc('create_baby',{p_name:name,p_birthdate:$('#sBirth').value||null,p_emoji:emoji});
+  if(error)return setMsg(m,error.message);myBabies.push(data);toast('Welcome, '+data.name+'! 🎉');loadBaby(data.id)};
+$('#sJoin').onclick=async()=>{const code=$('#sCode').value.trim(),m=$('#sMsg');if(!code)return setMsg(m,'Type the 6-letter code.');
+  const {data,error}=await sb.rpc('join_baby_with_code',{code});if(error)return setMsg(m,error.message);
+  localStorage.setItem(BABY_KEY,data);toast('You joined the family! 💜');startCloud()};
+$('#sBack').onclick=()=>startCloud();
+$('#sOut').onclick=async()=>{await sb.auth.signOut();showAuth()};
+
+setInterval(()=>{if(D&&D.entries.some(e=>!e.end))renderToday()},1000);
+setInterval(()=>{if(D)renderToday()},60000);
+
+async function boot(forceAuth){
+  document.body.classList.toggle('night',!!P.night);
+  if(!forceAuth&&localStorage.getItem(MODE_KEY)==='demo'&&!urlInvite){startDemo();return}
+  try{await loadSupabase()}catch(e){ // offline / CDN unreachable
+    if(localStorage.getItem(DEMO_KEY)){startDemo();toast('Offline: showing demo')}else showAuth();return}
+  const {data}=await sb.auth.getSession();
+  if(data.session){user=data.session.user;startCloud()}else showAuth();
+}
+window.__littledays={get mode(){return MODE},get data(){return D},get queue(){return Q}};
+boot();
+})();
+</script>
+</body>
+</html>
