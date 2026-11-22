@@ -67,7 +67,7 @@
 - **Website files** (`index.html`, `sw.js` cache `little-days-v6`, storage keys) are unchanged. The `ios-app/` project and `APP_STORE_STEPS.md` are kept out of the Pages site by `_config.yml`.
 - The app adds two new storage keys of its own: `littledays.native.alerts` and `littledays.native.apnsToken`. All existing keys are shared, unchanged.
 
-## Delete my account + privacy policy (SW cache v7)
+## Delete my account + privacy policy (SW cache v7, then v8 for the contact email)
 - **Migration 007 `delete_account`** adds new functions only: `account_deletion_preview()` and `delete_my_account('DELETE')`. Both are public invoker wrappers around private security-definer functions; signed-in users only, anon is refused.
   - One transaction does all of it. A baby with no one else on it is deleted, including its entries, growth, invites and alarm state.
   - A shared baby stays. If the person was its only owner, ownership passes to the longest-standing caregiver, and `babies.created_by` is re-pointed so nothing cascades.
@@ -80,3 +80,4 @@
   - iOS shell: alarms were cancelled and the token forgotten.
   - All temp accounts were deleted through the feature itself, and counts are back to the baseline.
 - `privacy.html` was added (and cached for offline). It's linked from the sign-in screen, the welcome screen and Settings. `APP_STORE_STEPS.md` is excluded from the Pages site.
+- Follow-up: the contact address thelittledaysapp@gmail.com is on the privacy page and in a "Contact us" link in Settings. Cache bumped to v8; the v7 → v8 upgrade was tested.

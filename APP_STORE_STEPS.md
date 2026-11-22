@@ -107,7 +107,8 @@ Go to **Apps → Little Days → App Privacy**, then **Get Started**.
 - For each type, the purpose is **App Functionality** only. Don't tick Analytics, Advertising, Product Personalization, or Other.
 - **Tracking:** No. The app has no ads, no analytics, and no third-party SDKs. Data is stored in your Supabase database and shared only with the family members you invite.
 - Don't tick these: Location, Contacts, Photos, Purchases, Financial info, Browsing history, Search history, Diagnostics, Usage data, or Device ID. The push-notification token is used only to deliver your alerts, and Apple doesn't count it as a "Device ID".
-- **Privacy Policy URL:** `https://jamiejmann.github.io/little-days/privacy.html`. It's already live. **Before you submit, replace `[CONTACT EMAIL]` on that page with the email address you want people to use** (ask me and I'll do it). Having a lawyer look over the policy is a good idea.
+- **Privacy Policy URL:** `https://jamiejmann.github.io/little-days/privacy.html`. It's already live, with thelittledaysapp@gmail.com as the contact address. Having a lawyer look over the policy is a good idea.
+- **Support URL / contact:** thelittledaysapp@gmail.com.
 
 ## 9. Age rating
 Go to **Apps → Little Days → App Information → Age Rating → Edit**. Answer **None** or **No** to everything:
