@@ -1,0 +1,6 @@
+/* Little Days iOS app only (never shipped to the website). */
+html.native body{padding-top:env(safe-area-inset-top)}
+html.native .alarmBanner{top:calc(12px + env(safe-area-inset-top))}
+html.native #iosSteps{display:none!important}
+html.native{-webkit-user-select:none;user-select:none}
+html.native input,html.native textarea,html.native select{-webkit-user-select:text;user-select:text}

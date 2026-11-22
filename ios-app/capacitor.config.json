@@ -1,0 +1,31 @@
+{
+  "appId": "com.jamiejmann.littledays",
+  "appName": "Little Days",
+  "webDir": "www",
+  "backgroundColor": "#FBF7F0",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#FBF7F0",
+    "scheme": "Little Days",
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 600,
+      "launchAutoHide": true,
+      "launchFadeOutDuration": 300,
+      "backgroundColor": "#FBF7F0",
+      "showSpinner": false
+    },
+    "PushNotifications": {
+      "presentationOptions": ["sound", "alert"]
+    },
+    "LocalNotifications": {
+      "presentationOptions": ["sound", "banner", "list"]
+    },
+    "StatusBar": {
+      "style": "LIGHT",
+      "overlaysWebView": true
+    }
+  }
+}
