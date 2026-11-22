@@ -1,5 +1,6 @@
-# GitHub Pages (Jekyll): publish only the website, not the iOS project or docs tooling.
+# GitHub Pages (Jekyll): publish only the website, not the iOS project or internal docs.
 exclude:
+  - APP_STORE_STEPS.md
   - ios-app
   - Gemfile
   - Gemfile.lock

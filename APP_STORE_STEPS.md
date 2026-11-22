@@ -107,7 +107,7 @@ Go to **Apps → Little Days → App Privacy**, then **Get Started**.
 - For each type, the purpose is **App Functionality** only. Don't tick Analytics, Advertising, Product Personalization, or Other.
 - **Tracking:** No. The app has no ads, no analytics, and no third-party SDKs. Data is stored in your Supabase database and shared only with the family members you invite.
 - Don't tick these: Location, Contacts, Photos, Purchases, Financial info, Browsing history, Search history, Diagnostics, Usage data, or Device ID. The push-notification token is used only to deliver your alerts, and Apple doesn't count it as a "Device ID".
-- **Privacy Policy URL:** this is required. You need a simple public page that says what's collected (the list above), why, that it's never sold or shared, and how to ask for deletion. I can write and publish this page for you, for example at `jamiejmann.github.io/little-days/privacy.html`.
+- **Privacy Policy URL:** `https://jamiejmann.github.io/little-days/privacy.html`. It's already live. **Before you submit, replace `[CONTACT EMAIL]` on that page with the email address you want people to use** (ask me and I'll do it). Having a lawyer look over the policy is a good idea.
 
 ## 9. Age rating
 Go to **Apps → Little Days → App Information → Age Rating → Edit**. Answer **None** or **No** to everything:
@@ -120,7 +120,7 @@ Go to **Apps → Little Days → App Information → Age Rating → Edit**. Answ
 The result is **4+**. Don't choose the "Made for Kids" category, because the app is for parents. Suggested categories are **Primary: Health & Fitness** and **Secondary: Lifestyle**.
 
 ## 10. Before you press "Submit for Review"
-- **Account deletion (required by Apple).** Apps that let people create accounts must let them delete their account inside the app (guideline 5.1.1(v)). Little Days doesn't have this button yet. Ask me to add "Delete my account" before you submit. It's a small change.
+- **Account deletion (required by Apple):** done. It's under **Family → Settings → Delete my account**, and also on the welcome screen. You confirm by typing DELETE. Mention it in the review notes.
 - **Screenshots:** upload 6.9-inch iPhone screenshots (1320×2868 or 1290×2796). I can make these.
 - **App Review information:** give a demo login (an email and password for a test family with sample data) so the reviewer can sign in. Add a note like this one:
   > "Little Days is a shared baby tracker for parents. Native features: feeding alarms delivered as local notifications and APNs push to every parent in the family, haptic feedback when logging, offline logging with sync."
@@ -130,4 +130,4 @@ The result is **4+**. Don't choose the "Made for Kids" category, because the app
 - The iOS app project is in `ios-app/`. The website is bundled inside the app, so it works without loading the site. It uses the same Supabase backend and the same accounts.
 - The push notification code, phone-only alarm reminders, haptics, pastel icon, splash screen, and status bar are all built in.
 - The **iOS app → TestFlight** build workflow only runs when you start it, and it skips itself until the four GitHub secrets exist.
-- The website at jamiejmann.github.io/little-days is unchanged.
+- The privacy policy page and the in-app "Delete my account" button are live. This guide is kept out of the public website.

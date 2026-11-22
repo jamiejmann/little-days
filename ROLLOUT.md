@@ -66,3 +66,17 @@
 - **Edge Function `feed-alarm` v2**: Web Push behaves exactly as before. It also sends APNs to iPhone app tokens, but only when the `APNS_*` secrets are set; until then it returns `apns-disabled`. New `status` action for the app. Tested: status/test/cron runs; anon 401; non-service users 403 on the claim; outsiders can't read or insert tokens.
 - **Website files** (`index.html`, `sw.js` cache `little-days-v6`, storage keys) are unchanged. The `ios-app/` project and `APP_STORE_STEPS.md` are kept out of the Pages site by `_config.yml`.
 - The app adds two new storage keys of its own: `littledays.native.alerts` and `littledays.native.apnsToken`. All existing keys are shared, unchanged.
+
+## Delete my account + privacy policy (SW cache v7)
+- **Migration 007 `delete_account`** adds new functions only: `account_deletion_preview()` and `delete_my_account('DELETE')`. Both are public invoker wrappers around private security-definer functions; signed-in users only, anon is refused.
+  - One transaction does all of it. A baby with no one else on it is deleted, including its entries, growth, invites and alarm state.
+  - A shared baby stays. If the person was its only owner, ownership passes to the longest-standing caregiver, and `babies.created_by` is re-pointed so nothing cascades.
+  - Their entries and growth on shared babies are kept with the author cleared (the app shows "Former caregiver").
+  - Memberships, invites, web push subscriptions, iPhone tokens, profile and the auth user are removed.
+  - The `entries_touch` trigger now lets the author be cleared, but only inside that deletion transaction. Normal edits still can't change `logged_by` (tested).
+- **Tests:**
+  - API, with temp accounts: 27/27 passed (transfer / delete / leave / co-owner cases; wrong confirm text; anon 401; private helper not exposed).
+  - UI upgrade test from the live version: 27/27 passed. The old client's offline queue flushed after the update, the sleep timer survived, the cache is v7 only, and the partner sees "Former caregiver".
+  - iOS shell: alarms were cancelled and the token forgotten.
+  - All temp accounts were deleted through the feature itself, and counts are back to the baseline.
+- `privacy.html` was added (and cached for offline). It's linked from the sign-in screen, the welcome screen and Settings. `APP_STORE_STEPS.md` is excluded from the Pages site.

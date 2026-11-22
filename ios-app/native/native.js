@@ -146,5 +146,13 @@
   // after sign-in / app start: re-register so the token stays fresh, then decide local vs server alerts
   setTimeout(async () => { if (on() && app() && app().mode === 'cloud') await registerRemote(); await checkRemote().catch(() => {}); scheduleLocal(true); }, 4000);
 
-  window.LDNative = { refreshPushStatus, pushOn, test, dropThisDevice, scheduleLocal, _state: st, _plan: plan };
+  // sign-out / account deletion: forget this phone's alert setup and cancel any scheduled alarms
+  async function reset() {
+    await dropThisDevice();
+    localStorage.removeItem(PREF); st.lastSig = null;
+    try { if (LN) await LN.cancel({ notifications: ALARM_IDS.concat([7199]).map((id) => ({ id })) }); } catch (e) {}
+    window.__ldScheduled = [];
+  }
+
+  window.LDNative = { refreshPushStatus, pushOn, test, dropThisDevice, scheduleLocal, reset, _state: st, _plan: plan };
 })();

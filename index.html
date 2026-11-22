@@ -154,6 +154,8 @@ body.night .due.over{background:#7a4a35;color:#FFE3D3}
 .auth .card{text-align:left}
 .msg{border-radius:16px;padding:10px 14px;font-size:14px;margin-top:10px}
 .msg.err{background:#F8D3D3;color:#7A3A3A}.msg.ok{background:var(--mint)}
+.legal{text-align:center;margin-top:14px;font-size:13px;color:var(--soft)}.legal a,.legal .link{color:var(--soft);font-size:13px;font-weight:700;padding:4px}
+.delbox{background:#FFF4F2;border-radius:18px;padding:12px 14px;margin:10px 0;font-size:14px;line-height:1.45}.delbox p{margin:6px 0}
 .link{background:none;border:none;color:var(--lav-d);font:inherit;font-weight:700;cursor:pointer;padding:6px;text-decoration:underline}
 .sync{margin-left:auto;font-size:12px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--mint);color:#2f5a4b;white-space:nowrap}
 .sync.off{background:var(--yellow);color:#6b5a1e}
@@ -241,6 +243,7 @@ body.night .gs .p{background:rgba(0,0,0,.2)}
     </div>
     <div class="or">or</div>
     <button class="btn ghost full" id="tryDemo">👀 Try the demo with sample data (no account)</button>
+    <div class="legal"><a href="privacy.html">Privacy policy</a></div>
   </div>
 </div>
 
@@ -266,6 +269,7 @@ body.night .gs .p{background:rgba(0,0,0,.2)}
     </div>
     <div class="msg hidden" id="sMsg"></div>
     <button class="link" id="sBack">Back to my baby</button> <button class="link" id="sOut">Sign out</button>
+    <div class="legal"><a href="privacy.html">Privacy policy</a> · <button class="link" id="sDelete">Delete my account</button></div>
   </div>
 </div>
 
@@ -383,6 +387,7 @@ body.night .gs .p{background:rgba(0,0,0,.2)}
       <label class="f">Growth units</label>
       <div class="seg" id="gunitSeg"><button data-gu="imperial">lb · oz · in</button><button data-gu="metric">kg · cm</button></div>
       <div class="row" style="flex-wrap:wrap" id="settingsBtns"></div>
+      <div class="legal" id="legalRow"><a href="privacy.html">Privacy policy</a><span id="delWrap"> · <button class="link" id="delAcct">Delete my account</button></span></div>
     </div>
   </section>
 </div>
@@ -443,7 +448,7 @@ function toast(m){const t=$('#toast');t.textContent=m;t.classList.remove('act');
 function toastUndo(m,fn){const t=$('#toast');t.innerHTML=esc(m)+'<button class="undo" id="undoBtn">Undo</button>';t.classList.add('on','act');
   $('#undoBtn').onclick=()=>{t.classList.remove('on','act');fn()};clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on','act'),5000)}
 function ageText(b){if(!b)return'';const days=Math.floor((Date.now()-new Date(b+'T00:00'))/864e5);if(days<0)return'Arriving soon';if(days<14)return days+' days old';if(days<90)return Math.floor(days/7)+' weeks old';const mo=Math.floor(days/30.44);return mo<24?mo+' months old':Math.floor(mo/12)+' years old'}
-const person=id=>(D&&D.people.find(c=>c.id===id))||{name:'Someone',color:'#eee'};
+const person=id=>(D&&D.people.find(c=>c.id===id))||{name:'Former caregiver',color:'#eee'};
 const running=(type,sub)=>D.entries.find(e=>e.type===type&&!e.end&&(!sub||e.subtype===sub));
 function show(id){['offlineScreen','authScreen','setupScreen','app'].forEach(x=>$('#'+x).classList.toggle('hidden',x!==id));$('#nav').classList.toggle('hidden',id!=='app')}
 function setMsg(el,text,ok){el.textContent=text;el.className='msg '+(ok?'ok':'err');el.classList.toggle('hidden',!text)}
@@ -778,6 +783,7 @@ function renderFamily(){
   $$('#unitSeg button').forEach(b=>b.classList.toggle('on',b.dataset.u===P.unit));
   $$('#gunitSeg button').forEach(b=>b.classList.toggle('on',b.dataset.gu===GU()));
   $$('#sexSeg button').forEach(b=>b.classList.toggle('on',b.dataset.sx===(D.baby.sex||'')));
+  $('#delWrap').classList.toggle('hidden',MODE!=='cloud');
   $('#settingsBtns').innerHTML=MODE==='demo'
     ?`<button class="btn ghost" id="loadSample">Reload sample data</button><button class="btn danger" id="clearAll">Clear demo data</button><button class="btn" id="exitDemo">Sign in instead</button>`
     :`<button class="btn ghost" id="addBaby">+ Add or join another baby</button>${isOwner?'':`<button class="btn ghost" id="leaveBaby">Leave this baby</button>`}<button class="btn" id="signOut">Sign out</button>`;
@@ -786,8 +792,8 @@ function renderFamily(){
     $('#clearAll').onclick=()=>{if(confirm('Remove all demo entries?')){D.entries=[];D.growth=[];saveDemo();render();toast('Demo data cleared')}};
     $('#exitDemo').onclick=leaveDemo;
   }else{
-    $('#addBaby').onclick=openSetup;
-    $('#signOut').onclick=async()=>{await dropThisDevice();await sb.auth.signOut();showAuth()};
+    $('#addBaby').onclick=openSetup;$('#delAcct').onclick=openDeleteAccount;
+    $('#signOut').onclick=async()=>{await dropThisDevice();if(window.LDNative&&LDNative.reset)await LDNative.reset();await sb.auth.signOut();showAuth()};
     if($('#leaveBaby'))$('#leaveBaby').onclick=async()=>{if(!confirm('Leave '+D.baby.name+'? You will stop seeing its log.'))return;
       const {error}=await sb.from('baby_members').delete().eq('baby_id',D.baby.id).eq('user_id',user.id);if(error)return toast(error.message);localStorage.removeItem(BABY_KEY);user=null;await sb.auth.getSession().then(({data})=>{user=data.session.user});startCloud()};
   }
@@ -1150,7 +1156,36 @@ $('#sJoin').onclick=async()=>{const code=$('#sCode').value.trim(),m=$('#sMsg');i
   const {data,error}=await sb.rpc('join_baby_with_code',{code});if(error)return setMsg(m,error.message);
   localStorage.setItem(BABY_KEY,data);toast('You joined the family! 💜');startCloud()};
 $('#sBack').onclick=()=>startCloud();
-$('#sOut').onclick=async()=>{await sb.auth.signOut();showAuth()};
+$('#sOut').onclick=async()=>{if(window.LDNative&&LDNative.reset)await LDNative.reset();await sb.auth.signOut();showAuth()};
+$('#sDelete').onclick=()=>openDeleteAccount();
+
+// DELETE MY ACCOUNT (App Store 5.1.1(v)): server-side in one transaction, see supabase/007_delete_account.sql
+async function openDeleteAccount(){
+  if(MODE==='demo'||!sb||!user)return;
+  if(!navigator.onLine)return toast('You need to be online to delete your account');
+  const {data:pv,error}=await sb.rpc('account_deletion_preview');if(error)return toast(error.message);
+  const line=x=>x.action==='delete'?`🗑️ <b>${esc(x.baby)}</b> and its whole log (feeds, diapers, sleep, growth, notes) will be <b>deleted</b>. No one else is on it.`
+    :x.action==='transfer'?`👑 <b>${esc(x.baby)}</b> stays with your family. <b>${esc(x.to)}</b> becomes the owner, because they've been a caregiver the longest.`
+    :`👋 You'll leave <b>${esc(x.baby)}</b>. Everyone else keeps it.`;
+  const shared=(pv||[]).some(x=>x.action!=='delete');
+  openSheet(`<h2 style="margin-top:0">Delete my account</h2>
+    <div class="muted">This permanently deletes your Little Days account (${esc(user.email)}). It can't be undone.</div>
+    <div class="delbox">${(pv||[]).length?(pv||[]).map(x=>`<p>${line(x)}</p>`).join(''):'<p>You are not on any baby yet.</p>'}
+    ${shared?`<p>📝 Entries you logged on babies that stay are kept for the family and will show as <b>“Former caregiver”</b>.</p>`:''}
+    <p>🔕 Your name, sign-in, invite codes and alert settings on all your devices are removed.</p></div>
+    <label class="f">Type <b>DELETE</b> to confirm</label><input id="delTxt" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DELETE">
+    <button class="btn danger full" id="delGo" style="margin-top:14px" disabled>Delete my account</button>
+    <button class="btn ghost full" id="delNo" style="margin-top:10px">Keep my account</button>`,()=>{
+      const go=$('#delGo'),t=$('#delTxt');t.oninput=()=>{go.disabled=t.value.trim()!=='DELETE'};$('#delNo').onclick=closeSheet;
+      go.onclick=async()=>{if(t.value.trim()!=='DELETE')return;go.disabled=true;go.textContent='Deleting…';
+        try{await dropThisDevice()}catch(e){}
+        const {error}=await sb.rpc('delete_my_account',{p_confirm:'DELETE'});
+        if(error){go.disabled=false;go.textContent='Delete my account';return toast('Could not delete: '+error.message)}
+        try{if(window.LDNative&&LDNative.reset)await LDNative.reset()}catch(e){}
+        [QUEUE_KEY,BABY_KEY,MODE_KEY,'littledays.pendingInvite'].forEach(k=>localStorage.removeItem(k));Q=[];
+        try{await sb.auth.signOut({scope:'local'})}catch(e){}
+        try{if(channel)sb.removeChannel(channel)}catch(e){}channel=null;user=null;D=null;myBabies=[];closeSheet();showAuth();$('#aPass').value='';$('#aEmail').value='';setMsg($('#aMsg'),'Your account and its data have been deleted. Thank you for using Little Days 💜',true)}});
+}
 
 setInterval(()=>{if(D&&D.entries.some(e=>!e.end))renderToday()},1000);
 setInterval(()=>{if(D){renderToday();renderReports()}},60000);
