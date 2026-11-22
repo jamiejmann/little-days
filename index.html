@@ -144,7 +144,8 @@ body.night .due.over{background:#7a4a35;color:#FFE3D3}
 .l24head h3{margin:0}
 .l24grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 .l24t{border-radius:16px;padding:10px 4px;text-align:center}
-.l24t .v{font-size:20px;font-weight:800;line-height:1.1}
+.l24t .v{font-size:19px;font-weight:800;line-height:1.1;white-space:nowrap;letter-spacing:-.3px}
+.l24t .l{white-space:nowrap}
 .l24t .l{font-size:11px;color:var(--soft);font-weight:700;margin-top:2px}
 .daysub{font-size:12px;color:var(--soft);font-weight:700}
 .auth{max-width:420px;margin:0 auto;padding-top:28px;text-align:center}
@@ -565,7 +566,7 @@ function renderL24(){
   const now=Date.now(),s=dayStats(now-864e5,now);
   const since=new Date(now-864e5);
   $('#l24when').textContent='since '+fmtT(since)+' yesterday';$('#r24when').textContent='· since '+fmtT(since)+' yesterday';
-  $('#l24').innerHTML=[['💧',s.pee+s.both,'Wet','var(--mint)'],['💩',s.poop+s.both,'Dirty','var(--mint)'],['🍼',s.feeds,'Feeds','var(--peach)'],['🥛',s.bottle?bottleTotal(s):'—','Bottle','var(--peach)'],['🌙',dur(s.sleepMs),'Sleep','var(--blue)']]
+  $('#l24').innerHTML=[['💧',s.pee+s.both,'Wet','var(--mint)'],['💩',s.poop+s.both,'Dirty','var(--mint)'],['🍼',s.feeds,'Feeds','var(--peach)'],['🥛',s.bottle?bottleTotal(s).replace(' ',''):'—','Bottle','var(--peach)'],['🌙',s.sleepMs<36e5?Math.round(s.sleepMs/6e4)+'m':(Math.round(s.sleepMs/36e5*10)/10)+'h','Sleep','var(--blue)']]
     .map(x=>`<div class="l24t" style="background:${x[3]}"><div class="l">${x[0]} ${x[2]}</div><div class="v">${x[1]}</div></div>`).join('');
   return s;
 }
