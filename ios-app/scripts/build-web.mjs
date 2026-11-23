@@ -9,12 +9,16 @@ for (const f of ['native.js', 'native.css']) fs.copyFileSync(path.join(app, 'nat
 
 // Supabase client bundled locally (the website loads the same major version from esm.sh)
 await build({ stdin: { contents: "export * from '@supabase/supabase-js';", resolveDir: app }, bundle: true, format: 'esm', platform: 'browser', target: 'es2020', minify: true, outfile: path.join(www, 'vendor', 'supabase.js'), logLevel: 'warning' });
+// jsPDF bundled locally for the pediatrician summary PDF (window.print() does nothing inside the iOS app)
+await build({ stdin: { contents: "import { jsPDF } from 'jspdf'; window.jspdf = { jsPDF };", resolveDir: app }, bundle: true, format: 'iife', platform: 'browser', target: 'es2020', minify: true, outfile: path.join(www, 'vendor', 'jspdf.js'), logLevel: 'warning' });
 
 let html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const patch = (from, to) => { const n = html.split(from).length - 1; if (n !== 1) throw new Error(`build-web: expected exactly one match for: ${from.slice(0, 70)} (found ${n})`); html = html.replace(from, to); };
 patch("const SUPABASE_CDN='https://esm.sh/@supabase/supabase-js@2';", "const SUPABASE_CDN='./vendor/supabase.js';");
 patch('</head>', '<link rel="stylesheet" href="native.css">\n</head>');
-patch('<script>\n(function(){', '<script src="native.js"></script>\n<script>\n(function(){');
+// the app never zooms: no pinch zoom, no auto-zoom when a small text field is focused
+patch('<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">', '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">');
+patch('<script>\n(function(){', '<script src="vendor/jspdf.js" defer></script>\n<script src="native.js"></script>\n<script>\n(function(){');
 patch('async function refreshPushStatus(){', 'async function refreshPushStatus(){if(window.LDNative)return LDNative.refreshPushStatus();');
 patch("$('#pushOn').onclick=async()=>{", "$('#pushOn').onclick=async()=>{if(window.LDNative)return LDNative.pushOn();");
 patch("$('#pushTest').onclick=async()=>{", "$('#pushTest').onclick=async()=>{if(window.LDNative)return LDNative.test();");

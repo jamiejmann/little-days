@@ -176,18 +176,25 @@ textarea.note{margin-top:10px;min-height:0;resize:none;font-size:15px}
 .pnote{text-align:center;font-size:13px;font-weight:700;color:var(--ink);background:var(--yellow);border-radius:14px;padding:8px 12px;margin:8px 0 2px}
 .pdet{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px;margin-top:6px}
 .pdet b{color:var(--soft);font-size:12px;font-weight:800;align-self:center}
-.pastRow{display:flex;align-items:center;gap:8px;margin:-6px 0 14px;font-size:13px;font-weight:700;color:var(--soft)}
-.pastRow span{padding-left:4px}
-.pastRow button{flex:1}
-.lastMed{display:block;width:100%;border:none;background:none;font:inherit;text-align:left;font-size:13px;font-weight:700;color:var(--soft);margin:-8px 0 14px;padding:2px 8px;cursor:pointer}
-.lastMed b{color:var(--ink)}
+.choose{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0 12px}
+.choose button{border:none;border-radius:26px;padding:22px 8px;font:inherit;font-weight:800;font-size:16px;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;box-shadow:var(--shadow)}
+.choose button b{font-size:30px}
+.choose button small{font-weight:700;font-size:12px;color:var(--soft)}
+.choose2{display:flex;gap:8px;justify-content:center}
+.choose2 .chip{flex:1}
+.medRow{display:flex;align-items:center;gap:8px;margin:-6px 0 14px;min-width:0}
+.medBtn{flex:none;border:none;border-radius:999px;padding:9px 16px;background:var(--yellow);box-shadow:var(--shadow);font:inherit;font-weight:800;font-size:14px;color:var(--ink);cursor:pointer}
+.medRow .lastMed{flex:1;min-width:0;margin:0;display:flex;align-items:center;gap:6px;background:var(--card);border-radius:999px;box-shadow:var(--shadow);padding:9px 10px 9px 14px;color:var(--soft);font-size:13px}
+.medRow .lastMed span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.medRow .lastMed b{flex:none;background:var(--yellow);border-radius:999px;padding:3px 10px;color:var(--ink)}
+.medRow button:active{transform:scale(.97)}
+html,body{max-width:100%;overflow-x:hidden}
+.lastMed{border:none;font:inherit;font-weight:700;cursor:pointer}
 .side.hint{box-shadow:0 0 0 5px var(--lav),var(--shadow)}
 .hintTxt{text-align:center;font-size:13px;font-weight:800;color:var(--lav-d);margin:-4px 0 6px}
 .when.ago .chip{font-size:13px;padding:6px 12px}
 .pumpbtn{width:150px;margin:0 auto;background:var(--lav)}
 .pumpbtn.on{background:var(--lav-d)}
-.pastRow button{border:none;border-radius:999px;padding:8px 13px;font:inherit;font-size:13px;font-weight:800;color:var(--ink);background:var(--card);box-shadow:var(--shadow);cursor:pointer;white-space:nowrap}
-.pastRow button:active{transform:scale(.97)}
 .pastlink{display:block;width:100%;margin-top:12px;border:none;background:none;font:inherit;font-size:14px;font-weight:800;color:var(--lav-d);cursor:pointer;padding:8px}
 .when{display:flex;gap:8px;justify-content:center;margin:2px 0 10px}
 .mins{display:flex;align-items:center;gap:8px}
@@ -225,7 +232,7 @@ body.night .gs .p{background:rgba(0,0,0,.2)}
 .doc .fine{font-size:11.5px;color:#7C778E;margin-top:14px;line-height:1.45}
 .doc .notesPrint{display:none;white-space:pre-wrap}
 .doc .saved{font-size:12px;color:#5FB394;font-weight:700;min-height:16px;margin-top:4px}
-@media (max-width:560px){.doc{padding:18px 14px;margin:0 0 30px;border-radius:0}.doc table{font-size:12.5px}.doc th,.doc td{padding:5px 4px}.doc .dh{flex-wrap:wrap}}
+@media (max-width:560px){.doc{padding:18px 14px;margin:0 0 30px;border-radius:0;font-size:15px}.doc table{font-size:13.5px}.doc th,.doc td{padding:6px 4px}.doc th{font-size:12.5px}.doc .dh{flex-wrap:wrap}}
 @media print{
   @page{margin:12mm}
   html,body{background:#fff!important;padding:0!important;min-height:0}
@@ -322,10 +329,9 @@ body.night .gs .p{background:rgba(0,0,0,.2)}
     <div class="big">
       <button class="bigbtn feed" id="bFeed"><div class="em">🍼</div>Feed<small id="sFeed">tap to log</small></button>
       <button class="bigbtn diaper" id="bDiaper"><div class="em">🧷</div>Diaper<small>pee · poop</small></button>
-      <button class="bigbtn sleep" id="bSleep"><div class="em">🌙</div><span id="sleepLbl">Sleep</span><small id="sSleep">start timer</small></button>
+      <button class="bigbtn sleep" id="bSleep"><div class="em">🌙</div><span id="sleepLbl">Sleep</span><small id="sSleep">tap to log</small></button>
     </div>
-    <div class="pastRow"><span>🕘</span><button id="pastFeed">+ Past feed</button><button id="pastSleep">+ Past sleep</button><button id="addMed">+ Medicine</button></div>
-    <button class="lastMed hidden" id="lastMed"></button>
+    <div class="medRow"><button class="medBtn" id="addMed">💊 Medicine</button><button class="lastMed hidden" id="lastMed" aria-label="Log the last medicine again"></button></div>
     <button class="again hidden" id="bAgain" aria-label="Log the same bottle again"></button>
     <div class="card" id="l24card">
       <div class="l24head"><h3>🕐 Last 24 hours</h3><span class="muted" id="l24when"></span></div>
@@ -731,10 +737,11 @@ function renderToday(){
   const sl=running('sleep'), ls=E.find(e=>e.type==='sleep'&&e.end);
   $('#gSleep').textContent=sl?'asleep '+dur(Date.now()-sl.start):(ls?'awake '+dur(Date.now()-ls.end):'—');
   $('#bSleep').classList.toggle('running',!!sl);$('#sleepLbl').textContent=sl?'Wake up':'Sleep';
-  $('#sSleep').textContent=sl?clock(Date.now()-sl.start)+' · '+person(sl.by).name:'start timer';
+  $('#sSleep').textContent=sl?clock(Date.now()-sl.start)+' · '+person(sl.by).name:'tap to log';
   const ft=running('feed','breast'),pt=running('pump');$('#bFeed').classList.toggle('running',!!(ft||pt));$('#sFeed').textContent=ft?'nursing '+clock(feedTotal(ft)*1000):pt?'pumping '+clock(Date.now()-pt.start):'tap to log';
-  const lm=E.find(e=>e.type==='medicine'&&e.start<=Date.now()+6e4&&e.start>Date.now()-7*864e5);$('#lastMed').classList.toggle('hidden',!lm);
-  if(lm)$('#lastMed').innerHTML=`💊 Last medicine: <b>${esc((lm.details&&lm.details.name)||'Medicine')}</b> · ${esc(ago(lm.start))}`;
+  const lm=E.find(e=>e.type==='medicine'&&e.start<=Date.now()+6e4&&e.start>Date.now()-7*864e5);
+  $('#lastMed').classList.toggle('hidden',!lm);$('#lastMed').dataset.id=lm?lm.id:'';
+  if(lm)$('#lastMed').innerHTML=`<span>Last: <b style="background:none;padding:0">${esc((lm.details&&lm.details.name)||'Medicine')}</b> · ${esc(ago(lm.start))}</span><b>↻ Again</b>`;
   renderL24();renderDue();renderAgain();
   const ws=shiftWindow(curWindow(),-viewOffset),d0=ws.getTime(),d1=shiftWindow(ws,1).getTime(),isToday=viewOffset===0;
   $('#dayTitle').textContent=windowTitle(ws);$('#daySub').textContent=windowSub(ws);
@@ -1095,6 +1102,23 @@ function poopDetailsSheet(e){ // shown right after a poop is saved; every detail
     $('#scrim').onclick=ev=>{if(ev.target.id==='scrim'){save();closeSheet()}};
   });
 }
+/* ---- first step for Feed and Sleep: live timer or a past entry, side by side ---- */
+function feedStart(){
+  if(running('feed','breast'))return feedSheet('breast');if(running('pump'))return pumpSheet();
+  openSheet(`<h2 style="text-align:center">Feed</h2>
+    <div class="choose"><button id="cTimer" style="background:var(--peach)"><b>⏱</b>Start timer<small>breastfeeding now</small></button>
+      <button id="cPast" style="background:var(--lav)"><b>🕘</b>Log a past feed<small>pick when it was</small></button></div>
+    <div class="choose2"><button class="chip" id="cBottle">🍼 Bottle</button><button class="chip" id="cPump">🧴 Pumping</button></div>`,()=>{
+    $('#cTimer').onclick=()=>feedSheet('breast');$('#cPast').onclick=()=>pastFeedSheet('breast');
+    $('#cBottle').onclick=()=>feedSheet('bottle');$('#cPump').onclick=()=>pumpSheet()});
+}
+function sleepStart(){
+  if(running('sleep'))return toggleSleep();
+  openSheet(`<h2 style="text-align:center">Sleep</h2>
+    <div class="choose"><button id="cSTimer" style="background:var(--blue)"><b>🌙</b>Start sleep timer<small>asleep now</small></button>
+      <button id="cSPast" style="background:var(--lav)"><b>🕘</b>Log a past sleep<small>a nap nobody timed</small></button></div>`,()=>{
+    $('#cSTimer').onclick=()=>{closeSheet();toggleSleep()};$('#cSPast').onclick=()=>pastSleepSheet()});
+}
 function toggleSleep(){
   const s=running('sleep');
   if(s){s.end=Date.now();updEntry(s);savedUndo('Good morning! Slept '+dur(s.end-s.start)+' ☀️',()=>{s.end=null;updEntry(s)})}
@@ -1137,9 +1161,12 @@ function editEntry(id){
 }
 
 /* ======================= WIRING ======================= */
-$('#bFeed').onclick=()=>feedSheet();$('#bDiaper').onclick=diaperSheet;$('#bSleep').onclick=toggleSleep;
-$('#pastFeed').onclick=()=>pastFeedSheet('breast');$('#pastSleep').onclick=pastSleepSheet;$('#addMed').onclick=()=>medSheet();
-$('#lastMed').onclick=()=>{const lm=D.entries.filter(e=>e.type==='medicine').sort((a,b)=>b.start-a.start)[0];medSheet(lm&&lm.details&&lm.details.name)};
+$('#bFeed').onclick=()=>feedStart();$('#bDiaper').onclick=diaperSheet;$('#bSleep').onclick=sleepStart;
+$('#addMed').onclick=()=>medSheet();
+let medAgainAt=0;
+$('#lastMed').onclick=()=>{const lm=D.entries.find(e=>e.id===$('#lastMed').dataset.id);if(!lm||Date.now()-medAgainAt<2000)return;medAgainAt=Date.now(); // one tap logs the same medicine and dose now
+  const d={name:lm.details.name};if(lm.details.dose)d.dose=lm.details.dose;const ne={type:'medicine',start:Date.now(),end:Date.now(),details:d};addEntry(ne);
+  savedUndo('Saved 💊 '+d.name+(d.dose?' · '+d.dose:''),undoAdd(ne))};
 $('#nightBtn').onclick=()=>{P.night=!P.night;savePrefs();render()};
 $('#prevDay').onclick=()=>{viewOffset++;renderToday()};
 $('#nextDay').onclick=()=>{if(viewOffset>0){viewOffset--;renderToday()}};
@@ -1156,7 +1183,7 @@ $$('#sexSeg button').forEach(b=>b.onclick=()=>{D.baby.sex=b.dataset.sx||null;sav
 $$('#gMetric button').forEach(b=>b.onclick=()=>{gMetric=b.dataset.g;renderGrowth()});
 $('#gAdd').onclick=()=>growthSheet();
 $('#bAgain').onclick=repeatBottle;
-$('#docBtn').onclick=openDoc;$('#docClose').onclick=closeDoc;$('#docPrint').onclick=()=>window.print();$('#docShare').onclick=shareDoc;
+$('#docBtn').onclick=openDoc;$('#docClose').onclick=closeDoc;$('#docPrint').onclick=async()=>{if(window.LDNative&&LDNative.printDoc){if(notesDirty){clearTimeout(notesT);await saveNotes()}return LDNative.printDoc(docText(),D.baby.name+': summary for the pediatrician')}window.print()};$('#docShare').onclick=shareDoc;
 $('#docNotes').oninput=()=>{notesDirty=true;$('#docNotesPrint').textContent=$('#docNotes').value;$('#docSaved').textContent='';clearTimeout(notesT);notesT=setTimeout(saveNotes,800)};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#docView').classList.contains('on'))closeDoc()});
 $('#copySum').onclick=()=>{const now=Date.now(),cw=curWindow();
@@ -1362,7 +1389,10 @@ function renderDoc(){
   if(document.activeElement!==$('#docNotes')&&!notesDirty){$('#docNotes').value=b.doctor_notes||'';$('#docNotesPrint').textContent=b.doctor_notes||''}
 }
 async function openDoc(){try{if(D.baby.sex&&D.baby.birthdate)await loadWHO()}catch(e){}renderDoc();$('#docView').classList.add('on');$('#docView').scrollTop=0;document.body.style.overflow='hidden'}
-function closeDoc(){if(notesDirty){clearTimeout(notesT);saveNotes()}$('#docView').classList.remove('on');document.body.style.overflow=''}
+function closeDoc(){if(notesDirty){clearTimeout(notesT);saveNotes()}$('#docView').classList.remove('on');document.body.style.overflow='';resetZoom()}
+function resetZoom(){ // if someone pinch-zoomed, snap the page back to normal size
+  const m=document.querySelector('meta[name=viewport]');if(!m)return;const c=m.content;
+  if(!/maximum-scale/.test(c)){m.content=c+', maximum-scale=1';setTimeout(()=>{m.content=c},400)}window.scrollTo(0,window.scrollY)}
 async function saveNotes(){const v=$('#docNotes').value.slice(0,4000);notesDirty=true;D.baby.doctor_notes=v;
   if(MODE==='demo'){saveDemo();notesDirty=false;$('#docSaved').textContent='Saved on this phone';return}
   const {error}=await sb.from('babies').update({doctor_notes:v}).eq('id',D.baby.id);
@@ -1379,6 +1409,7 @@ function docImage(text){ // a calm, simple PNG of the summary text for the Share
   return new Promise(res=>c.toBlob(res,'image/png'))}
 async function shareDoc(){if(notesDirty){clearTimeout(notesT);await saveNotes()}
   const text=docText(),title=D.baby.name+': summary for the pediatrician';
+  if(window.LDNative&&LDNative.shareDoc)return LDNative.shareDoc(text,title);
   try{let files=null;
     try{const blob=await docImage(text);const f=new File([blob],'little-days-summary.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))files=[f]}catch(e){}
     if(navigator.share){await navigator.share(files?{files,title,text}:{title,text});return}
@@ -1474,7 +1505,7 @@ function renderDue(){
     :`⏰ Next feed due in ${dur(i.left)}<small>around ${fmtT(i.due)}</small>`;
   if(i.state==='over')checkAlarm();
 }
-$('#feedDue').onclick=()=>feedSheet();
+$('#feedDue').onclick=()=>feedStart();
 let audioCtx=null;
 document.addEventListener('pointerdown',()=>{try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume()}catch(e){}},{passive:true});
 function chime(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();const t=audioCtx.currentTime;
@@ -1491,7 +1522,7 @@ function checkAlarm(){
 }
 function showAlarmBanner(i,stage){
   $('#alarmBannerWrap').innerHTML=`<div class="alarmBanner" id="alarmBanner"><div style="font-size:30px">⏰</div><div style="flex:1"><b>${esc(D.baby.name)}'s feed is ${stage>1?'still ':''}due</b><span>Last fed ${dur(Date.now()-i.last)} ago</span></div><button class="btn sm peach" id="abLog">Log feed</button><button class="btn sm ghost" id="abX" aria-label="Dismiss">✕</button></div>`;
-  $('#abLog').onclick=()=>{hideAlarmBanner();feedSheet()};$('#abX').onclick=hideAlarmBanner;
+  $('#abLog').onclick=()=>{hideAlarmBanner();feedStart()};$('#abX').onclick=hideAlarmBanner;
 }
 function hideAlarmBanner(){const w=$('#alarmBannerWrap');if(w)w.innerHTML=''}
 setInterval(()=>{if(D){renderDue();checkAlarm()}},15000);

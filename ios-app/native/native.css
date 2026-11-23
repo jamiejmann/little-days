@@ -1,6 +1,14 @@
 /* Little Days iOS app only (never shipped to the website). */
-html.native body{padding-top:env(safe-area-inset-top)}
-html.native .alarmBanner{top:calc(12px + env(safe-area-inset-top))}
+/* status bar overlays the web view (StatusBar.overlaysWebView=true), so everything at the top clears it.
+   --ld-top = the safe-area inset; native.js sets a fallback if WebKit reports 0 on a phone with a notch/Dynamic Island. */
+html.native{--ld-top:env(safe-area-inset-top,0px)}
+html.native body{padding-top:calc(var(--ld-top) + 8px)}
+html.native body::before{content:"";position:fixed;top:0;left:0;right:0;height:var(--ld-top);background:var(--bg);z-index:9;pointer-events:none;transition:background .3s}
+html.native .alarmBanner{top:calc(12px + var(--ld-top))}
+html.native .docbar{padding-top:calc(10px + var(--ld-top))}
+html.native .sheet{max-height:calc(100vh - var(--ld-top) - 24px)}
 html.native #iosSteps{display:none!important}
 html.native{-webkit-user-select:none;user-select:none}
 html.native input,html.native textarea,html.native select{-webkit-user-select:text;user-select:text}
+html.native{-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:manipulation;overflow-x:hidden}
+html.native body{overflow-x:hidden;max-width:100vw}

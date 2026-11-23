@@ -8,8 +8,18 @@
   const C = window.Capacitor;
   if (!C || !C.isNativePlatform || !C.isNativePlatform()) return;
   const P = C.Plugins || {};
-  const PN = P.PushNotifications, LN = P.LocalNotifications, H = P.Haptics, SB = P.StatusBar, App = P.App;
+  const FS = P.Filesystem, SH = P.Share, PN = P.PushNotifications, LN = P.LocalNotifications, H = P.Haptics, SB = P.StatusBar, App = P.App;
   document.documentElement.classList.add('native');
+
+  /* ---------- safe area: keep the header clear of the clock / Dynamic Island ---------- */
+  function fixTopInset() {
+    const probe = document.createElement('div'); probe.style.cssText = 'position:fixed;top:0;left:0;width:1px;visibility:hidden;padding-top:env(safe-area-inset-top,0px)';
+    document.body.appendChild(probe); const got = parseFloat(getComputedStyle(probe).paddingTop) || 0; probe.remove();
+    const portrait = innerHeight > innerWidth, tall = Math.max(screen.width, screen.height) >= 812; // Face ID iPhones
+    if (got < 20 && portrait) document.documentElement.style.setProperty('--ld-top', (tall ? 50 : 20) + 'px');
+    else document.documentElement.style.removeProperty('--ld-top');
+  }
+  document.addEventListener('DOMContentLoaded', fixTopInset); addEventListener('orientationchange', () => setTimeout(fixTopInset, 300)); addEventListener('resize', fixTopInset);
 
   const PREF = 'littledays.native.alerts';   // 'on' | 'off'
   const TOKEN = 'littledays.native.apnsToken';
@@ -34,6 +44,7 @@
 
   /* ---------- status bar follows night mode ---------- */
   const paintBar = () => { if (SB) SB.setStyle({ style: document.body.classList.contains('night') ? 'DARK' : 'LIGHT' }).catch(() => {}); };
+  if (SB && SB.setOverlaysWebView) SB.setOverlaysWebView({ overlay: true }).catch(() => {});
   document.addEventListener('DOMContentLoaded', () => { paintBar(); new MutationObserver(paintBar).observe(document.body, { attributes: true, attributeFilter: ['class'] }); });
 
   /* ---------- server push (APNs) ---------- */
@@ -154,5 +165,39 @@
     window.__ldScheduled = [];
   }
 
-  window.LDNative = { refreshPushStatus, pushOn, test, dropThisDevice, scheduleLocal, reset, _state: st, _plan: plan };
+  /* ---------- pediatrician summary: a real PDF, handed to the iOS share sheet (Print, Mail, Messages, Files, AirDrop) ---------- */
+  const clean = (t) => String(t).replace(/[\u2013\u2014]/g, '-').replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"').replace(/\u2026/g, '...').replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, '').replace(/ {2,}/g, ' ');
+  function makePdf(text) {
+    const J = window.jspdf && window.jspdf.jsPDF; if (!J) throw new Error('PDF library missing');
+    const doc = new J({ unit: 'pt', format: 'letter' }), W = doc.internal.pageSize.getWidth(), Hh = doc.internal.pageSize.getHeight(), M = 54;
+    let y = M; const lines = clean(text).split('\n');
+    const put = (t, size, bold, color, gap) => { doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(size); doc.setTextColor(...color);
+      for (const ln of doc.splitTextToSize(t, W - 2 * M)) { if (y + size > Hh - M) { doc.addPage(); y = M; } doc.text(ln, M, y + size); y += size * 1.35; } y += gap || 0; };
+    lines.forEach((l, i) => {
+      if (i === 0) return put(l, 18, true, [43, 39, 64], 4);
+      if (i <= 2) return put(l, 11, false, [110, 105, 130], i === 2 ? 6 : 0);
+      if (!l.trim()) { y += 8; return; }
+      if (/^[A-Z][A-Z0-9 ]{3,}$/.test(l.split(' (')[0])) return put(l, 11.5, true, [43, 39, 64], 2);
+      put(l, 11, false, [30, 30, 30]);
+    });
+    if (y + 40 > Hh - M) { doc.addPage(); y = M; }
+    y += 14; put('Made with Little Days. A log kept by parents, not a medical record.', 9, false, [140, 135, 155]);
+    return doc.output('datauristring').split(',')[1];
+  }
+  async function shareDoc(text, title) {
+    try {
+      if (!FS || !SH) throw new Error('share unavailable');
+      const name = 'Little-Days-summary-' + new Date().toISOString().slice(0, 10) + '.pdf';
+      const w = await FS.writeFile({ path: name, data: makePdf(text), directory: 'CACHE' });
+      await SH.share({ title, dialogTitle: title, files: [w.uri] });
+    } catch (e) {
+      if (/cancel/i.test(String(e && (e.message || e)))) return;
+      log('shareDoc', e);
+      try { if (SH) { await SH.share({ title, text }); return; } } catch (e2) { if (/cancel/i.test(String(e2 && (e2.message || e2)))) return; }
+      try { await navigator.clipboard.writeText(text); app() && app().toast('Summary copied. Paste it into a message'); } catch (e3) { app() && app().toast('Could not share right now'); }
+    }
+  }
+  const printDoc = shareDoc; // the iOS share sheet has Print in it
+
+  window.LDNative = { shareDoc, printDoc, refreshPushStatus, pushOn, test, dropThisDevice, scheduleLocal, reset, _state: st, _plan: plan };
 })();
