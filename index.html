@@ -166,6 +166,9 @@ body.night .due.over{background:#7a4a35;color:#FFE3D3}
 .again{display:flex;align-items:center;gap:10px;width:100%;border:none;border-radius:999px;padding:9px 10px 9px 16px;margin:0 0 16px;background:var(--card);box-shadow:var(--shadow);font:inherit;font-weight:700;font-size:14px;color:var(--ink);cursor:pointer}
 .again b{margin-left:auto;background:var(--peach);border-radius:999px;padding:5px 12px;font-weight:800;white-space:nowrap}
 .again:active{transform:scale(.98)}
+.notelink{display:block;margin:10px auto 0;border:none;background:none;font:inherit;font-size:14px;font-weight:800;color:var(--lav-d);cursor:pointer;padding:6px 10px}
+textarea.note{margin-top:10px;min-height:0;resize:none;font-size:15px}
+.tl .nt{font-size:13px;color:var(--ink);margin-top:2px;font-style:italic;overflow-wrap:anywhere}
 .pchips{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin:2px 0 6px}
 .pchips .chip{padding:7px 13px;font-size:14px;display:inline-flex;align-items:center;gap:6px}
 .pchips .sw{width:14px;height:14px;border-radius:50%;display:inline-block;border:1.5px solid rgba(74,69,96,.18)}
@@ -721,7 +724,7 @@ function renderToday(){
   $('#nextDay').disabled=isToday;$('#nextDay').style.opacity=isToday?.4:1;
   const list=E.filter(e=>(e.start>=d0&&e.start<d1)||(isToday&&!e.end));
   $('#timeline').innerHTML=list.length?list.map(e=>{const x=describe(e),c=person(e.by);
-    return `<li data-id="${e.id}"><div class="dot" style="background:${x.bg}">${x.i}</div><div><div class="t">${x.t}${e.sample?'<span class="sample">sample</span>':''}</div><div class="d">${esc(x.d)} <span class="by" style="background:${c.color}">${esc(c.name)}</span></div></div><div class="time">${fmtT(e.start)}</div></li>`}).join('')
+    return `<li data-id="${e.id}"><div class="dot" style="background:${x.bg}">${x.i}</div><div><div class="t">${x.t}${e.sample?'<span class="sample">sample</span>':''}</div><div class="d">${esc(x.d)} <span class="by" style="background:${c.color}">${esc(c.name)}</span></div>${e.details&&e.details.note?`<div class="nt">📝 ${esc(e.details.note)}</div>`:''}</div><div class="time">${fmtT(e.start)}</div></li>`}).join('')
     :'<div class="empty">Nothing logged yet. Tap a big button above ☁️</div>';
   $$('#timeline li').forEach(li=>li.onclick=()=>editEntry(li.dataset.id));
 }
@@ -855,14 +858,15 @@ function feedSheet(tab){
   openSheet(`<h2 style="text-align:center">Feed</h2><div class="seg"><button data-t="breast" class="${tab==='breast'?'on':''}">🤱 Breast</button><button data-t="bottle" class="${tab==='bottle'?'on':''}">🍼 Bottle</button></div>
   ${tab==='breast'?`<div class="muted" style="text-align:center">Tap a side to start · tap the other side to switch</div>
     <div class="sides"><button class="side" data-s="L"><b>L</b><span class="tm" id="tmL">00:00</span></button><button class="side" data-s="R"><b>R</b><span class="tm" id="tmR">00:00</span></button></div>
-    <div class="row"><button class="btn ghost" id="fPause">Pause</button><button class="btn peach" id="fSave">Done · Save</button></div>
+    ${noteBlock('nFeed',(running('feed','breast')||{details:{}}).details.note)}
+    <div class="row" style="margin-top:12px"><button class="btn ghost" id="fPause">Pause</button><button class="btn peach" id="fSave">Done · Save</button></div>
     <button class="btn sm ghost full" id="fCancel" style="margin-top:10px">Discard timer</button>
     ${running('feed','breast')?'':'<button class="pastlink" id="fPast">🕘 Forgot the timer? Log a past feed</button>'}`
   :`<div class="amount"><button class="round" id="aMinus">−</button><div class="n"><span id="aVal">${amt}</span><div class="muted" style="font-size:14px">${P.unit}</div></div><button class="round" id="aPlus">+</button></div>
     <div class="chips">${['Formula','Breast milk'].map(m=>`<button class="chip ${m===milk?'on':''}" data-m="${m}">${m}</button>`).join('')}</div>
     <div class="when"><button class="chip on" data-w="now">Just now</button><button class="chip" data-w="earlier">🕘 Earlier</button></div>
     <div id="bWhenBox" class="hidden"><label class="f">Time of the bottle</label><input type="datetime-local" id="bWhen"></div>
-    <div class="perr" id="bErr"></div>
+    ${noteBlock('nBottle','')}<div class="perr" id="bErr"></div>
     <button class="btn peach full" id="bSave">Save bottle</button>`}`,()=>{
     $$('.seg [data-t]').forEach(b=>b.onclick=()=>feedSheet(b.dataset.t));
     if(tab==='breast'){
@@ -874,7 +878,7 @@ function feedSheet(tab){
         const was=ft.details.side;bank(ft);if(was!==s){ft.details.side=s;ft.details.since=Date.now()}updEntry(ft);paint()});
       $('#fPause').onclick=()=>{const ft=running('feed','breast');if(!ft)return;if(ft.details.side)bank(ft);else{ft.details.side=ft.details.lastSide||'L';ft.details.since=Date.now()}updEntry(ft);paint()};
       $('#fSave').onclick=()=>{const ft=running('feed','breast');if(!ft){toast('Tap L or R to start');return}
-        bank(ft);const d=ft.details;d.left=Math.max(Math.round(d.acc.L||0),d.acc.R?0:60);d.right=Math.round(d.acc.R||0);ft.end=Date.now();updEntry(ft);closeSheet();toast('Feed saved 🤱')};
+        bank(ft);const d=withNote(ft.details,'nFeed');d.left=Math.max(Math.round(d.acc.L||0),d.acc.R?0:60);d.right=Math.round(d.acc.R||0);ft.end=Date.now();updEntry(ft);closeSheet();toast('Feed saved 🤱')};
       $('#fCancel').onclick=()=>{const ft=running('feed','breast');if(ft)delEntry(ft.id);closeSheet()};
       if($('#fPast'))$('#fPast').onclick=()=>{clearInterval(sheetTick);pastFeedSheet('breast')};
       paint();clearInterval(sheetTick);sheetTick=setInterval(paint,1000);
@@ -888,10 +892,16 @@ function feedSheet(tab){
         if(earlier&&!$('#bWhen').value){$('#bWhen').value=toLocalInput(Date.now()-30*6e4)}$('#bWhen').max=toLocalInput(Date.now());$('#bErr').textContent=''});
       $('#bSave').onclick=()=>{let t=Date.now();
         if(earlier){t=new Date($('#bWhen').value).getTime();const er=pastErr(t,t);if(er){$('#bErr').textContent=er;return}}
-        P.lastAmount=amt;P.lastMilk=milk;savePrefs();addEntry({type:'feed',subtype:'bottle',start:t,end:t,amount:amt,unit:P.unit,details:{milk}});closeSheet();toast(earlier?'Bottle saved for '+fmtT(t)+' 🍼':'Bottle saved 🍼')};
+        P.lastAmount=amt;P.lastMilk=milk;savePrefs();addEntry({type:'feed',subtype:'bottle',start:t,end:t,amount:amt,unit:P.unit,details:withNote({milk},'nBottle')});closeSheet();toast(earlier?'Bottle saved for '+fmtT(t)+' 🍼':'Bottle saved 🍼')};
     }
   });
 }
+/* ---- optional short note on any entry (stored in details.note) ---- */
+const NOTE_MAX=200;
+function noteBlock(id,val){return `${val?'':`<button class="notelink" data-note="${id}">📝 Add a note</button>`}<textarea id="${id}" class="note ${val?'':'hidden'}" maxlength="${NOTE_MAX}" rows="2" placeholder="A short note, e.g. spit up a little">${esc(val||'')}</textarea>`}
+function noteVal(id){const t=$('#'+id);return t?t.value.trim().slice(0,NOTE_MAX):''}
+function withNote(d,id){d=d||{};const v=noteVal(id);if(v)d.note=v;else delete d.note;return d}
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-note]');if(!b)return;const t=$('#'+b.dataset.note);b.remove();if(t){t.classList.remove('hidden');t.focus()}});
 /* ---- log a PAST feed or sleep (for when nobody started the timer) ---- */
 const PAST_MAX_DAYS=31,BREAST_MAX_MIN=180,SLEEP_MAX_H=14;
 function pastErr(start,end){ // returns a gentle message, or '' when the times are fine
@@ -911,7 +921,7 @@ function pastFeedSheet(tab){
   openSheet(`<h2 style="text-align:center">🕘 Log a past feed</h2><div class="seg"><button data-pt="breast" class="on">🤱 Breast</button><button data-pt="bottle">🍼 Bottle</button></div>
     <label class="f">Started at</label><input type="datetime-local" id="pStart" value="${toLocalInput(roundedPast(40))}" max="${toLocalInput(Date.now())}">
     <div class="row">${minsField('pL','Left side (min)',10)}${minsField('pR','Right side (min)',10)}</div>
-    <div class="pastSum" id="pSum"></div><div class="perr" id="pErr"></div>
+    <div class="pastSum" id="pSum"></div>${noteBlock('nPast','')}<div class="perr" id="pErr"></div>
     <button class="btn peach full" id="pSave">Save feed</button>
     <button class="pastlink" id="pTimer">⏱ Use the live timer instead</button>`,()=>{
     $$('[data-pt]').forEach(b=>b.onclick=()=>pastFeedSheet(b.dataset.pt));
@@ -921,7 +931,7 @@ function pastFeedSheet(tab){
     $$('[data-step]').forEach(b=>b.onclick=()=>{const [id,d]=b.dataset.step.split(':'),el=$('#'+id);el.value=Math.min(BREAST_MAX_MIN,Math.max(0,(Math.round(+el.value)||0)+(+d)));paint()});
     ['#pStart','#pL','#pR'].forEach(q=>$(q).oninput=paint);
     $('#pSave').onclick=()=>{const {v,er}=check();if(er){$('#pErr').textContent=er;return}
-      addEntry({type:'feed',subtype:'breast',start:v.s,end:v.e,details:{left:v.L*60,right:v.R*60,acc:{L:v.L*60,R:v.R*60},lastSide:v.R&&!v.L?'R':(v.L&&!v.R?'L':null),past:true}});
+      addEntry({type:'feed',subtype:'breast',start:v.s,end:v.e,details:{left:v.L*60,right:v.R*60,acc:{L:v.L*60,R:v.R*60},lastSide:v.R&&!v.L?'R':(v.L&&!v.R?'L':null),past:true,...withNote({},'nPast')}});
       closeSheet();toast('Feed saved for '+fmtT(v.s)+' 🤱')};
     $('#pTimer').onclick=()=>feedSheet('breast');
     paint();
@@ -932,7 +942,7 @@ function pastSleepSheet(){
   openSheet(`<h2 style="text-align:center">🕘 Log a past sleep</h2><div class="muted" style="text-align:center">For a nap nobody timed</div>
     <label class="f">Fell asleep</label><input type="datetime-local" id="sStart" value="${toLocalInput(roundedPast(90))}" max="${toLocalInput(Date.now())}">
     <label class="f">Woke up</label><input type="datetime-local" id="sEnd" value="${toLocalInput(roundedPast(0))}" max="${toLocalInput(Date.now())}">
-    <div class="pastSum" id="sSum"></div><div class="perr" id="sErr"></div>
+    <div class="pastSum" id="sSum"></div>${noteBlock('nSleepP','')}<div class="perr" id="sErr"></div>
     <button class="btn blue full" id="sSave">Save sleep</button>
     ${sl?'':'<button class="pastlink" id="sTimer">⏱ Baby is asleep now? Start the timer</button>'}`,()=>{
     const check=()=>{const s=new Date($('#sStart').value).getTime(),e=new Date($('#sEnd').value).getTime();let er=pastErr(s,e);
@@ -940,7 +950,7 @@ function pastSleepSheet(){
     const paint=()=>{const {s,e,er}=check();$('#sSum').textContent=!isNaN(s)&&!isNaN(e)&&e>s?'Slept '+dur(e-s):'';$('#sErr').textContent=er};
     ['#sStart','#sEnd'].forEach(q=>$(q).oninput=paint);
     $('#sSave').onclick=()=>{const {s,e,er}=check();if(er){$('#sErr').textContent=er;return}
-      addEntry({type:'sleep',start:s,end:e,details:{past:true}});closeSheet();toast('Sleep saved · '+dur(e-s)+' 🌙')};
+      addEntry({type:'sleep',start:s,end:e,details:withNote({past:true},'nSleepP')});closeSheet();toast('Sleep saved · '+dur(e-s)+' 🌙')};
     if($('#sTimer'))$('#sTimer').onclick=()=>{closeSheet();toggleSleep()};
     paint();
   });
@@ -966,6 +976,8 @@ function poopStats(from,to){const r={dirty:0,detailed:0,color:{},texture:{},amou
     ['color','texture','amount'].forEach(k=>{if(d[k]&&poopLbl(k,d[k])){r[k][d[k]]=(r[k][d[k]]||0)+1;any=true}});if(any)r.detailed++;
     if(POOP_FLAG.includes(d.color))r.flagged.push(e)});
   r.flagged.sort((a,b)=>b.start-a.start);return r}
+function recentNotes(){const now=Date.now();return D.entries.filter(e=>e.details&&e.details.note&&e.start>=now-7*864e5&&e.start<=now).sort((a,b)=>b.start-a.start)}
+const noteType=e=>describe(e).t.replace(/<[^>]+>/g,'');
 const poopCounts=(r,k)=>POOP[k].filter(o=>r[k][o[0]]).map(o=>o[1]+' '+r[k][o[0]]).join(', ');
 function diaperSheet(){
   openSheet(`<h2 style="text-align:center">Diaper</h2><div class="muted" style="text-align:center">One tap saves it</div>
@@ -976,9 +988,9 @@ function diaperSheet(){
 }
 function poopDetailsSheet(e){ // shown right after a poop is saved; every detail is optional
   const d=e.details=e.details||{};let dirty=false;
-  const save=()=>{if(dirty){dirty=false;updEntry(e)}};
+  const save=()=>{const before=d.note||'';withNote(d,'nPoop');if(dirty||(d.note||'')!==before){dirty=false;updEntry(e)}};
   openSheet(`<h2 style="text-align:center">💩 Saved</h2><div class="muted" style="text-align:center">Add details if you like. All optional</div>
-    ${poopChips(d)}<button class="btn mint full" id="pDone" style="margin-top:14px">Done</button>`,()=>{
+ ${poopChips(d)}${noteBlock('nPoop',d.note)}<button class="btn mint full" id="pDone" style="margin-top:14px">Done</button>`,()=>{
     bindPoopChips(d,()=>{dirty=true});
     $('#pDone').onclick=()=>{save();closeSheet();toast(poopText(d)?'Saved · '+poopText(d):'Diaper saved 🧷')};
     $('#scrim').onclick=ev=>{if(ev.target.id==='scrim'){save();closeSheet()}};
@@ -999,6 +1011,7 @@ function editEntry(id){
   const pd={color:d.color,texture:d.texture,amount:d.amount};Object.keys(pd).forEach(k=>{if(!pd[k])delete pd[k]});
   if(e.type==='diaper')f+=`<label class="f">Type</label><select id="eKind">${['pee','poop','both'].map(k=>`<option ${k===e.subtype?'selected':''}>${k}</option>`).join('')}</select>
     <div id="ePoop" class="${poopy(e)?'':'hidden'}"><div class="muted" style="text-align:center;margin-top:10px">Poop details (optional)</div>${poopChips(pd)}</div>`;
+  f+=noteBlock('eNote',d.note);
   f+=MODE==='demo'?`<label class="f">Logged by</label><select id="eBy">${D.people.map(c=>`<option value="${c.id}" ${c.id===e.by?'selected':''}>${esc(c.name)}</option>`).join('')}</select>`:`<div class="muted" style="margin-top:10px">Logged by <b>${esc(person(e.by).name)}</b></div>`;
   openSheet(`<h2 style="text-align:center">${x.i} Edit ${x.t.toLowerCase()}</h2>${f}<div class="row" style="margin-top:16px"><button class="btn danger" id="eDel">Delete</button><button class="btn mint" id="eSave">Save</button></div>`,()=>{
     $('#eSave').onclick=()=>{
@@ -1012,6 +1025,7 @@ function editEntry(id){
       if($('#eAmt')){e.amount=+$('#eAmt').value||0;e.unit=$('#eUnit').value}
       if($('#eKind')){e.subtype=$('#eKind').value;const nd=Object.assign({},e.details||{});['color','texture','amount'].forEach(k=>{delete nd[k];if(poopy(e)&&pd[k])nd[k]=pd[k]});e.details=nd}
       if($('#eBy'))e.by=$('#eBy').value;
+      e.details=withNote(Object.assign({},e.details||{}),'eNote');
       updEntry(e);closeSheet();toast('Updated ✓')};
     $('#eDel').onclick=()=>{if(confirm('Delete this entry?')){delEntry(id);closeSheet();toast('Deleted')}};
     if($('#eKind')){bindPoopChips(pd);$('#eKind').onchange=()=>$('#ePoop').classList.toggle('hidden',$('#eKind').value==='pee')}
@@ -1046,7 +1060,7 @@ $('#copySum').onclick=()=>{const now=Date.now(),cw=curWindow();
   `${useBirthDay()?windowTitle(cw):'Today (since midnight)'} so far: ${summaryLine(dayStats(cw.getTime(),now))}\n`+
   $('#avgText').textContent;
   copy(txt,'Summary copied')};
-$('#csvBtn').onclick=()=>{const rows=[['date','time','day_of_life','day_window','type','details','logged_by']].concat(D.entries.slice().sort((a,b)=>a.start-b.start).map(e=>{const x=describe(e),ws=windowStart(e.start);return [new Date(e.start).toLocaleDateString(),fmtT(e.start),lifeDay(ws)??'',useBirthDay()?ws.toLocaleDateString()+' '+fmtT(ws)+' – '+shiftWindow(ws,1).toLocaleDateString()+' '+fmtT(shiftWindow(ws,1)):ws.toLocaleDateString(),x.t.replace(/<[^>]+>/g,''),x.d,person(e.by).name]}));
+$('#csvBtn').onclick=()=>{const rows=[['date','time','day_of_life','day_window','type','details','note','logged_by']].concat(D.entries.slice().sort((a,b)=>a.start-b.start).map(e=>{const x=describe(e),ws=windowStart(e.start);return [new Date(e.start).toLocaleDateString(),fmtT(e.start),lifeDay(ws)??'',useBirthDay()?ws.toLocaleDateString()+' '+fmtT(ws)+' – '+shiftWindow(ws,1).toLocaleDateString()+' '+fmtT(shiftWindow(ws,1)):ws.toLocaleDateString(),x.t.replace(/<[^>]+>/g,''),x.d,(e.details&&e.details.note)||'',person(e.by).name]}));
   const blob=new Blob([rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='baby-log.csv';a.click()};
 /* ======================= ONE-TAP "AGAIN" (repeat the last bottle) ======================= */
 let againAt=0;
@@ -1201,6 +1215,7 @@ function docText(){const {d24,d7,span,days}=docData(),b=D.baby,n=lifeDay(curWind
   const pr=poopStats(Date.now()-7*864e5,Date.now());
   if(pr.detailed){L.push('','POOP DETAILS (last 7 days, '+pr.detailed+' of '+pr.dirty+' dirty diapers described)');['color','texture','amount'].forEach(k=>{const c=poopCounts(pr,k);if(c)L.push(POOP_NAME[k]+': '+c)});
     if(pr.flagged.length)L.push('Noted: '+pr.flagged.map(e=>poopLbl('color',e.details.color).toLowerCase()+' poop on '+fmtD2(e.start)).join('; '))}
+  const rn=recentNotes();if(rn.length){L.push('','NOTES FROM THE LOG (last 7 days)');rn.forEach(e=>L.push(fmtD2(e.start)+' · '+noteType(e)+': '+e.details.note))}
   const nt=(b.doctor_notes||'').trim();if(nt)L.push('','QUESTIONS FOR THE DOCTOR',nt);
   return L.join('\n')}
 function renderDoc(){
@@ -1232,6 +1247,7 @@ function renderDoc(){
       return `<div class="keep"><h2>Poop details · last 7 days</h2><table><tbody>${['color','texture','amount'].map(k=>`<tr><td>${POOP_NAME[k]}</td><td>${esc(poopCounts(pr,k)||'—')}</td></tr>`).join('')}</tbody></table>
       <div class="fine" style="margin-top:4px">Described on ${pr.detailed} of ${pr.dirty} dirty diapers.</div>
       ${pr.flagged.length?`<div class="flag" style="margin-top:8px;padding:8px 10px;border-radius:10px;background:#FFF4D6;border:1px solid #EBD9A6;font-size:13px"><b>Noted for the doctor:</b> ${pr.flagged.map(e=>esc(poopLbl('color',e.details.color).toLowerCase()+' poop, '+fmtD2(e.start))).join('; ')}</div>`:''}</div>`})()}
+    ${(()=>{const rn=recentNotes();if(!rn.length)return'';return `<div class="keep"><h2>Notes from the log · last 7 days</h2><table><tbody>${rn.map(e=>`<tr><td style="white-space:nowrap">${esc(fmtD2(e.start))}</td><td>${esc(noteType(e))}</td><td>${esc(e.details.note)}</td></tr>`).join('')}</tbody></table></div>`})()}
     <div class="keep"><h2>Growth</h2>${gRows?`<table><thead><tr><th></th><th class="n">Latest</th><th>Change since last measurement</th><th class="n">WHO percentile</th></tr></thead><tbody>${gRows}</tbody></table>`:'<div class="meta">No measurements logged yet.</div>'}</div>`;
   $('#docFine').innerHTML=`Logged at home by ${esc(who||'family')} with Little Days. A “wet” or “dirty” count includes diapers that were both.${gRows?' Percentiles compare with the WHO Child Growth Standards (birth to 2 years)'+(b.sex?'':' and need the baby’s sex to be set')+'. They are for information only and are not medical advice.':''}`;
   if(document.activeElement!==$('#docNotes')&&!notesDirty){$('#docNotes').value=b.doctor_notes||'';$('#docNotesPrint').textContent=b.doctor_notes||''}
