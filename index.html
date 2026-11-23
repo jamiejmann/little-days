@@ -163,9 +163,20 @@ body.night .due.over{background:#7a4a35;color:#FFE3D3}
 .or{display:flex;align-items:center;gap:10px;color:var(--soft);font-size:13px;margin:14px 0}
 .or:before,.or:after{content:"";flex:1;height:2px;background:var(--line)}
 /* one-tap repeat bottle */
-.again{display:flex;align-items:center;gap:10px;width:100%;border:none;border-radius:999px;padding:9px 10px 9px 16px;margin:-6px 0 16px;background:var(--card);box-shadow:var(--shadow);font:inherit;font-weight:700;font-size:14px;color:var(--ink);cursor:pointer}
+.again{display:flex;align-items:center;gap:10px;width:100%;border:none;border-radius:999px;padding:9px 10px 9px 16px;margin:0 0 16px;background:var(--card);box-shadow:var(--shadow);font:inherit;font-weight:700;font-size:14px;color:var(--ink);cursor:pointer}
 .again b{margin-left:auto;background:var(--peach);border-radius:999px;padding:5px 12px;font-weight:800;white-space:nowrap}
 .again:active{transform:scale(.98)}
+.pastRow{display:flex;align-items:center;gap:8px;margin:-6px 0 14px;font-size:13px;font-weight:700;color:var(--soft)}
+.pastRow span{flex:1;padding-left:6px}
+.pastRow button{border:none;border-radius:999px;padding:8px 13px;font:inherit;font-size:13px;font-weight:800;color:var(--ink);background:var(--card);box-shadow:var(--shadow);cursor:pointer;white-space:nowrap}
+.pastRow button:active{transform:scale(.97)}
+.pastlink{display:block;width:100%;margin-top:12px;border:none;background:none;font:inherit;font-size:14px;font-weight:800;color:var(--lav-d);cursor:pointer;padding:8px}
+.when{display:flex;gap:8px;justify-content:center;margin:2px 0 10px}
+.mins{display:flex;align-items:center;gap:8px}
+.mins .round{width:44px;height:44px;font-size:22px;flex:none}
+.mins input{text-align:center;font-weight:800}
+.pastSum{text-align:center;font-weight:800;margin:14px 0 4px;color:var(--ink)}
+.perr{text-align:center;color:#B0504F;font-weight:700;font-size:13px;min-height:18px;margin:6px 0 2px}
 .toast.act{pointer-events:auto;display:flex;align-items:center;white-space:nowrap}
 .toast .undo{background:var(--peach);border:none;border-radius:999px;padding:4px 12px;margin-left:10px;font:inherit;font-weight:800;color:#4A4560;cursor:pointer}
 /* growth */
@@ -295,6 +306,7 @@ body.night .gs .p{background:rgba(0,0,0,.2)}
       <button class="bigbtn diaper" id="bDiaper"><div class="em">🧷</div>Diaper<small>pee · poop</small></button>
       <button class="bigbtn sleep" id="bSleep"><div class="em">🌙</div><span id="sleepLbl">Sleep</span><small id="sSleep">start timer</small></button>
     </div>
+    <div class="pastRow"><span>🕘 Forgot the timer?</span><button id="pastFeed">+ Past feed</button><button id="pastSleep">+ Past sleep</button></div>
     <button class="again hidden" id="bAgain" aria-label="Log the same bottle again"></button>
     <div class="card" id="l24card">
       <div class="l24head"><h3>🕐 Last 24 hours</h3><span class="muted" id="l24when"></span></div>
@@ -829,9 +841,13 @@ function feedSheet(tab){
   ${tab==='breast'?`<div class="muted" style="text-align:center">Tap a side to start · tap the other side to switch</div>
     <div class="sides"><button class="side" data-s="L"><b>L</b><span class="tm" id="tmL">00:00</span></button><button class="side" data-s="R"><b>R</b><span class="tm" id="tmR">00:00</span></button></div>
     <div class="row"><button class="btn ghost" id="fPause">Pause</button><button class="btn peach" id="fSave">Done · Save</button></div>
-    <button class="btn sm ghost full" id="fCancel" style="margin-top:10px">Discard timer</button>`
+    <button class="btn sm ghost full" id="fCancel" style="margin-top:10px">Discard timer</button>
+    ${running('feed','breast')?'':'<button class="pastlink" id="fPast">🕘 Forgot the timer? Log a past feed</button>'}`
   :`<div class="amount"><button class="round" id="aMinus">−</button><div class="n"><span id="aVal">${amt}</span><div class="muted" style="font-size:14px">${P.unit}</div></div><button class="round" id="aPlus">+</button></div>
     <div class="chips">${['Formula','Breast milk'].map(m=>`<button class="chip ${m===milk?'on':''}" data-m="${m}">${m}</button>`).join('')}</div>
+    <div class="when"><button class="chip on" data-w="now">Just now</button><button class="chip" data-w="earlier">🕘 Earlier</button></div>
+    <div id="bWhenBox" class="hidden"><label class="f">Time of the bottle</label><input type="datetime-local" id="bWhen"></div>
+    <div class="perr" id="bErr"></div>
     <button class="btn peach full" id="bSave">Save bottle</button>`}`,()=>{
     $$('.seg [data-t]').forEach(b=>b.onclick=()=>feedSheet(b.dataset.t));
     if(tab==='breast'){
@@ -845,14 +861,73 @@ function feedSheet(tab){
       $('#fSave').onclick=()=>{const ft=running('feed','breast');if(!ft){toast('Tap L or R to start');return}
         bank(ft);const d=ft.details;d.left=Math.max(Math.round(d.acc.L||0),d.acc.R?0:60);d.right=Math.round(d.acc.R||0);ft.end=Date.now();updEntry(ft);closeSheet();toast('Feed saved 🤱')};
       $('#fCancel').onclick=()=>{const ft=running('feed','breast');if(ft)delEntry(ft.id);closeSheet()};
+      if($('#fPast'))$('#fPast').onclick=()=>{clearInterval(sheetTick);pastFeedSheet('breast')};
       paint();clearInterval(sheetTick);sheetTick=setInterval(paint,1000);
     }else{
       const step=P.unit==='oz'?.5:10;
       $('#aMinus').onclick=()=>{amt=Math.max(0,Math.round((amt-step)*10)/10);$('#aVal').textContent=amt};
       $('#aPlus').onclick=()=>{amt=Math.round((amt+step)*10)/10;$('#aVal').textContent=amt};
       $$('[data-m]').forEach(b=>b.onclick=()=>{milk=b.dataset.m;$$('[data-m]').forEach(x=>x.classList.toggle('on',x===b))});
-      $('#bSave').onclick=()=>{P.lastAmount=amt;P.lastMilk=milk;savePrefs();const t=Date.now();addEntry({type:'feed',subtype:'bottle',start:t,end:t,amount:amt,unit:P.unit,details:{milk}});closeSheet();toast('Bottle saved 🍼')};
+      let earlier=false;
+      $$('[data-w]').forEach(b=>b.onclick=()=>{earlier=b.dataset.w==='earlier';$$('[data-w]').forEach(x=>x.classList.toggle('on',x===b));$('#bWhenBox').classList.toggle('hidden',!earlier);
+        if(earlier&&!$('#bWhen').value){$('#bWhen').value=toLocalInput(Date.now()-30*6e4)}$('#bWhen').max=toLocalInput(Date.now());$('#bErr').textContent=''});
+      $('#bSave').onclick=()=>{let t=Date.now();
+        if(earlier){t=new Date($('#bWhen').value).getTime();const er=pastErr(t,t);if(er){$('#bErr').textContent=er;return}}
+        P.lastAmount=amt;P.lastMilk=milk;savePrefs();addEntry({type:'feed',subtype:'bottle',start:t,end:t,amount:amt,unit:P.unit,details:{milk}});closeSheet();toast(earlier?'Bottle saved for '+fmtT(t)+' 🍼':'Bottle saved 🍼')};
     }
+  });
+}
+/* ---- log a PAST feed or sleep (for when nobody started the timer) ---- */
+const PAST_MAX_DAYS=31,BREAST_MAX_MIN=180,SLEEP_MAX_H=14;
+function pastErr(start,end){ // returns a gentle message, or '' when the times are fine
+  const now=Date.now();
+  if(isNaN(start)||isNaN(end))return 'Please pick a time';
+  if(start>now+6e4)return 'That time is in the future';
+  if(end>now+6e4)return 'That would end in the future. Please check the times';
+  if(end<start)return 'The end has to be after the start';
+  if(start<now-PAST_MAX_DAYS*864e5)return 'That is more than '+PAST_MAX_DAYS+' days ago';
+  return '';
+}
+function roundedPast(minsAgo){const t=Date.now()-minsAgo*6e4;return Math.floor(t/6e4)*6e4}
+function minsField(id,label,val){return `<div><label class="f">${label}</label><div class="mins"><button class="round" data-step="${id}:-1">−</button><input type="number" inputmode="numeric" min="0" max="${BREAST_MAX_MIN}" id="${id}" value="${val}"><button class="round" data-step="${id}:1">+</button></div></div>`}
+function pastFeedSheet(tab){
+  tab=tab||'breast';
+  if(tab==='bottle'){P.lastFeedTab='bottle';savePrefs();feedSheet('bottle');$$('[data-w]')[1]&&$$('[data-w]')[1].click();return}
+  openSheet(`<h2 style="text-align:center">🕘 Log a past feed</h2><div class="seg"><button data-pt="breast" class="on">🤱 Breast</button><button data-pt="bottle">🍼 Bottle</button></div>
+    <label class="f">Started at</label><input type="datetime-local" id="pStart" value="${toLocalInput(roundedPast(40))}" max="${toLocalInput(Date.now())}">
+    <div class="row">${minsField('pL','Left side (min)',10)}${minsField('pR','Right side (min)',10)}</div>
+    <div class="pastSum" id="pSum"></div><div class="perr" id="pErr"></div>
+    <button class="btn peach full" id="pSave">Save feed</button>
+    <button class="pastlink" id="pTimer">⏱ Use the live timer instead</button>`,()=>{
+    $$('[data-pt]').forEach(b=>b.onclick=()=>pastFeedSheet(b.dataset.pt));
+    const vals=()=>{const s=new Date($('#pStart').value).getTime(),L=Math.max(0,Math.round(+$('#pL').value||0)),R=Math.max(0,Math.round(+$('#pR').value||0));return {s,L,R,e:s+(L+R)*6e4}};
+    const check=()=>{const v=vals();let er=v.L+v.R<1?'Add the minutes for at least one side':v.L+v.R>BREAST_MAX_MIN?'That is over '+BREAST_MAX_MIN/60+' hours. Please check the minutes':pastErr(v.s,v.e);if(isNaN(v.s))er='Please pick a time';return {v,er}};
+    const paint=()=>{const {v,er}=check();$('#pSum').textContent=isNaN(v.s)?'':(v.L+v.R)+' min · '+fmtT(v.s)+' – '+fmtT(v.e);$('#pErr').textContent=er};
+    $$('[data-step]').forEach(b=>b.onclick=()=>{const [id,d]=b.dataset.step.split(':'),el=$('#'+id);el.value=Math.min(BREAST_MAX_MIN,Math.max(0,(Math.round(+el.value)||0)+(+d)));paint()});
+    ['#pStart','#pL','#pR'].forEach(q=>$(q).oninput=paint);
+    $('#pSave').onclick=()=>{const {v,er}=check();if(er){$('#pErr').textContent=er;return}
+      addEntry({type:'feed',subtype:'breast',start:v.s,end:v.e,details:{left:v.L*60,right:v.R*60,acc:{L:v.L*60,R:v.R*60},lastSide:v.R&&!v.L?'R':(v.L&&!v.R?'L':null),past:true}});
+      closeSheet();toast('Feed saved for '+fmtT(v.s)+' 🤱')};
+    $('#pTimer').onclick=()=>feedSheet('breast');
+    paint();
+  });
+}
+function pastSleepSheet(){
+  const sl=running('sleep');
+  openSheet(`<h2 style="text-align:center">🕘 Log a past sleep</h2><div class="muted" style="text-align:center">For a nap nobody timed</div>
+    <label class="f">Fell asleep</label><input type="datetime-local" id="sStart" value="${toLocalInput(roundedPast(90))}" max="${toLocalInput(Date.now())}">
+    <label class="f">Woke up</label><input type="datetime-local" id="sEnd" value="${toLocalInput(roundedPast(0))}" max="${toLocalInput(Date.now())}">
+    <div class="pastSum" id="sSum"></div><div class="perr" id="sErr"></div>
+    <button class="btn blue full" id="sSave">Save sleep</button>
+    ${sl?'':'<button class="pastlink" id="sTimer">⏱ Baby is asleep now? Start the timer</button>'}`,()=>{
+    const check=()=>{const s=new Date($('#sStart').value).getTime(),e=new Date($('#sEnd').value).getTime();let er=pastErr(s,e);
+      if(!er&&e-s<6e4)er='Woke up has to be after fell asleep';if(!er&&e-s>SLEEP_MAX_H*36e5)er='That is over '+SLEEP_MAX_H+' hours. Please check the times';return {s,e,er}};
+    const paint=()=>{const {s,e,er}=check();$('#sSum').textContent=!isNaN(s)&&!isNaN(e)&&e>s?'Slept '+dur(e-s):'';$('#sErr').textContent=er};
+    ['#sStart','#sEnd'].forEach(q=>$(q).oninput=paint);
+    $('#sSave').onclick=()=>{const {s,e,er}=check();if(er){$('#sErr').textContent=er;return}
+      addEntry({type:'sleep',start:s,end:e,details:{past:true}});closeSheet();toast('Sleep saved · '+dur(e-s)+' 🌙')};
+    if($('#sTimer'))$('#sTimer').onclick=()=>{closeSheet();toggleSleep()};
+    paint();
   });
 }
 function diaperSheet(){
@@ -868,7 +943,7 @@ function toggleSleep(){
 function editEntry(id){
   const e=D.entries.find(x=>x.id===id);if(!e)return;const x=describe(e),d=e.details||{};
   if(!e.end&&e.type==='feed')return feedSheet('breast');
-  let f=`<label class="f">Time</label><input type="datetime-local" id="eStart" value="${toLocalInput(e.start)}">`;
+  let f=`<label class="f">${e.type==='sleep'?'Fell asleep':e.type==='feed'&&e.subtype==='breast'?'Started at':'Time'}</label><input type="datetime-local" id="eStart" value="${toLocalInput(e.start)}">`;
   if(e.type==='sleep')f+=`<label class="f">Woke up</label><input type="datetime-local" id="eEnd" value="${e.end?toLocalInput(e.end):''}">`;
   if(e.type==='feed'&&e.subtype==='breast')f+=`<div class="row"><div><label class="f">Left (min)</label><input type="number" id="eL" value="${Math.round((d.left||0)/60)}"></div><div><label class="f">Right (min)</label><input type="number" id="eR" value="${Math.round((d.right||0)/60)}"></div></div>`;
   if(e.type==='feed'&&e.subtype==='bottle')f+=`<div class="row"><div><label class="f">Amount</label><input type="number" step="0.5" id="eAmt" value="${e.amount??''}"></div><div><label class="f">Unit</label><select id="eUnit"><option ${e.unit==='oz'?'selected':''}>oz</option><option ${e.unit==='ml'?'selected':''}>ml</option></select></div></div>`;
@@ -876,9 +951,13 @@ function editEntry(id){
   f+=MODE==='demo'?`<label class="f">Logged by</label><select id="eBy">${D.people.map(c=>`<option value="${c.id}" ${c.id===e.by?'selected':''}>${esc(c.name)}</option>`).join('')}</select>`:`<div class="muted" style="margin-top:10px">Logged by <b>${esc(person(e.by).name)}</b></div>`;
   openSheet(`<h2 style="text-align:center">${x.i} Edit ${x.t.toLowerCase()}</h2>${f}<div class="row" style="margin-top:16px"><button class="btn danger" id="eDel">Delete</button><button class="btn mint" id="eSave">Save</button></div>`,()=>{
     $('#eSave').onclick=()=>{
-      if($('#eStart').value!==toLocalInput(e.start)){const v=new Date($('#eStart').value).getTime();if(!isNaN(v)){if(e.end&&e.type!=='sleep')e.end=v;e.start=v}}
-      if($('#eEnd')&&$('#eEnd').value!==(e.end?toLocalInput(e.end):'')){const en=new Date($('#eEnd').value).getTime();if(!isNaN(en)&&en>e.start)e.end=en}
-      if($('#eL')){d.left=(+$('#eL').value||0)*60;d.right=(+$('#eR').value||0)*60;e.details=d}
+      const ns=$('#eStart').value!==toLocalInput(e.start)?new Date($('#eStart').value).getTime():e.start;
+      const ne=$('#eEnd')&&$('#eEnd').value!==(e.end?toLocalInput(e.end):'')?new Date($('#eEnd').value).getTime():null;
+      if(isNaN(ns)||ns>Date.now()+6e4){toast(isNaN(ns)?'Please pick a time':'That time is in the future');return}
+      if(ne!=null&&!isNaN(ne)){if(ne>Date.now()+6e4){toast('That time is in the future');return}if(ne<=ns){toast('Woke up has to be after fell asleep');return}}
+      if(ns!==e.start){if(e.end&&e.type!=='sleep')e.end=ns+(e.end-e.start);e.start=ns}
+      if(ne!=null&&!isNaN(ne))e.end=ne;
+      if($('#eL')){const L=Math.max(0,+$('#eL').value||0),R=Math.max(0,+$('#eR').value||0);if((L!==Math.round((d.left||0)/60)||R!==Math.round((d.right||0)/60))&&e.end)e.end=e.start+(L+R)*6e4;d.left=L*60;d.right=R*60;e.details=d}
       if($('#eAmt')){e.amount=+$('#eAmt').value||0;e.unit=$('#eUnit').value}
       if($('#eKind'))e.subtype=$('#eKind').value;
       if($('#eBy'))e.by=$('#eBy').value;
@@ -889,6 +968,7 @@ function editEntry(id){
 
 /* ======================= WIRING ======================= */
 $('#bFeed').onclick=()=>feedSheet();$('#bDiaper').onclick=diaperSheet;$('#bSleep').onclick=toggleSleep;
+$('#pastFeed').onclick=()=>pastFeedSheet('breast');$('#pastSleep').onclick=pastSleepSheet;
 $('#nightBtn').onclick=()=>{P.night=!P.night;savePrefs();render()};
 $('#prevDay').onclick=()=>{viewOffset++;renderToday()};
 $('#nextDay').onclick=()=>{if(viewOffset>0){viewOffset--;renderToday()}};
