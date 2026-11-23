@@ -232,6 +232,8 @@ body.night .gs .p{background:rgba(0,0,0,.2)}
 .doc .fine{font-size:11.5px;color:#7C778E;margin-top:14px;line-height:1.45}
 .doc .notesPrint{display:none;white-space:pre-wrap}
 .doc .saved{font-size:12px;color:#5FB394;font-weight:700;min-height:16px;margin-top:4px}
+.doc .credit{font-size:11px;color:#9B97A8;text-align:center;margin-top:22px;letter-spacing:.02em;font-weight:600}
+.doc .credit a{color:inherit;text-decoration:none}
 @media (max-width:560px){.doc{padding:18px 14px;margin:0 0 30px;border-radius:0;font-size:15px}.doc table{font-size:13.5px}.doc th,.doc td{padding:6px 4px}.doc th{font-size:12.5px}.doc .dh{flex-wrap:wrap}}
 @media print{
   @page{margin:12mm}
@@ -247,6 +249,7 @@ body.night .gs .p{background:rgba(0,0,0,.2)}
   .doc tr,.doc .keep{break-inside:avoid}
   .doc td br{display:none}.doc .dl{margin-left:6px}
   .doc .dh{flex-wrap:nowrap}
+  .doc .credit{margin-top:16px;font-size:10px;color:#8E8A9A}
 }
 </style>
 </head>
@@ -446,6 +449,7 @@ body.night .gs .p{background:rgba(0,0,0,.2)}
       <textarea id="docNotes" maxlength="4000" placeholder="Write questions as they come up, e.g. “Is 2 dirty diapers a day OK?”. Shared with your family."></textarea>
       <div class="notesPrint" id="docNotesPrint"></div><div class="saved" id="docSaved"></div></div>
     <div class="fine" id="docFine"></div>
+    <div class="credit">Made with Little Days · <a href="https://thelittledaysapp.com">thelittledaysapp.com</a></div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -1351,6 +1355,7 @@ function docText(){const {d24,d7,span,days}=docData(),b=D.baby,n=lifeDay(curWind
   const md=recentMeds();if(md.length){L.push('','MEDICINE (last 7 days)');md.forEach(e=>L.push(fmtD2(e.start)+' · '+[e.details.name,e.details.dose].filter(Boolean).join(', ')))}
   const rn=recentNotes();if(rn.length){L.push('','NOTES FROM THE LOG (last 7 days)');rn.forEach(e=>L.push(fmtD2(e.start)+' · '+noteType(e)+': '+e.details.note))}
   const nt=(b.doctor_notes||'').trim();if(nt)L.push('','QUESTIONS FOR THE DOCTOR',nt);
+  L.push('','Made with Little Days · thelittledaysapp.com');
   return L.join('\n')}
 function renderDoc(){
   const {d24,d7,span,days}=docData(),b=D.baby,n=lifeDay(curWindow()),k=span;
@@ -1400,12 +1405,12 @@ async function saveNotes(){const v=$('#docNotes').value.slice(0,4000);notesDirty
   notesDirty=false;$('#docSaved').textContent='Saved · shared with your family';const bb=myBabies.find(x=>x.id===D.baby.id);if(bb)bb.doctor_notes=v}
 function docImage(text){ // a calm, simple PNG of the summary text for the Share sheet
   const W=1080,P=64,c=document.createElement('canvas'),x=c.getContext('2d'),font=(w,s)=>`${w} ${s}px Nunito, "Segoe UI", system-ui, sans-serif`;
-  const lines=[];text.split('\n').forEach((ln,i)=>{const head=/^(LAST 24|LAST 7|BY DAY|GROWTH|QUESTIONS)/.test(ln);const f=i===0?font(800,40):i===1?font(800,34):head?font(800,26):font(500,27);
-    x.font=f;const words=ln.split(' ');let cur='';words.forEach(w=>{const t=cur?cur+' '+w:w;if(x.measureText(t).width>W-2*P&&cur){lines.push([cur,f,head,i]);cur=w}else cur=t});lines.push([cur,f,head,i])});
-  const lh=l=>l[3]===0?56:l[3]===1?48:l[0]===''?18:40;c.width=W;c.height=P*2+lines.reduce((a,l)=>a+lh(l),0)+30;
+  const lines=[];text.split('\n').forEach((ln,i)=>{const head=/^(LAST 24|LAST 7|BY DAY|GROWTH|QUESTIONS)/.test(ln),credit=/^Made with Little Days/.test(ln);const f=i===0?font(800,40):i===1?font(800,34):head?font(800,26):credit?font(600,22):font(500,27);
+    x.font=f;const words=ln.split(' ');let cur='';words.forEach(w=>{const t=cur?cur+' '+w:w;if(x.measureText(t).width>W-2*P&&cur){lines.push([cur,f,head,i,credit]);cur=w}else cur=t});lines.push([cur,f,head,i,credit])});
+  const lh=l=>l[3]===0?56:l[3]===1?48:l[0]===''?18:l[4]?32:40;c.width=W;c.height=P*2+lines.reduce((a,l)=>a+lh(l),0)+30;
   x.fillStyle='#FBF7F0';x.fillRect(0,0,W,c.height);x.fillStyle='#FFFFFF';x.beginPath();x.roundRect?x.roundRect(24,24,W-48,c.height-48,36):x.rect(24,24,W-48,c.height-48);x.fill();
   x.fillStyle='#FFD9C4';x.fillRect(24,24,W-48,10);let y=P+20;
-  lines.forEach(l=>{x.font=l[1];x.fillStyle=l[3]===0?'#9483CF':l[2]?'#7A6FB0':'#2E2B3A';y+=lh(l);x.fillText(l[0],P,y-12)});
+  lines.forEach(l=>{x.font=l[1];x.fillStyle=l[3]===0?'#9483CF':l[2]?'#7A6FB0':l[4]?'#9B97A8':'#2E2B3A';y+=lh(l);const tw=l[4]?x.measureText(l[0]).width:0;x.fillText(l[0],l[4]?(W-tw)/2:P,y-12)});
   return new Promise(res=>c.toBlob(res,'image/png'))}
 async function shareDoc(){if(notesDirty){clearTimeout(notesT);await saveNotes()}
   const text=docText(),title=D.baby.name+': summary for the pediatrician';

@@ -174,6 +174,7 @@
     const put = (t, size, bold, color, gap) => { doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(size); doc.setTextColor(...color);
       for (const ln of doc.splitTextToSize(t, W - 2 * M)) { if (y + size > Hh - M) { doc.addPage(); y = M; } doc.text(ln, M, y + size); y += size * 1.35; } y += gap || 0; };
     lines.forEach((l, i) => {
+      if (/^Made with Little Days/.test(l)) return;
       if (i === 0) return put(l, 18, true, [43, 39, 64], 4);
       if (i <= 2) return put(l, 11, false, [110, 105, 130], i === 2 ? 6 : 0);
       if (!l.trim()) { y += 8; return; }
@@ -181,7 +182,7 @@
       put(l, 11, false, [30, 30, 30]);
     });
     if (y + 40 > Hh - M) { doc.addPage(); y = M; }
-    y += 14; put('Made with Little Days. A log kept by parents, not a medical record.', 9, false, [140, 135, 155]);
+    y += 14; put('Made with Little Days · thelittledaysapp.com', 9, false, [140, 135, 155]);
     return doc.output('datauristring').split(',')[1];
   }
   async function shareDoc(text, title) {
