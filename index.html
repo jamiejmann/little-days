@@ -166,6 +166,13 @@ body.night .due.over{background:#7a4a35;color:#FFE3D3}
 .again{display:flex;align-items:center;gap:10px;width:100%;border:none;border-radius:999px;padding:9px 10px 9px 16px;margin:0 0 16px;background:var(--card);box-shadow:var(--shadow);font:inherit;font-weight:700;font-size:14px;color:var(--ink);cursor:pointer}
 .again b{margin-left:auto;background:var(--peach);border-radius:999px;padding:5px 12px;font-weight:800;white-space:nowrap}
 .again:active{transform:scale(.98)}
+.pchips{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin:2px 0 6px}
+.pchips .chip{padding:7px 13px;font-size:14px;display:inline-flex;align-items:center;gap:6px}
+.pchips .sw{width:14px;height:14px;border-radius:50%;display:inline-block;border:1.5px solid rgba(74,69,96,.18)}
+.plabel{text-align:center;font-size:12px;font-weight:800;color:var(--soft);margin:12px 0 4px;letter-spacing:.3px}
+.pnote{text-align:center;font-size:13px;font-weight:700;color:var(--ink);background:var(--yellow);border-radius:14px;padding:8px 12px;margin:8px 0 2px}
+.pdet{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px;margin-top:6px}
+.pdet b{color:var(--soft);font-size:12px;font-weight:800;align-self:center}
 .pastRow{display:flex;align-items:center;gap:8px;margin:-6px 0 14px;font-size:13px;font-weight:700;color:var(--soft)}
 .pastRow span{flex:1;padding-left:6px}
 .pastRow button{border:none;border-radius:999px;padding:8px 13px;font:inherit;font-size:13px;font-weight:800;color:var(--ink);background:var(--card);box-shadow:var(--shadow);cursor:pointer;white-space:nowrap}
@@ -328,6 +335,7 @@ body.night .gs .p{background:rgba(0,0,0,.2)}
     <h2 id="chartsTitle">Last 7 days</h2>
     <div class="card"><h3>🍼 Feeds per day</h3><div id="chFeeds"></div><div class="legend"><span><i style="background:var(--peach-d)"></i>Breast</span><span><i style="background:#F3B795"></i>Bottle</span></div></div>
     <div class="card"><h3>🧷 Diapers per day</h3><div id="chDiapers"></div><div class="legend"><span><i style="background:#F2D27A"></i>Pee</span><span><i style="background:#C9A27E"></i>Poop</span><span><i style="background:var(--mint-d)"></i>Both</span></div></div>
+    <div class="card" id="poopCard"><h3>💩 Poop details · last 7 days</h3><div id="poopDet"></div></div>
     <div class="card"><h3>🌙 Sleep hours per day</h3><div id="chSleep"></div></div>
     <h2>📏 Growth</h2>
     <div class="card" id="growthCard">
@@ -486,7 +494,8 @@ function sampleEntries(people){
       if(r()<.55){const L=Math.round(6+r()*10),R=Math.round(5+r()*9);
         out.push({id:uuid(),type:'feed',subtype:'breast',start:t,end:t+(L+R)*6e4,details:{left:L*60,right:R*60},by:who,sample:true});}
       else out.push({id:uuid(),type:'feed',subtype:'bottle',start:t,end:t,amount:Math.round((2.5+r()*2)*2)/2,unit:'oz',details:{milk:r()<.5?'Formula':'Breast milk'},by:who,sample:true});
-      const dt=t+25*6e4; if(dt<now){const x=r();out.push({id:uuid(),type:'diaper',subtype:x<.5?'pee':x<.78?'poop':'both',start:dt,end:dt,details:{},by:who,sample:true});}
+      const dt=t+25*6e4; if(dt<now){const x=r(),sub=x<.5?'pee':x<.78?'poop':'both',pd={};if(sub!=='pee'&&r()<.7){pd.color=r()<.75?'yellow':r()<.6?'green':'brown';pd.texture=r()<.7?'soft':'runny';pd.amount=['little','medium','big'][Math.floor(r()*3)]}
+        out.push({id:uuid(),type:'diaper',subtype:sub,start:dt,end:dt,details:pd,by:who,sample:true});}
       if(h>8&&h<19&&r()<.6){const ss=t+50*6e4,se=ss+(35+r()*70)*6e4; if(se<now) out.push({id:uuid(),type:'sleep',start:ss,end:se,details:{},by:who,sample:true});}
     }
   }
@@ -652,7 +661,7 @@ function describe(e){
     if(e.subtype==='breast'){if(!e.end)return {i:'🤱',bg:'var(--peach)',t:'Nursing now',d:'timer running · '+(d.side?'on '+d.side:'paused')};
       return {i:'🤱',bg:'var(--peach)',t:'Breastfeed',d:'L '+Math.round((d.left||0)/60)+'m · R '+Math.round((d.right||0)/60)+'m'}}
     return {i:'🍼',bg:'var(--peach)',t:'Bottle',d:(e.amount??'?')+' '+(e.unit||'')+(d.milk?' · '+d.milk:'')}}
-  if(e.type==='diaper'){const m={pee:['💧','Wet diaper'],poop:['💩','Dirty diaper'],both:['<span style="font-size:14px">💧💩</span>','Wet + dirty']}[e.subtype]||['🧷','Diaper'];return {i:m[0],bg:'var(--mint)',t:m[1],d:''}}
+  if(e.type==='diaper'){const m={pee:['💧','Wet diaper'],poop:['💩','Dirty diaper'],both:['<span style="font-size:14px">💧💩</span>','Wet + dirty']}[e.subtype]||['🧷','Diaper'];return {i:m[0],bg:'var(--mint)',t:m[1],d:poopy(e)?poopText(d):''}}
   return {i:'🌙',bg:'var(--blue)',t:e.end?'Sleep':'Sleeping now',d:e.end?dur(e.end-e.start)+' · until '+fmtT(e.end):'since '+fmtT(e.start)+' · '+dur(Date.now()-e.start)}
 }
 function render(){
@@ -742,9 +751,15 @@ function renderReports(){
   $('#chDiapers').innerHTML=bars(lbl,days.map(x=>[[x.s.pee,'#F2D27A'],[x.s.poop,'#C9A27E'],[x.s.both,'var(--mint-d)']]));
   $('#chSleep').innerHTML=bars(lbl,days.map(x=>[[Math.round(x.s.sleepMs/36e5*10)/10,'var(--blue-d)']]),'h');
   const n=days.length,avg=k=>days.reduce((a,x)=>a+k(x.s),0)/n;
-  renderGrowth();if($('#docView').classList.contains('on'))renderDoc();
+  renderPoop();renderGrowth();if($('#docView').classList.contains('on'))renderDoc();
   $('#avgText').innerHTML=`7-day averages: <b>${avg(s=>s.feeds).toFixed(1)}</b> feeds, <b>${avg(s=>s.pee+s.both).toFixed(1)}</b> wet &amp; <b>${avg(s=>s.poop+s.both).toFixed(1)}</b> dirty diapers, <b>${(avg(s=>s.sleepMs)/36e5).toFixed(1)}h</b> sleep per day.`;
 }
+function renderPoop(){const now=Date.now(),r=poopStats(now-7*864e5,now),el=$('#poopDet');if(!el)return;
+  if(!r.detailed){el.innerHTML=`<div class="muted">${r.dirty?'No details yet. ':''}When you log a poop, you can add its color, texture and amount. The counts show up here and in the pediatrician summary.</div>`;return}
+  el.innerHTML=`<div class="pdet">${['color','texture','amount'].map(k=>`<b>${POOP_NAME[k]}</b><span>${esc(poopCounts(r,k)||'—')}</span>`).join('')}</div>
+    <div class="muted" style="margin-top:8px">Details on ${r.detailed} of ${r.dirty} dirty diaper${r.dirty===1?'':'s'}.</div>
+    ${r.flagged.length?`<div class="pnote" style="margin-top:10px">${r.flagged.length} ${r.flagged.length===1?'was':'were'} red or pale (last ${fmtD2(r.flagged[0].start)}). ${POOP_NOTE}</div>`:''}`}
+const fmtD2=t=>new Date(t).toLocaleDateString([], {month:'short',day:'numeric'})+' '+fmtT(t);
 function bars(labels,data,suffix=''){
   const W=320,H=150,pb=22,pt=16,bw=26,gap=(W-bw*7)/7;
   const max=Math.max(1,...data.map(d=>d.reduce((a,x)=>a+x[0],0)));
@@ -829,7 +844,7 @@ function leaveDemo(){teardown();MODE=null;localStorage.removeItem(MODE_KEY);boot
 
 /* ======================= SHEETS ======================= */
 let sheetTick;
-function openSheet(html,bind){$('#sheet').innerHTML='<div class="grab"></div>'+html;$('#scrim').classList.add('on');bind&&bind()}
+function openSheet(html,bind){$('#sheet').innerHTML='<div class="grab"></div>'+html;$('#scrim').onclick=e=>{if(e.target.id==='scrim')closeSheet()};$('#scrim').classList.add('on');bind&&bind()}
 function closeSheet(){$('#scrim').classList.remove('on');clearInterval(sheetTick)}
 $('#scrim').onclick=e=>{if(e.target.id==='scrim')closeSheet()};
 function feedSide(e,s){const d=e.details;return (d.acc?.[s]||0)+(d.side===s?(Date.now()-d.since)/1000:0)}
@@ -930,10 +945,44 @@ function pastSleepSheet(){
     paint();
   });
 }
+/* ---- optional poop details: what the pediatrician usually asks about ---- */
+const POOP={
+  color:[['yellow','Yellow','#F2C94C'],['green','Green','#8DB36A'],['brown','Brown','#9A6B4B'],['black','Black','#3A3236'],['red','Red','#D9645F'],['pale','Pale (white/gray)','#E9E6E1']],
+  texture:[['runny','Runny'],['soft','Soft'],['firm','Firm']],
+  amount:[['little','A little'],['medium','Medium'],['big','Big']]};
+const POOP_FLAG=['red','pale'],POOP_NAME={color:'Color',texture:'Texture',amount:'Amount'};
+const poopy=e=>e&&e.type==='diaper'&&(e.subtype==='poop'||e.subtype==='both');
+const poopLbl=(k,v)=>{const o=(POOP[k]||[]).find(x=>x[0]===v);return o?o[1]:''};
+function poopText(d){d=d||{};return ['color','texture','amount'].map(k=>d[k]?(k==='amount'?poopLbl(k,d[k]).toLowerCase()+' amount':poopLbl(k,d[k])):'').filter(Boolean).join(' · ').replace(/^./,c=>c.toUpperCase())}
+const POOP_NOTE='Worth mentioning to your pediatrician 💛';
+function poopChips(d){return ['color','texture','amount'].map(k=>`<div class="plabel">${POOP_NAME[k].toUpperCase()}</div><div class="pchips">${POOP[k].map(o=>`<button class="chip ${d[k]===o[0]?'on':''}" data-pk="${k}" data-pv="${o[0]}">${o[2]?`<i class="sw" style="background:${o[2]}"></i>`:''}${o[1]}</button>`).join('')}</div>`).join('')+
+  `<div class="pnote ${POOP_FLAG.includes(d.color)?'':'hidden'}" id="pNote">${POOP_NOTE}</div>`}
+function bindPoopChips(d,onChange){$$('[data-pk]').forEach(b=>b.onclick=()=>{const k=b.dataset.pk,v=b.dataset.pv;
+  if(d[k]===v)delete d[k];else d[k]=v;
+  $$(`[data-pk="${k}"]`).forEach(x=>x.classList.toggle('on',d[k]===x.dataset.pv));
+  if($('#pNote'))$('#pNote').classList.toggle('hidden',!POOP_FLAG.includes(d.color));onChange&&onChange()})}
+function poopStats(from,to){const r={dirty:0,detailed:0,color:{},texture:{},amount:{},flagged:[]};
+  D.entries.forEach(e=>{if(!poopy(e)||e.start<from||e.start>=to)return;r.dirty++;const d=e.details||{};let any=false;
+    ['color','texture','amount'].forEach(k=>{if(d[k]&&poopLbl(k,d[k])){r[k][d[k]]=(r[k][d[k]]||0)+1;any=true}});if(any)r.detailed++;
+    if(POOP_FLAG.includes(d.color))r.flagged.push(e)});
+  r.flagged.sort((a,b)=>b.start-a.start);return r}
+const poopCounts=(r,k)=>POOP[k].filter(o=>r[k][o[0]]).map(o=>o[1]+' '+r[k][o[0]]).join(', ');
 function diaperSheet(){
   openSheet(`<h2 style="text-align:center">Diaper</h2><div class="muted" style="text-align:center">One tap saves it</div>
     <div class="dgrid"><button class="dbtn" data-k="pee"><b>💧</b>Pee</button><button class="dbtn" data-k="poop"><b>💩</b>Poop</button><button class="dbtn" data-k="both"><b>💧💩</b>Both</button></div>`,
-  ()=>$$('.dbtn').forEach(b=>b.onclick=()=>{const t=Date.now();addEntry({type:'diaper',subtype:b.dataset.k,start:t,end:t});closeSheet();toast('Diaper saved 🧷')}));
+  ()=>$$('.dbtn').forEach(b=>b.onclick=()=>{const t=Date.now(),e={type:'diaper',subtype:b.dataset.k,start:t,end:t};addEntry(e);
+    if(!poopy(e)){closeSheet();toast('Diaper saved 🧷');return}
+    poopDetailsSheet(e)}));
+}
+function poopDetailsSheet(e){ // shown right after a poop is saved; every detail is optional
+  const d=e.details=e.details||{};let dirty=false;
+  const save=()=>{if(dirty){dirty=false;updEntry(e)}};
+  openSheet(`<h2 style="text-align:center">💩 Saved</h2><div class="muted" style="text-align:center">Add details if you like. All optional</div>
+    ${poopChips(d)}<button class="btn mint full" id="pDone" style="margin-top:14px">Done</button>`,()=>{
+    bindPoopChips(d,()=>{dirty=true});
+    $('#pDone').onclick=()=>{save();closeSheet();toast(poopText(d)?'Saved · '+poopText(d):'Diaper saved 🧷')};
+    $('#scrim').onclick=ev=>{if(ev.target.id==='scrim'){save();closeSheet()}};
+  });
 }
 function toggleSleep(){
   const s=running('sleep');
@@ -947,7 +996,9 @@ function editEntry(id){
   if(e.type==='sleep')f+=`<label class="f">Woke up</label><input type="datetime-local" id="eEnd" value="${e.end?toLocalInput(e.end):''}">`;
   if(e.type==='feed'&&e.subtype==='breast')f+=`<div class="row"><div><label class="f">Left (min)</label><input type="number" id="eL" value="${Math.round((d.left||0)/60)}"></div><div><label class="f">Right (min)</label><input type="number" id="eR" value="${Math.round((d.right||0)/60)}"></div></div>`;
   if(e.type==='feed'&&e.subtype==='bottle')f+=`<div class="row"><div><label class="f">Amount</label><input type="number" step="0.5" id="eAmt" value="${e.amount??''}"></div><div><label class="f">Unit</label><select id="eUnit"><option ${e.unit==='oz'?'selected':''}>oz</option><option ${e.unit==='ml'?'selected':''}>ml</option></select></div></div>`;
-  if(e.type==='diaper')f+=`<label class="f">Type</label><select id="eKind">${['pee','poop','both'].map(k=>`<option ${k===e.subtype?'selected':''}>${k}</option>`).join('')}</select>`;
+  const pd={color:d.color,texture:d.texture,amount:d.amount};Object.keys(pd).forEach(k=>{if(!pd[k])delete pd[k]});
+  if(e.type==='diaper')f+=`<label class="f">Type</label><select id="eKind">${['pee','poop','both'].map(k=>`<option ${k===e.subtype?'selected':''}>${k}</option>`).join('')}</select>
+    <div id="ePoop" class="${poopy(e)?'':'hidden'}"><div class="muted" style="text-align:center;margin-top:10px">Poop details (optional)</div>${poopChips(pd)}</div>`;
   f+=MODE==='demo'?`<label class="f">Logged by</label><select id="eBy">${D.people.map(c=>`<option value="${c.id}" ${c.id===e.by?'selected':''}>${esc(c.name)}</option>`).join('')}</select>`:`<div class="muted" style="margin-top:10px">Logged by <b>${esc(person(e.by).name)}</b></div>`;
   openSheet(`<h2 style="text-align:center">${x.i} Edit ${x.t.toLowerCase()}</h2>${f}<div class="row" style="margin-top:16px"><button class="btn danger" id="eDel">Delete</button><button class="btn mint" id="eSave">Save</button></div>`,()=>{
     $('#eSave').onclick=()=>{
@@ -959,10 +1010,11 @@ function editEntry(id){
       if(ne!=null&&!isNaN(ne))e.end=ne;
       if($('#eL')){const L=Math.max(0,+$('#eL').value||0),R=Math.max(0,+$('#eR').value||0);if((L!==Math.round((d.left||0)/60)||R!==Math.round((d.right||0)/60))&&e.end)e.end=e.start+(L+R)*6e4;d.left=L*60;d.right=R*60;e.details=d}
       if($('#eAmt')){e.amount=+$('#eAmt').value||0;e.unit=$('#eUnit').value}
-      if($('#eKind'))e.subtype=$('#eKind').value;
+      if($('#eKind')){e.subtype=$('#eKind').value;const nd=Object.assign({},e.details||{});['color','texture','amount'].forEach(k=>{delete nd[k];if(poopy(e)&&pd[k])nd[k]=pd[k]});e.details=nd}
       if($('#eBy'))e.by=$('#eBy').value;
       updEntry(e);closeSheet();toast('Updated ✓')};
     $('#eDel').onclick=()=>{if(confirm('Delete this entry?')){delEntry(id);closeSheet();toast('Deleted')}};
+    if($('#eKind')){bindPoopChips(pd);$('#eKind').onchange=()=>$('#ePoop').classList.toggle('hidden',$('#eKind').value==='pee')}
   });
 }
 
@@ -1146,6 +1198,9 @@ function docText(){const {d24,d7,span,days}=docData(),b=D.baby,n=lifeDay(curWind
   L.push('','BY DAY');days.forEach(x=>{const s=x.s;L.push(`${dayLabel(x.ws,x.cur)}: ${s.feeds} feeds, bottle ${bt(s)}, nursing ${mins(s.breastMin)}, ${s.pee+s.both} wet, ${s.poop+s.both} dirty, sleep ${dur(s.sleepMs)}`)});
   const gl=['w','l','h'].map(m=>{const c=gChange(m);if(!c)return null;const p=whoPct(m,c.cur);return `${GNAME[m]}${m==='h'?' circumference':''}: ${fmtGV(m,c.cur[m])} (${fmtD(c.cur.date)}) · ${changeText(m,c)}${p!=null?' · WHO '+pctText(p)+' percentile':''}`}).filter(Boolean);
   if(gl.length){L.push('','GROWTH (latest)',...gl);if(gl.some(x=>x.includes('WHO')))L.push('Percentiles: WHO Child Growth Standards, for information only, not medical advice.')}
+  const pr=poopStats(Date.now()-7*864e5,Date.now());
+  if(pr.detailed){L.push('','POOP DETAILS (last 7 days, '+pr.detailed+' of '+pr.dirty+' dirty diapers described)');['color','texture','amount'].forEach(k=>{const c=poopCounts(pr,k);if(c)L.push(POOP_NAME[k]+': '+c)});
+    if(pr.flagged.length)L.push('Noted: '+pr.flagged.map(e=>poopLbl('color',e.details.color).toLowerCase()+' poop on '+fmtD2(e.start)).join('; '))}
   const nt=(b.doctor_notes||'').trim();if(nt)L.push('','QUESTIONS FOR THE DOCTOR',nt);
   return L.join('\n')}
 function renderDoc(){
@@ -1173,6 +1228,10 @@ function renderDoc(){
     <table><thead><tr><th>Day</th><th class="n">Feeds</th><th class="n">Bottle</th><th class="n">Nursing</th><th class="n">Wet</th><th class="n">Dirty</th><th class="n">Sleep</th></tr></thead><tbody>
       ${days.slice().reverse().map(x=>{const s=x.s;return `<tr class="${x.cur?'cur':''}"><td>${dayCell(x.ws,x.cur)}</td><td class="n">${s.feeds}</td><td class="n">${bt(s)}</td><td class="n">${mins(s.breastMin)}</td><td class="n">${s.pee+s.both}</td><td class="n">${s.poop+s.both}</td><td class="n">${dur(s.sleepMs)}</td></tr>`}).join('')}
     </tbody></table></div>
+    ${(()=>{const pr=poopStats(Date.now()-7*864e5,Date.now());if(!pr.detailed)return'';
+      return `<div class="keep"><h2>Poop details · last 7 days</h2><table><tbody>${['color','texture','amount'].map(k=>`<tr><td>${POOP_NAME[k]}</td><td>${esc(poopCounts(pr,k)||'—')}</td></tr>`).join('')}</tbody></table>
+      <div class="fine" style="margin-top:4px">Described on ${pr.detailed} of ${pr.dirty} dirty diapers.</div>
+      ${pr.flagged.length?`<div class="flag" style="margin-top:8px;padding:8px 10px;border-radius:10px;background:#FFF4D6;border:1px solid #EBD9A6;font-size:13px"><b>Noted for the doctor:</b> ${pr.flagged.map(e=>esc(poopLbl('color',e.details.color).toLowerCase()+' poop, '+fmtD2(e.start))).join('; ')}</div>`:''}</div>`})()}
     <div class="keep"><h2>Growth</h2>${gRows?`<table><thead><tr><th></th><th class="n">Latest</th><th>Change since last measurement</th><th class="n">WHO percentile</th></tr></thead><tbody>${gRows}</tbody></table>`:'<div class="meta">No measurements logged yet.</div>'}</div>`;
   $('#docFine').innerHTML=`Logged at home by ${esc(who||'family')} with Little Days. A “wet” or “dirty” count includes diapers that were both.${gRows?' Percentiles compare with the WHO Child Growth Standards (birth to 2 years)'+(b.sex?'':' and need the baby’s sex to be set')+'. They are for information only and are not medical advice.':''}`;
   if(document.activeElement!==$('#docNotes')&&!notesDirty){$('#docNotes').value=b.doctor_notes||'';$('#docNotesPrint').textContent=b.doctor_notes||''}
