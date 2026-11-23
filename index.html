@@ -177,7 +177,15 @@ textarea.note{margin-top:10px;min-height:0;resize:none;font-size:15px}
 .pdet{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px;margin-top:6px}
 .pdet b{color:var(--soft);font-size:12px;font-weight:800;align-self:center}
 .pastRow{display:flex;align-items:center;gap:8px;margin:-6px 0 14px;font-size:13px;font-weight:700;color:var(--soft)}
-.pastRow span{flex:1;padding-left:6px}
+.pastRow span{padding-left:4px}
+.pastRow button{flex:1}
+.lastMed{display:block;width:100%;border:none;background:none;font:inherit;text-align:left;font-size:13px;font-weight:700;color:var(--soft);margin:-8px 0 14px;padding:2px 8px;cursor:pointer}
+.lastMed b{color:var(--ink)}
+.side.hint{box-shadow:0 0 0 5px var(--lav),var(--shadow)}
+.hintTxt{text-align:center;font-size:13px;font-weight:800;color:var(--lav-d);margin:-4px 0 6px}
+.when.ago .chip{font-size:13px;padding:6px 12px}
+.pumpbtn{width:150px;margin:0 auto;background:var(--lav)}
+.pumpbtn.on{background:var(--lav-d)}
 .pastRow button{border:none;border-radius:999px;padding:8px 13px;font:inherit;font-size:13px;font-weight:800;color:var(--ink);background:var(--card);box-shadow:var(--shadow);cursor:pointer;white-space:nowrap}
 .pastRow button:active{transform:scale(.97)}
 .pastlink{display:block;width:100%;margin-top:12px;border:none;background:none;font:inherit;font-size:14px;font-weight:800;color:var(--lav-d);cursor:pointer;padding:8px}
@@ -251,7 +259,7 @@ body.night .gs .p{background:rgba(0,0,0,.2)}
   <div class="auth">
     <div class="logo">🐣</div>
     <h1>Little Days</h1>
-    <div class="muted" style="margin-bottom:16px">Feeds, diapers &amp; sleep, shared by everyone who loves your baby</div>
+    <div class="muted" style="margin-bottom:16px">Feeds, diapers, sleep, pumping &amp; medicine, shared by everyone who loves your baby</div>
     <div class="msg ok hidden" id="inviteNote">💌 You've been invited to join a baby! Sign in or create an account and you'll be added automatically.</div>
     <div class="card" style="margin-top:14px">
       <div class="seg" id="authSeg"><button data-a="in" class="on">Sign in</button><button data-a="up">Create account</button></div>
@@ -316,7 +324,8 @@ body.night .gs .p{background:rgba(0,0,0,.2)}
       <button class="bigbtn diaper" id="bDiaper"><div class="em">🧷</div>Diaper<small>pee · poop</small></button>
       <button class="bigbtn sleep" id="bSleep"><div class="em">🌙</div><span id="sleepLbl">Sleep</span><small id="sSleep">start timer</small></button>
     </div>
-    <div class="pastRow"><span>🕘 Forgot the timer?</span><button id="pastFeed">+ Past feed</button><button id="pastSleep">+ Past sleep</button></div>
+    <div class="pastRow"><span>🕘</span><button id="pastFeed">+ Past feed</button><button id="pastSleep">+ Past sleep</button><button id="addMed">+ Medicine</button></div>
+    <button class="lastMed hidden" id="lastMed"></button>
     <button class="again hidden" id="bAgain" aria-label="Log the same bottle again"></button>
     <div class="card" id="l24card">
       <div class="l24head"><h3>🕐 Last 24 hours</h3><span class="muted" id="l24when"></span></div>
@@ -338,6 +347,7 @@ body.night .gs .p{background:rgba(0,0,0,.2)}
     <h2 id="chartsTitle">Last 7 days</h2>
     <div class="card"><h3>🍼 Feeds per day</h3><div id="chFeeds"></div><div class="legend"><span><i style="background:var(--peach-d)"></i>Breast</span><span><i style="background:#F3B795"></i>Bottle</span></div></div>
     <div class="card"><h3>🧷 Diapers per day</h3><div id="chDiapers"></div><div class="legend"><span><i style="background:#F2D27A"></i>Pee</span><span><i style="background:#C9A27E"></i>Poop</span><span><i style="background:var(--mint-d)"></i>Both</span></div></div>
+    <div class="card hidden" id="pumpCard"><h3>🧴 Pumped per day</h3><div id="chPump"></div></div>
     <div class="card" id="poopCard"><h3>💩 Poop details · last 7 days</h3><div id="poopDet"></div></div>
     <div class="card"><h3>🌙 Sleep hours per day</h3><div id="chSleep"></div></div>
     <h2>📏 Growth</h2>
@@ -495,10 +505,12 @@ function sampleEntries(people){
     for(let h=7;h<23;h+=2.5+r()){
       const t=day+h*36e5; if(t>now) break; const who=pick();
       if(r()<.55){const L=Math.round(6+r()*10),R=Math.round(5+r()*9);
-        out.push({id:uuid(),type:'feed',subtype:'breast',start:t,end:t+(L+R)*6e4,details:{left:L*60,right:R*60},by:who,sample:true});}
+        out.push({id:uuid(),type:'feed',subtype:'breast',start:t,end:t+(L+R)*6e4,details:{left:L*60,right:R*60,lastSide:r()<.5?'L':'R'},by:who,sample:true});}
       else out.push({id:uuid(),type:'feed',subtype:'bottle',start:t,end:t,amount:Math.round((2.5+r()*2)*2)/2,unit:'oz',details:{milk:r()<.5?'Formula':'Breast milk'},by:who,sample:true});
       const dt=t+25*6e4; if(dt<now){const x=r(),sub=x<.5?'pee':x<.78?'poop':'both',pd={};if(sub!=='pee'&&r()<.7){pd.color=r()<.75?'yellow':r()<.6?'green':'brown';pd.texture=r()<.7?'soft':'runny';pd.amount=['little','medium','big'][Math.floor(r()*3)]}
         out.push({id:uuid(),type:'diaper',subtype:sub,start:dt,end:dt,details:pd,by:who,sample:true});}
+      if(h>=7&&h<9.6){const vt=day+9*36e5+Math.round(r()*20)*6e4;if(vt<now)out.push({id:uuid(),type:'medicine',start:vt,end:vt,details:{name:'Vitamin D',dose:'1 drop'},by:people[0].id,sample:true});
+        const ps=day+(10+r())*36e5,pm=Math.round(12+r()*8);if(ps+pm*6e4<now)out.push({id:uuid(),type:'pump',start:ps,end:ps+pm*6e4,amount:Math.round((2.5+r()*2)*2)/2,unit:'oz',details:{pside:'both'},by:people[0].id,sample:true})}
       if(h>8&&h<19&&r()<.6){const ss=t+50*6e4,se=ss+(35+r()*70)*6e4; if(se<now) out.push({id:uuid(),type:'sleep',start:ss,end:se,details:{},by:who,sample:true});}
     }
   }
@@ -665,6 +677,9 @@ function describe(e){
       return {i:'🤱',bg:'var(--peach)',t:'Breastfeed',d:'L '+Math.round((d.left||0)/60)+'m · R '+Math.round((d.right||0)/60)+'m'}}
     return {i:'🍼',bg:'var(--peach)',t:'Bottle',d:(e.amount??'?')+' '+(e.unit||'')+(d.milk?' · '+d.milk:'')}}
   if(e.type==='diaper'){const m={pee:['💧','Wet diaper'],poop:['💩','Dirty diaper'],both:['<span style="font-size:14px">💧💩</span>','Wet + dirty']}[e.subtype]||['🧷','Diaper'];return {i:m[0],bg:'var(--mint)',t:m[1],d:poopy(e)?poopText(d):''}}
+  if(e.type==='pump'){const mn=e.end?Math.round((e.end-e.start)/6e4):0;
+    return {i:'🧴',bg:'var(--lav)',t:e.end?'Pumping':'Pumping now',d:e.end?[e.amount?e.amount+' '+(e.unit||''):'',mn?mn+' min':'',d.pside?({L:'left',R:'right',both:'both sides'}[d.pside]):''].filter(Boolean).join(' · '):'timer running · since '+fmtT(e.start)}}
+  if(e.type==='medicine')return {i:'💊',bg:'var(--yellow)',t:'Medicine',d:[d.name,d.dose].filter(Boolean).join(' · ')};
   return {i:'🌙',bg:'var(--blue)',t:e.end?'Sleep':'Sleeping now',d:e.end?dur(e.end-e.start)+' · until '+fmtT(e.end):'since '+fmtT(e.start)+' · '+dur(Date.now()-e.start)}
 }
 function render(){
@@ -717,7 +732,9 @@ function renderToday(){
   $('#gSleep').textContent=sl?'asleep '+dur(Date.now()-sl.start):(ls?'awake '+dur(Date.now()-ls.end):'—');
   $('#bSleep').classList.toggle('running',!!sl);$('#sleepLbl').textContent=sl?'Wake up':'Sleep';
   $('#sSleep').textContent=sl?clock(Date.now()-sl.start)+' · '+person(sl.by).name:'start timer';
-  const ft=running('feed','breast');$('#bFeed').classList.toggle('running',!!ft);$('#sFeed').textContent=ft?'nursing '+clock(feedTotal(ft)*1000):'tap to log';
+  const ft=running('feed','breast'),pt=running('pump');$('#bFeed').classList.toggle('running',!!(ft||pt));$('#sFeed').textContent=ft?'nursing '+clock(feedTotal(ft)*1000):pt?'pumping '+clock(Date.now()-pt.start):'tap to log';
+  const lm=E.find(e=>e.type==='medicine'&&e.start<=Date.now()+6e4&&e.start>Date.now()-7*864e5);$('#lastMed').classList.toggle('hidden',!lm);
+  if(lm)$('#lastMed').innerHTML=`💊 Last medicine: <b>${esc((lm.details&&lm.details.name)||'Medicine')}</b> · ${esc(ago(lm.start))}`;
   renderL24();renderDue();renderAgain();
   const ws=shiftWindow(curWindow(),-viewOffset),d0=ws.getTime(),d1=shiftWindow(ws,1).getTime(),isToday=viewOffset===0;
   $('#dayTitle').textContent=windowTitle(ws);$('#daySub').textContent=windowSub(ws);
@@ -729,20 +746,24 @@ function renderToday(){
   $$('#timeline li').forEach(li=>li.onclick=()=>editEntry(li.dataset.id));
 }
 function dayStats(d0,d1){
-  if(d1==null)d1=shiftWindow(new Date(d0),1).getTime();const r={feeds:0,breast:0,bottle:0,oz:0,ml:0,breastMin:0,pee:0,poop:0,both:0,sleepMs:0};
+  if(d1==null)d1=shiftWindow(new Date(d0),1).getTime();const r={feeds:0,breast:0,bottle:0,oz:0,ml:0,breastMin:0,pee:0,poop:0,both:0,sleepMs:0,pumps:0,pumpOz:0,pumpMl:0,pumpMin:0};
   D.entries.forEach(e=>{
     const d=e.details||{};
     if(e.type==='feed'&&e.start>=d0&&e.start<d1){r.feeds++;if(e.subtype==='breast'){r.breast++;r.breastMin+=((d.left||0)+(d.right||0))/60}else{r.bottle++;if(e.unit==='ml'||e.unit==='oz')r[e.unit]+=+e.amount||0}}
     if(e.type==='diaper'&&e.start>=d0&&e.start<d1&&r[e.subtype]!=null)r[e.subtype]++;
+    if(e.type==='pump'&&e.end&&e.start>=d0&&e.start<d1){r.pumps++;r.pumpMin+=(e.end-e.start)/6e4;if(e.unit==='oz')r.pumpOz+=+e.amount||0;else if(e.unit==='ml')r.pumpMl+=+e.amount||0}
     if(e.type==='sleep'){const end=e.end||Date.now(),o=Math.min(end,d1)-Math.max(e.start,d0);if(o>0)r.sleepMs+=o}
   });return r}
+const hasPump=()=>D.entries.some(e=>e.type==='pump');
+function pumpTotal(r,k=1){return bottleTotal({oz:r.pumpOz/k,ml:r.pumpMl/k})}
 function bottleTotal(r){return P.unit==='oz'?Math.round((r.oz+r.ml/29.57)*10)/10+' oz':Math.round(r.ml+r.oz*29.57)+' ml'}
 function renderReports(){
   const cw=curWindow(),t=dayStats(cw.getTime(),Date.now()),t24=dayStats(Date.now()-864e5,Date.now());
   const tiles=t=>[
     ['💧 Wet diapers',t.pee+t.both,'var(--mint)'],['💩 Dirty diapers',t.poop+t.both,'var(--mint)'],
     ['🍼 Feeds',t.feeds,'var(--peach)'],['🥛 Bottle total',bottleTotal(t),'var(--peach)'],
-    ['🌙 Sleep',dur(t.sleepMs),'var(--blue)'],['🤱 Nursing time',Math.round(t.breastMin)+'m','var(--lav)']
+    ['🌙 Sleep',dur(t.sleepMs),'var(--blue)'],['🤱 Nursing time',Math.round(t.breastMin)+'m','var(--lav)'],
+    ...(hasPump()?[['🧴 Pumped',t.pumpOz||t.pumpMl?pumpTotal(t):'—','var(--lav)']]:[])
   ].map(x=>`<div class="tot" style="background:${x[2]}"><div class="l">${x[0]}</div><div class="v">${x[1]}</div></div>`).join('');
   $('#totals24').innerHTML=tiles(t24);
   $('#curDayTitle').textContent=(useBirthDay()?windowTitle(cw):'Today')+' so far';
@@ -752,6 +773,7 @@ function renderReports(){
   const lbl=days.map(x=>{const n=lifeDay(x.d);return useBirthDay()&&n?'D'+n:x.d.toLocaleDateString([], {weekday:'short'}).slice(0,2)});
   $('#chFeeds').innerHTML=bars(lbl,days.map(x=>[[x.s.breast,'var(--peach-d)'],[x.s.bottle,'#F3B795']]));
   $('#chDiapers').innerHTML=bars(lbl,days.map(x=>[[x.s.pee,'#F2D27A'],[x.s.poop,'#C9A27E'],[x.s.both,'var(--mint-d)']]));
+  $('#pumpCard').classList.toggle('hidden',!hasPump());if(hasPump())$('#chPump').innerHTML=bars(lbl,days.map(x=>[[P.unit==='oz'?Math.round((x.s.pumpOz+x.s.pumpMl/29.57)*10)/10:Math.round(x.s.pumpMl+x.s.pumpOz*29.57),'var(--lav-d)']]),P.unit==='oz'?'':'');
   $('#chSleep').innerHTML=bars(lbl,days.map(x=>[[Math.round(x.s.sleepMs/36e5*10)/10,'var(--blue-d)']]),'h');
   const n=days.length,avg=k=>days.reduce((a,x)=>a+k(x.s),0)/n;
   renderPoop();renderGrowth();if($('#docView').classList.contains('on'))renderDoc();
@@ -853,11 +875,14 @@ $('#scrim').onclick=e=>{if(e.target.id==='scrim')closeSheet()};
 function feedSide(e,s){const d=e.details;return (d.acc?.[s]||0)+(d.side===s?(Date.now()-d.since)/1000:0)}
 function feedTotal(e){return feedSide(e,'L')+feedSide(e,'R')}
 function feedSheet(tab){
-  tab=tab||(running('feed','breast')?'breast':(P.lastFeedTab||'breast'));P.lastFeedTab=tab;savePrefs();
+  tab=tab||(running('feed','breast')?'breast':running('pump')?'pump':(P.lastFeedTab||'breast'));P.lastFeedTab=tab;savePrefs();
   let amt=P.lastAmount||(P.unit==='oz'?3:90),milk=P.lastMilk||'Formula';
-  openSheet(`<h2 style="text-align:center">Feed</h2><div class="seg"><button data-t="breast" class="${tab==='breast'?'on':''}">🤱 Breast</button><button data-t="bottle" class="${tab==='bottle'?'on':''}">🍼 Bottle</button></div>
+  const ns=!running('feed','breast')&&nextSide();
+  if(tab==='pump')return pumpSheet();
+  openSheet(`<h2 style="text-align:center">Feed</h2>${feedSeg(tab)}
   ${tab==='breast'?`<div class="muted" style="text-align:center">Tap a side to start · tap the other side to switch</div>
-    <div class="sides"><button class="side" data-s="L"><b>L</b><span class="tm" id="tmL">00:00</span></button><button class="side" data-s="R"><b>R</b><span class="tm" id="tmR">00:00</span></button></div>
+    ${ns?`<div class="hintTxt" style="margin-top:6px">Start on ${ns==='L'?'Left':'Right'} · last feed ended on ${ns==='L'?'Right':'Left'}</div>`:''}
+    <div class="sides"><button class="side${ns==='L'?' hint':''}" data-s="L"><b>L</b><span class="tm" id="tmL">00:00</span></button><button class="side${ns==='R'?' hint':''}" data-s="R"><b>R</b><span class="tm" id="tmR">00:00</span></button></div>
     ${noteBlock('nFeed',(running('feed','breast')||{details:{}}).details.note)}
     <div class="row" style="margin-top:12px"><button class="btn ghost" id="fPause">Pause</button><button class="btn peach" id="fSave">Done · Save</button></div>
     <button class="btn sm ghost full" id="fCancel" style="margin-top:10px">Discard timer</button>
@@ -865,20 +890,21 @@ function feedSheet(tab){
   :`<div class="amount"><button class="round" id="aMinus">−</button><div class="n"><span id="aVal">${amt}</span><div class="muted" style="font-size:14px">${P.unit}</div></div><button class="round" id="aPlus">+</button></div>
     <div class="chips">${['Formula','Breast milk'].map(m=>`<button class="chip ${m===milk?'on':''}" data-m="${m}">${m}</button>`).join('')}</div>
     <div class="when"><button class="chip on" data-w="now">Just now</button><button class="chip" data-w="earlier">🕘 Earlier</button></div>
-    <div id="bWhenBox" class="hidden"><label class="f">Time of the bottle</label><input type="datetime-local" id="bWhen"></div>
+    <div id="bWhenBox" class="hidden">${agoChips('bWhen')}<label class="f">Time of the bottle</label><input type="datetime-local" id="bWhen"></div>
     ${noteBlock('nBottle','')}<div class="perr" id="bErr"></div>
     <button class="btn peach full" id="bSave">Save bottle</button>`}`,()=>{
-    $$('.seg [data-t]').forEach(b=>b.onclick=()=>feedSheet(b.dataset.t));
+    bindFeedSeg();
     if(tab==='breast'){
       const paint=()=>{const ft=running('feed','breast');['L','R'].forEach(s=>{$('#tm'+s).textContent=clock((ft?feedSide(ft,s):0)*1000);$(`.side[data-s=${s}]`).classList.toggle('on',!!ft&&ft.details.side===s)});
         $('#fPause').textContent=ft&&!ft.details.side?'Resume':'Pause'};
       const bank=ft=>{const d=ft.details;if(d.side){d.acc[d.side]=(d.acc[d.side]||0)+(Date.now()-d.since)/1000;d.lastSide=d.side;d.side=null;d.since=null}};
       $$('.side').forEach(b=>b.onclick=()=>{const s=b.dataset.s;let ft=running('feed','breast');
-        if(!ft){addEntry({type:'feed',subtype:'breast',start:Date.now(),end:null,details:{acc:{L:0,R:0},side:s,since:Date.now()}});paint();return}
+        if(!ft){addEntry({type:'feed',subtype:'breast',start:Date.now(),end:null,details:{acc:{L:0,R:0},side:s,since:Date.now()}});$$('.side').forEach(x=>x.classList.remove('hint'));if($('.hintTxt'))$('.hintTxt').remove();paint();return}
         const was=ft.details.side;bank(ft);if(was!==s){ft.details.side=s;ft.details.since=Date.now()}updEntry(ft);paint()});
       $('#fPause').onclick=()=>{const ft=running('feed','breast');if(!ft)return;if(ft.details.side)bank(ft);else{ft.details.side=ft.details.lastSide||'L';ft.details.since=Date.now()}updEntry(ft);paint()};
       $('#fSave').onclick=()=>{const ft=running('feed','breast');if(!ft){toast('Tap L or R to start');return}
-        bank(ft);const d=withNote(ft.details,'nFeed');d.left=Math.max(Math.round(d.acc.L||0),d.acc.R?0:60);d.right=Math.round(d.acc.R||0);ft.end=Date.now();updEntry(ft);closeSheet();toast('Feed saved 🤱')};
+        bank(ft);const d=withNote(ft.details,'nFeed');d.left=Math.max(Math.round(d.acc.L||0),d.acc.R?0:60);d.right=Math.round(d.acc.R||0);ft.end=Date.now();updEntry(ft);closeSheet();
+        savedUndo('Feed saved 🤱',()=>{ft.end=null;ft.details.side=null;ft.details.since=null;updEntry(ft);feedSheet('breast')})};
       $('#fCancel').onclick=()=>{const ft=running('feed','breast');if(ft)delEntry(ft.id);closeSheet()};
       if($('#fPast'))$('#fPast').onclick=()=>{clearInterval(sheetTick);pastFeedSheet('breast')};
       paint();clearInterval(sheetTick);sheetTick=setInterval(paint,1000);
@@ -892,10 +918,81 @@ function feedSheet(tab){
         if(earlier&&!$('#bWhen').value){$('#bWhen').value=toLocalInput(Date.now()-30*6e4)}$('#bWhen').max=toLocalInput(Date.now());$('#bErr').textContent=''});
       $('#bSave').onclick=()=>{let t=Date.now();
         if(earlier){t=new Date($('#bWhen').value).getTime();const er=pastErr(t,t);if(er){$('#bErr').textContent=er;return}}
-        P.lastAmount=amt;P.lastMilk=milk;savePrefs();addEntry({type:'feed',subtype:'bottle',start:t,end:t,amount:amt,unit:P.unit,details:withNote({milk},'nBottle')});closeSheet();toast(earlier?'Bottle saved for '+fmtT(t)+' 🍼':'Bottle saved 🍼')};
+        P.lastAmount=amt;P.lastMilk=milk;savePrefs();const ne={type:'feed',subtype:'bottle',start:t,end:t,amount:amt,unit:P.unit,details:withNote({milk},'nBottle')};addEntry(ne);closeSheet();savedUndo(earlier?'Bottle saved for '+fmtT(t)+' 🍼':'Bottle saved 🍼',undoAdd(ne))};
     }
   });
 }
+/* ---- Feed screen tabs: Breast · Bottle · Pump ---- */
+function feedSeg(tab){return `<div class="seg">${[['breast','🤱 Breast'],['bottle','🍼 Bottle'],['pump','🧴 Pump']].map(([k,l])=>`<button data-t="${k}" class="${tab===k?'on':''}">${l}</button>`).join('')}</div>`}
+function bindFeedSeg(){$$('.seg [data-t]').forEach(b=>b.onclick=()=>{clearInterval(sheetTick);feedSheet(b.dataset.t)})}
+/* ---- pumping: its own entry type, so it never resets the feeding alarm ---- */
+function pumpSheet(){
+  const pt=running('pump');let amt=pt&&pt.amount!=null?pt.amount:(P.lastPump||(P.unit==='oz'?3:90)),side=(pt&&pt.details.pside)||P.lastPumpSide||null,earlier=false;
+  openSheet(`<h2 style="text-align:center">Feed</h2>${feedSeg('pump')}
+    <div class="muted" style="text-align:center">${pt?'Pumping · tap Save when you’re done':'Tap the timer to start, or just log the amount'}</div>
+    <div class="sides" style="grid-template-columns:1fr"><button class="side pumpbtn ${pt?'on':''}" id="pumpT"><b>🧴</b><span class="tm" id="tmP">${pt?'':'Start'}</span></button></div>
+    <div class="amount"><button class="round" id="aMinus">−</button><div class="n"><span id="aVal">${amt}</span><div class="muted" style="font-size:14px">${P.unit} pumped</div></div><button class="round" id="aPlus">+</button></div>
+    <div class="chips">${[['L','Left'],['R','Right'],['both','Both']].map(([k,l])=>`<button class="chip ${side===k?'on':''}" data-ps="${k}">${l}</button>`).join('')}</div>
+    ${pt?'':`<div class="when"><button class="chip on" data-pw="now">Just now</button><button class="chip" data-pw="earlier">🕘 Earlier</button></div>
+    <div id="pwBox" class="hidden">${agoChips('pwStart')}<label class="f">Started at</label><input type="datetime-local" id="pwStart" max="${toLocalInput(Date.now())}">
+      <label class="f">Minutes</label><input type="number" inputmode="numeric" min="0" max="180" id="pwMin" value="15"></div>`}
+    ${noteBlock('nPump',pt&&pt.details.note)}<div class="perr" id="pumpErr"></div>
+    <button class="btn peach full" id="pumpSave" style="background:var(--lav)">Save pumping</button>
+    ${pt?'<button class="btn sm ghost full" id="pumpCancel" style="margin-top:10px">Discard timer</button>':''}`,()=>{
+    bindFeedSeg();
+    const step=P.unit==='oz'?.5:10;
+    $('#aMinus').onclick=()=>{amt=Math.max(0,Math.round((amt-step)*10)/10);$('#aVal').textContent=amt};
+    $('#aPlus').onclick=()=>{amt=Math.round((amt+step)*10)/10;$('#aVal').textContent=amt};
+    $$('[data-ps]').forEach(b=>b.onclick=()=>{side=side===b.dataset.ps?null:b.dataset.ps;$$('[data-ps]').forEach(x=>x.classList.toggle('on',x.dataset.ps===side))});
+    $$('[data-pw]').forEach(b=>b.onclick=()=>{earlier=b.dataset.pw==='earlier';$$('[data-pw]').forEach(x=>x.classList.toggle('on',x===b));$('#pwBox').classList.toggle('hidden',!earlier);
+      if(earlier&&!$('#pwStart').value)$('#pwStart').value=toLocalInput(Math.floor((Date.now()-30*6e4)/6e4)*6e4);$('#pumpErr').textContent=''});
+    const paint=()=>{const r=running('pump');if(r)$('#tmP').textContent=clock(Date.now()-r.start)};
+    $('#pumpT').onclick=()=>{if(running('pump'))return;const d=withNote({},'nPump');if(side)d.pside=side;addEntry({type:'pump',start:Date.now(),end:null,details:d});pumpSheet()};
+    $('#pumpSave').onclick=()=>{const r=running('pump');P.lastPump=amt;P.lastPumpSide=side;savePrefs();
+      if(r){r.end=Date.now();r.amount=amt;r.unit=P.unit;r.details=withNote(Object.assign({},r.details),'nPump');if(side)r.details.pside=side;else delete r.details.pside;updEntry(r);closeSheet();
+        savedUndo('Pumping saved 🧴 '+amt+' '+P.unit,()=>{r.end=null;updEntry(r);pumpSheet()});return}
+      let s=Date.now(),e=s;
+      if(earlier){s=new Date($('#pwStart').value).getTime();const mn=Math.round(+$('#pwMin').value||0);if(mn<0||mn>180){$('#pumpErr').textContent='Minutes should be between 0 and 180';return}e=s+mn*6e4;const er=pastErr(s,e);if(er){$('#pumpErr').textContent=er;return}}
+      if(!amt&&e===s){$('#pumpErr').textContent='Add an amount, or use the timer';return}
+      const d=withNote({},'nPump');if(side)d.pside=side;if(earlier)d.past=true;
+      const ne={type:'pump',start:s,end:e,amount:amt,unit:P.unit,details:d};addEntry(ne);closeSheet();savedUndo('Pumping saved 🧴 '+amt+' '+P.unit,undoAdd(ne))};
+    if($('#pumpCancel'))$('#pumpCancel').onclick=()=>{const r=running('pump');if(r)delEntry(r.id);closeSheet()};
+    paint();clearInterval(sheetTick);if(pt)sheetTick=setInterval(paint,1000);
+  });
+}
+/* ---- medicine & vitamins: name, dose as written, time. No dosing advice. ---- */
+function medNames(){const seen=[];D.entries.filter(e=>e.type==='medicine'&&e.details&&e.details.name).sort((a,b)=>b.start-a.start).forEach(e=>{const n=e.details.name.trim();if(n&&!seen.some(x=>x.toLowerCase()===n.toLowerCase()))seen.push(n)});
+  ['Vitamin D','Tylenol'].forEach(n=>{if(!seen.some(x=>x.toLowerCase()===n.toLowerCase()))seen.push(n)});return seen.slice(0,6)}
+function lastDose(name){const e=D.entries.filter(x=>x.type==='medicine'&&x.details&&(x.details.name||'').toLowerCase()===String(name).toLowerCase()).sort((a,b)=>b.start-a.start)[0];return e?e.details.dose||'':''}
+function medSheet(pref){
+  let earlier=false;
+  openSheet(`<h2 style="text-align:center">💊 Medicine</h2><div class="muted" style="text-align:center">Log what was given and when</div>
+    <label class="f">What</label><div class="chips" style="justify-content:flex-start;margin-bottom:6px">${medNames().map(n=>`<button class="chip" data-mn="${esc(n)}">${esc(n)}</button>`).join('')}</div>
+    <input id="mName" maxlength="40" placeholder="e.g. Vitamin D" value="${esc(pref||'')}">
+    <label class="f">Dose (optional)</label><input id="mDose" maxlength="40" placeholder="As written on the label, e.g. 1 drop" value="${esc(pref?lastDose(pref):'')}">
+    <div class="when" style="margin-top:12px"><button class="chip on" data-mw="now">Just now</button><button class="chip" data-mw="earlier">🕘 Earlier</button></div>
+    <div id="mwBox" class="hidden">${agoChips('mWhen')}<label class="f">Time given</label><input type="datetime-local" id="mWhen" max="${toLocalInput(Date.now())}"></div>
+    ${noteBlock('nMed','')}<div class="perr" id="mErr"></div>
+    <button class="btn full" id="mSave" style="background:var(--yellow)">Save medicine</button>`,()=>{
+    $$('[data-mn]').forEach(b=>b.onclick=()=>{$('#mName').value=b.dataset.mn;const ld=lastDose(b.dataset.mn);if(ld&&!$('#mDose').value)$('#mDose').value=ld;$$('[data-mn]').forEach(x=>x.classList.toggle('on',x===b))});
+    $$('[data-mw]').forEach(b=>b.onclick=()=>{earlier=b.dataset.mw==='earlier';$$('[data-mw]').forEach(x=>x.classList.toggle('on',x===b));$('#mwBox').classList.toggle('hidden',!earlier);
+      if(earlier&&!$('#mWhen').value)$('#mWhen').value=toLocalInput(Math.floor((Date.now()-30*6e4)/6e4)*6e4);$('#mErr').textContent=''});
+    $('#mSave').onclick=()=>{const name=$('#mName').value.trim().slice(0,40),dose=$('#mDose').value.trim().slice(0,40);if(!name){$('#mErr').textContent='Add what was given';return}
+      let t=Date.now();if(earlier){t=new Date($('#mWhen').value).getTime();const er=pastErr(t,t);if(er){$('#mErr').textContent=er;return}}
+      const d=withNote({name},'nMed');if(dose)d.dose=dose;const ne={type:'medicine',start:t,end:t,details:d};addEntry(ne);closeSheet();savedUndo('Saved 💊 '+name+(earlier?' at '+fmtT(t):''),undoAdd(ne))};
+  });
+}
+/* ---- quick "15 / 30 / 60 min ago" buttons for any time field ---- */
+function agoChips(target,endTarget){return `<div class="when ago">${[15,30,60].map(m=>`<button class="chip" data-ago="${m}" data-for="${target}"${endTarget?` data-end="${endTarget}"`:''}>${m} min ago</button>`).join('')}</div>`}
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-ago]');if(!b)return;const t=$('#'+b.dataset.for);if(!t)return;
+  t.value=toLocalInput(Math.floor((Date.now()-(+b.dataset.ago)*6e4)/6e4)*6e4);if(b.dataset.end&&$('#'+b.dataset.end))$('#'+b.dataset.end).value=toLocalInput(Date.now());
+  b.parentNode.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===b));t.dispatchEvent(new Event('input'))});
+/* ---- every save gets a 5-second Undo ---- */
+function savedUndo(msg,undo){toastUndo(msg,()=>{undo();toast('Undone')})}
+function undoAdd(e){return ()=>delEntry(e.id)}
+/* ---- which breast to start on: the other side from where the last feed ended ---- */
+function nextSide(){const last=D.entries.filter(e=>e.type==='feed'&&e.subtype==='breast'&&e.end).sort((a,b)=>b.end-a.end)[0];if(!last)return null;
+  const d=last.details||{};let s=d.lastSide;if(!s){if(d.left&&!d.right)s='L';else if(d.right&&!d.left)s='R'}return s?(s==='L'?'R':'L'):null}
 /* ---- optional short note on any entry (stored in details.note) ---- */
 const NOTE_MAX=200;
 function noteBlock(id,val){return `${val?'':`<button class="notelink" data-note="${id}">📝 Add a note</button>`}<textarea id="${id}" class="note ${val?'':'hidden'}" maxlength="${NOTE_MAX}" rows="2" placeholder="A short note, e.g. spit up a little">${esc(val||'')}</textarea>`}
@@ -919,20 +1016,21 @@ function pastFeedSheet(tab){
   tab=tab||'breast';
   if(tab==='bottle'){P.lastFeedTab='bottle';savePrefs();feedSheet('bottle');$$('[data-w]')[1]&&$$('[data-w]')[1].click();return}
   openSheet(`<h2 style="text-align:center">🕘 Log a past feed</h2><div class="seg"><button data-pt="breast" class="on">🤱 Breast</button><button data-pt="bottle">🍼 Bottle</button></div>
-    <label class="f">Started at</label><input type="datetime-local" id="pStart" value="${toLocalInput(roundedPast(40))}" max="${toLocalInput(Date.now())}">
+    ${agoChips('pStart')}<label class="f">Started at</label><input type="datetime-local" id="pStart" value="${toLocalInput(roundedPast(40))}" max="${toLocalInput(Date.now())}">
     <div class="row">${minsField('pL','Left side (min)',10)}${minsField('pR','Right side (min)',10)}</div>
     <div class="pastSum" id="pSum"></div>${noteBlock('nPast','')}<div class="perr" id="pErr"></div>
     <button class="btn peach full" id="pSave">Save feed</button>
     <button class="pastlink" id="pTimer">⏱ Use the live timer instead</button>`,()=>{
     $$('[data-pt]').forEach(b=>b.onclick=()=>pastFeedSheet(b.dataset.pt));
+    $('#pStart').addEventListener('input',()=>{});
     const vals=()=>{const s=new Date($('#pStart').value).getTime(),L=Math.max(0,Math.round(+$('#pL').value||0)),R=Math.max(0,Math.round(+$('#pR').value||0));return {s,L,R,e:s+(L+R)*6e4}};
     const check=()=>{const v=vals();let er=v.L+v.R<1?'Add the minutes for at least one side':v.L+v.R>BREAST_MAX_MIN?'That is over '+BREAST_MAX_MIN/60+' hours. Please check the minutes':pastErr(v.s,v.e);if(isNaN(v.s))er='Please pick a time';return {v,er}};
     const paint=()=>{const {v,er}=check();$('#pSum').textContent=isNaN(v.s)?'':(v.L+v.R)+' min · '+fmtT(v.s)+' – '+fmtT(v.e);$('#pErr').textContent=er};
     $$('[data-step]').forEach(b=>b.onclick=()=>{const [id,d]=b.dataset.step.split(':'),el=$('#'+id);el.value=Math.min(BREAST_MAX_MIN,Math.max(0,(Math.round(+el.value)||0)+(+d)));paint()});
     ['#pStart','#pL','#pR'].forEach(q=>$(q).oninput=paint);
     $('#pSave').onclick=()=>{const {v,er}=check();if(er){$('#pErr').textContent=er;return}
-      addEntry({type:'feed',subtype:'breast',start:v.s,end:v.e,details:{left:v.L*60,right:v.R*60,acc:{L:v.L*60,R:v.R*60},lastSide:v.R&&!v.L?'R':(v.L&&!v.R?'L':null),past:true,...withNote({},'nPast')}});
-      closeSheet();toast('Feed saved for '+fmtT(v.s)+' 🤱')};
+      const ne={type:'feed',subtype:'breast',start:v.s,end:v.e,details:{left:v.L*60,right:v.R*60,acc:{L:v.L*60,R:v.R*60},lastSide:v.R&&!v.L?'R':(v.L&&!v.R?'L':null),past:true,...withNote({},'nPast')}};addEntry(ne);
+      closeSheet();savedUndo('Feed saved for '+fmtT(v.s)+' 🤱',undoAdd(ne))};
     $('#pTimer').onclick=()=>feedSheet('breast');
     paint();
   });
@@ -940,7 +1038,7 @@ function pastFeedSheet(tab){
 function pastSleepSheet(){
   const sl=running('sleep');
   openSheet(`<h2 style="text-align:center">🕘 Log a past sleep</h2><div class="muted" style="text-align:center">For a nap nobody timed</div>
-    <label class="f">Fell asleep</label><input type="datetime-local" id="sStart" value="${toLocalInput(roundedPast(90))}" max="${toLocalInput(Date.now())}">
+    ${agoChips('sStart','sEnd')}<label class="f">Fell asleep</label><input type="datetime-local" id="sStart" value="${toLocalInput(roundedPast(90))}" max="${toLocalInput(Date.now())}">
     <label class="f">Woke up</label><input type="datetime-local" id="sEnd" value="${toLocalInput(roundedPast(0))}" max="${toLocalInput(Date.now())}">
     <div class="pastSum" id="sSum"></div>${noteBlock('nSleepP','')}<div class="perr" id="sErr"></div>
     <button class="btn blue full" id="sSave">Save sleep</button>
@@ -950,7 +1048,7 @@ function pastSleepSheet(){
     const paint=()=>{const {s,e,er}=check();$('#sSum').textContent=!isNaN(s)&&!isNaN(e)&&e>s?'Slept '+dur(e-s):'';$('#sErr').textContent=er};
     ['#sStart','#sEnd'].forEach(q=>$(q).oninput=paint);
     $('#sSave').onclick=()=>{const {s,e,er}=check();if(er){$('#sErr').textContent=er;return}
-      addEntry({type:'sleep',start:s,end:e,details:withNote({past:true},'nSleepP')});closeSheet();toast('Sleep saved · '+dur(e-s)+' 🌙')};
+      const ne={type:'sleep',start:s,end:e,details:withNote({past:true},'nSleepP')};addEntry(ne);closeSheet();savedUndo('Sleep saved · '+dur(e-s)+' 🌙',undoAdd(ne))};
     if($('#sTimer'))$('#sTimer').onclick=()=>{closeSheet();toggleSleep()};
     paint();
   });
@@ -976,6 +1074,7 @@ function poopStats(from,to){const r={dirty:0,detailed:0,color:{},texture:{},amou
     ['color','texture','amount'].forEach(k=>{if(d[k]&&poopLbl(k,d[k])){r[k][d[k]]=(r[k][d[k]]||0)+1;any=true}});if(any)r.detailed++;
     if(POOP_FLAG.includes(d.color))r.flagged.push(e)});
   r.flagged.sort((a,b)=>b.start-a.start);return r}
+function recentMeds(){const now=Date.now();return D.entries.filter(e=>e.type==='medicine'&&e.details&&e.start>=now-7*864e5&&e.start<=now+6e4).sort((a,b)=>b.start-a.start)}
 function recentNotes(){const now=Date.now();return D.entries.filter(e=>e.details&&e.details.note&&e.start>=now-7*864e5&&e.start<=now).sort((a,b)=>b.start-a.start)}
 const noteType=e=>describe(e).t.replace(/<[^>]+>/g,'');
 const poopCounts=(r,k)=>POOP[k].filter(o=>r[k][o[0]]).map(o=>o[1]+' '+r[k][o[0]]).join(', ');
@@ -983,7 +1082,7 @@ function diaperSheet(){
   openSheet(`<h2 style="text-align:center">Diaper</h2><div class="muted" style="text-align:center">One tap saves it</div>
     <div class="dgrid"><button class="dbtn" data-k="pee"><b>💧</b>Pee</button><button class="dbtn" data-k="poop"><b>💩</b>Poop</button><button class="dbtn" data-k="both"><b>💧💩</b>Both</button></div>`,
   ()=>$$('.dbtn').forEach(b=>b.onclick=()=>{const t=Date.now(),e={type:'diaper',subtype:b.dataset.k,start:t,end:t};addEntry(e);
-    if(!poopy(e)){closeSheet();toast('Diaper saved 🧷');return}
+    if(!poopy(e)){closeSheet();savedUndo('Diaper saved 🧷',undoAdd(e));return}
     poopDetailsSheet(e)}));
 }
 function poopDetailsSheet(e){ // shown right after a poop is saved; every detail is optional
@@ -992,22 +1091,25 @@ function poopDetailsSheet(e){ // shown right after a poop is saved; every detail
   openSheet(`<h2 style="text-align:center">💩 Saved</h2><div class="muted" style="text-align:center">Add details if you like. All optional</div>
  ${poopChips(d)}${noteBlock('nPoop',d.note)}<button class="btn mint full" id="pDone" style="margin-top:14px">Done</button>`,()=>{
     bindPoopChips(d,()=>{dirty=true});
-    $('#pDone').onclick=()=>{save();closeSheet();toast(poopText(d)?'Saved · '+poopText(d):'Diaper saved 🧷')};
+    $('#pDone').onclick=()=>{save();closeSheet();savedUndo(poopText(d)?'Saved · '+poopText(d):'Diaper saved 🧷',undoAdd(e))};
     $('#scrim').onclick=ev=>{if(ev.target.id==='scrim'){save();closeSheet()}};
   });
 }
 function toggleSleep(){
   const s=running('sleep');
-  if(s){s.end=Date.now();updEntry(s);toast('Good morning! Slept '+dur(s.end-s.start)+' ☀️')}
-  else{addEntry({type:'sleep',start:Date.now(),end:null});toast('Sweet dreams 🌙')}
+  if(s){s.end=Date.now();updEntry(s);savedUndo('Good morning! Slept '+dur(s.end-s.start)+' ☀️',()=>{s.end=null;updEntry(s)})}
+  else{const ne={type:'sleep',start:Date.now(),end:null};addEntry(ne);savedUndo('Sweet dreams 🌙',undoAdd(ne))}
 }
 function editEntry(id){
   const e=D.entries.find(x=>x.id===id);if(!e)return;const x=describe(e),d=e.details||{};
   if(!e.end&&e.type==='feed')return feedSheet('breast');
+  if(!e.end&&e.type==='pump')return pumpSheet();
   let f=`<label class="f">${e.type==='sleep'?'Fell asleep':e.type==='feed'&&e.subtype==='breast'?'Started at':'Time'}</label><input type="datetime-local" id="eStart" value="${toLocalInput(e.start)}">`;
   if(e.type==='sleep')f+=`<label class="f">Woke up</label><input type="datetime-local" id="eEnd" value="${e.end?toLocalInput(e.end):''}">`;
   if(e.type==='feed'&&e.subtype==='breast')f+=`<div class="row"><div><label class="f">Left (min)</label><input type="number" id="eL" value="${Math.round((d.left||0)/60)}"></div><div><label class="f">Right (min)</label><input type="number" id="eR" value="${Math.round((d.right||0)/60)}"></div></div>`;
-  if(e.type==='feed'&&e.subtype==='bottle')f+=`<div class="row"><div><label class="f">Amount</label><input type="number" step="0.5" id="eAmt" value="${e.amount??''}"></div><div><label class="f">Unit</label><select id="eUnit"><option ${e.unit==='oz'?'selected':''}>oz</option><option ${e.unit==='ml'?'selected':''}>ml</option></select></div></div>`;
+  if(e.type==='medicine')f+=`<label class="f">What</label><input id="eMName" maxlength="40" value="${esc(d.name||'')}"><label class="f">Dose (optional)</label><input id="eMDose" maxlength="40" value="${esc(d.dose||'')}">`;
+  if(e.type==='pump')f+=`<label class="f">Minutes</label><input type="number" min="0" max="180" id="ePMin" value="${Math.round((e.end-e.start)/6e4)}">`;
+  if((e.type==='feed'&&e.subtype==='bottle')||e.type==='pump')f+=`<div class="row"><div><label class="f">Amount</label><input type="number" step="0.5" id="eAmt" value="${e.amount??''}"></div><div><label class="f">Unit</label><select id="eUnit"><option ${e.unit==='oz'?'selected':''}>oz</option><option ${e.unit==='ml'?'selected':''}>ml</option></select></div></div>`;
   const pd={color:d.color,texture:d.texture,amount:d.amount};Object.keys(pd).forEach(k=>{if(!pd[k])delete pd[k]});
   if(e.type==='diaper')f+=`<label class="f">Type</label><select id="eKind">${['pee','poop','both'].map(k=>`<option ${k===e.subtype?'selected':''}>${k}</option>`).join('')}</select>
     <div id="ePoop" class="${poopy(e)?'':'hidden'}"><div class="muted" style="text-align:center;margin-top:10px">Poop details (optional)</div>${poopChips(pd)}</div>`;
@@ -1023,6 +1125,8 @@ function editEntry(id){
       if(ne!=null&&!isNaN(ne))e.end=ne;
       if($('#eL')){const L=Math.max(0,+$('#eL').value||0),R=Math.max(0,+$('#eR').value||0);if((L!==Math.round((d.left||0)/60)||R!==Math.round((d.right||0)/60))&&e.end)e.end=e.start+(L+R)*6e4;d.left=L*60;d.right=R*60;e.details=d}
       if($('#eAmt')){e.amount=+$('#eAmt').value||0;e.unit=$('#eUnit').value}
+      if($('#ePMin')){const mn=Math.round(+$('#ePMin').value||0);if(mn<0||mn>180){toast('Minutes should be between 0 and 180');return}if(e.start+mn*6e4>Date.now()+6e4){toast('That would end in the future');return}e.end=e.start+mn*6e4}
+      if($('#eMName')){const nm=$('#eMName').value.trim().slice(0,40);if(!nm){toast('Add what was given');return}const nd=Object.assign({},e.details||{},{name:nm});const ds=$('#eMDose').value.trim().slice(0,40);if(ds)nd.dose=ds;else delete nd.dose;e.details=nd}
       if($('#eKind')){e.subtype=$('#eKind').value;const nd=Object.assign({},e.details||{});['color','texture','amount'].forEach(k=>{delete nd[k];if(poopy(e)&&pd[k])nd[k]=pd[k]});e.details=nd}
       if($('#eBy'))e.by=$('#eBy').value;
       e.details=withNote(Object.assign({},e.details||{}),'eNote');
@@ -1034,7 +1138,8 @@ function editEntry(id){
 
 /* ======================= WIRING ======================= */
 $('#bFeed').onclick=()=>feedSheet();$('#bDiaper').onclick=diaperSheet;$('#bSleep').onclick=toggleSleep;
-$('#pastFeed').onclick=()=>pastFeedSheet('breast');$('#pastSleep').onclick=pastSleepSheet;
+$('#pastFeed').onclick=()=>pastFeedSheet('breast');$('#pastSleep').onclick=pastSleepSheet;$('#addMed').onclick=()=>medSheet();
+$('#lastMed').onclick=()=>{const lm=D.entries.filter(e=>e.type==='medicine').sort((a,b)=>b.start-a.start)[0];medSheet(lm&&lm.details&&lm.details.name)};
 $('#nightBtn').onclick=()=>{P.night=!P.night;savePrefs();render()};
 $('#prevDay').onclick=()=>{viewOffset++;renderToday()};
 $('#nextDay').onclick=()=>{if(viewOffset>0){viewOffset--;renderToday()}};
@@ -1207,7 +1312,8 @@ function docText(){const {d24,d7,span,days}=docData(),b=D.baby,n=lifeDay(curWind
     L.push(`Feeds: ${k>1?per(s.feeds,k)+' a day':s.feeds}${s.avgInt?' · every '+dur(s.avgInt)+' on average (longest gap '+dur(s.maxInt)+')':''}`);
     L.push(`Bottle: ${bt(s,k)}${k>1&&(s.oz||s.ml)?' a day':''} · Nursing: ${mins(s.breastMin/k)}${k>1?' a day':''}`);
     L.push(`Diapers: ${k>1?per(s.pee+s.both,k):s.pee+s.both} wet, ${k>1?per(s.poop+s.both,k):s.poop+s.both} dirty${k>1?' a day':''}`);
-    L.push(`Sleep: ${dur(s.sleepMs/k)}${k>1?' a day':''}`)};
+    L.push(`Sleep: ${dur(s.sleepMs/k)}${k>1?' a day':''}`);
+    if(hasPump())L.push(`Pumped: ${s.pumpOz||s.pumpMl?pumpTotal(s,k):'—'}${k>1&&(s.pumpOz||s.pumpMl)?' a day':''} (${k>1?per(s.pumps,k)+' sessions a day':s.pumps+' sessions'})`)};
   blk('LAST 24 HOURS',d24,1);blk(`LAST 7 DAYS (daily average${span<6.95?', over '+Math.round(span*10)/10+' days of logs':''})`,d7,span);
   L.push('','BY DAY');days.forEach(x=>{const s=x.s;L.push(`${dayLabel(x.ws,x.cur)}: ${s.feeds} feeds, bottle ${bt(s)}, nursing ${mins(s.breastMin)}, ${s.pee+s.both} wet, ${s.poop+s.both} dirty, sleep ${dur(s.sleepMs)}`)});
   const gl=['w','l','h'].map(m=>{const c=gChange(m);if(!c)return null;const p=whoPct(m,c.cur);return `${GNAME[m]}${m==='h'?' circumference':''}: ${fmtGV(m,c.cur[m])} (${fmtD(c.cur.date)}) · ${changeText(m,c)}${p!=null?' · WHO '+pctText(p)+' percentile':''}`}).filter(Boolean);
@@ -1215,6 +1321,7 @@ function docText(){const {d24,d7,span,days}=docData(),b=D.baby,n=lifeDay(curWind
   const pr=poopStats(Date.now()-7*864e5,Date.now());
   if(pr.detailed){L.push('','POOP DETAILS (last 7 days, '+pr.detailed+' of '+pr.dirty+' dirty diapers described)');['color','texture','amount'].forEach(k=>{const c=poopCounts(pr,k);if(c)L.push(POOP_NAME[k]+': '+c)});
     if(pr.flagged.length)L.push('Noted: '+pr.flagged.map(e=>poopLbl('color',e.details.color).toLowerCase()+' poop on '+fmtD2(e.start)).join('; '))}
+  const md=recentMeds();if(md.length){L.push('','MEDICINE (last 7 days)');md.forEach(e=>L.push(fmtD2(e.start)+' · '+[e.details.name,e.details.dose].filter(Boolean).join(', ')))}
   const rn=recentNotes();if(rn.length){L.push('','NOTES FROM THE LOG (last 7 days)');rn.forEach(e=>L.push(fmtD2(e.start)+' · '+noteType(e)+': '+e.details.note))}
   const nt=(b.doctor_notes||'').trim();if(nt)L.push('','QUESTIONS FOR THE DOCTOR',nt);
   return L.join('\n')}
@@ -1238,6 +1345,7 @@ function renderDoc(){
       ${row('Wet diapers',d24.pee+d24.both,per(d7.pee+d7.both,k))}
       ${row('Dirty diapers',d24.poop+d24.both,per(d7.poop+d7.both,k))}
       ${row('Sleep',dur(d24.sleepMs),dur(d7.sleepMs/k))}
+      ${hasPump()?row('Pumped',d24.pumpOz||d24.pumpMl?pumpTotal(d24):'—',d7.pumpOz||d7.pumpMl?pumpTotal(d7,k):'—'):''}
     </tbody></table>${k<6.95?`<div class="fine" style="margin-top:4px">Daily averages use the ${Math.round(k*10)/10} days that have logs.</div>`:''}</div>
     <div class="keep"><h2>Day by day${useBirthDay()?' (days start at birth time)':''}</h2>
     <table><thead><tr><th>Day</th><th class="n">Feeds</th><th class="n">Bottle</th><th class="n">Nursing</th><th class="n">Wet</th><th class="n">Dirty</th><th class="n">Sleep</th></tr></thead><tbody>
@@ -1247,6 +1355,7 @@ function renderDoc(){
       return `<div class="keep"><h2>Poop details · last 7 days</h2><table><tbody>${['color','texture','amount'].map(k=>`<tr><td>${POOP_NAME[k]}</td><td>${esc(poopCounts(pr,k)||'—')}</td></tr>`).join('')}</tbody></table>
       <div class="fine" style="margin-top:4px">Described on ${pr.detailed} of ${pr.dirty} dirty diapers.</div>
       ${pr.flagged.length?`<div class="flag" style="margin-top:8px;padding:8px 10px;border-radius:10px;background:#FFF4D6;border:1px solid #EBD9A6;font-size:13px"><b>Noted for the doctor:</b> ${pr.flagged.map(e=>esc(poopLbl('color',e.details.color).toLowerCase()+' poop, '+fmtD2(e.start))).join('; ')}</div>`:''}</div>`})()}
+    ${(()=>{const md=recentMeds();if(!md.length)return'';return `<div class="keep"><h2>Medicine · last 7 days</h2><table><tbody>${md.map(e=>`<tr><td style="white-space:nowrap">${esc(fmtD2(e.start))}</td><td><b>${esc(e.details.name||'')}</b></td><td>${esc(e.details.dose||'')}</td><td>${esc(person(e.by).name)}</td></tr>`).join('')}</tbody></table><div class="fine" style="margin-top:4px">As logged by the family.</div></div>`})()}
     ${(()=>{const rn=recentNotes();if(!rn.length)return'';return `<div class="keep"><h2>Notes from the log · last 7 days</h2><table><tbody>${rn.map(e=>`<tr><td style="white-space:nowrap">${esc(fmtD2(e.start))}</td><td>${esc(noteType(e))}</td><td>${esc(e.details.note)}</td></tr>`).join('')}</tbody></table></div>`})()}
     <div class="keep"><h2>Growth</h2>${gRows?`<table><thead><tr><th></th><th class="n">Latest</th><th>Change since last measurement</th><th class="n">WHO percentile</th></tr></thead><tbody>${gRows}</tbody></table>`:'<div class="meta">No measurements logged yet.</div>'}</div>`;
   $('#docFine').innerHTML=`Logged at home by ${esc(who||'family')} with Little Days. A “wet” or “dirty” count includes diapers that were both.${gRows?' Percentiles compare with the WHO Child Growth Standards (birth to 2 years)'+(b.sex?'':' and need the baby’s sex to be set')+'. They are for information only and are not medical advice.':''}`;
@@ -1319,7 +1428,7 @@ async function openDeleteAccount(){
   if(MODE==='demo'||!sb||!user)return;
   if(!navigator.onLine)return toast('You need to be online to delete your account');
   const {data:pv,error}=await sb.rpc('account_deletion_preview');if(error)return toast(error.message);
-  const line=x=>x.action==='delete'?`🗑️ <b>${esc(x.baby)}</b> and its whole log (feeds, diapers, sleep, growth, notes) will be <b>deleted</b>. No one else is on it.`
+  const line=x=>x.action==='delete'?`🗑️ <b>${esc(x.baby)}</b> and its whole log (feeds, diapers, sleep, pumping, medicine, growth, notes) will be <b>deleted</b>. No one else is on it.`
     :x.action==='transfer'?`👑 <b>${esc(x.baby)}</b> stays with your family. <b>${esc(x.to)}</b> becomes the owner, because they've been a caregiver the longest.`
     :`👋 You'll leave <b>${esc(x.baby)}</b>. Everyone else keeps it.`;
   const shared=(pv||[]).some(x=>x.action!=='delete');
