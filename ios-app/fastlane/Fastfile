@@ -1,7 +1,10 @@
 # Little Days iOS: build + upload to TestFlight. Runs on GitHub Actions (macOS), started by hand.
-# Signing: Xcode automatic signing with Apple's cloud-managed certificates, authorised by the
-# App Store Connect API key (no certificates or passwords stored anywhere).
-# Needs env: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (full .p8 text), APPLE_TEAM_ID
+# Signing: App Store distribution signing (no registered devices needed), managed through the
+# App Store Connect API key. One "Apple Distribution" certificate is reused on every run: its
+# private key lives only in the DIST_CERT_KEY GitHub secret; the matching certificate is looked up
+# on Apple's side (and created once if missing). The App Store provisioning profile is fetched or
+# created by sigh.
+# Needs env: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (full .p8 text), APPLE_TEAM_ID, DIST_CERT_KEY (RSA key PEM)
 default_platform(:ios)
 
 APP_ID  = "com.jamiejmann.littledays"
@@ -10,30 +13,77 @@ PROJECT = "ios/App/App.xcodeproj"
 platform :ios do
   desc "Build Little Days and upload it to TestFlight"
   lane :beta do
-    %w[ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID].each { |k| UI.user_error!("Missing #{k}") if ENV[k].to_s.strip.empty? }
-    setup_ci # temporary keychain on the CI machine
+    %w[ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID DIST_CERT_KEY].each { |k| UI.user_error!("Missing #{k}") if ENV[k].to_s.strip.empty? }
+    team_id = ENV["APPLE_TEAM_ID"].strip
+    setup_ci # temporary keychain on the CI machine (fastlane_tmp_keychain, empty password)
+    keychain_name = "fastlane_tmp_keychain"
+    keychain_path = File.expand_path("~/Library/Keychains/#{keychain_name}-db")
 
     p8 = ENV["ASC_KEY_P8"].to_s.strip
     p8 = Base64.decode64(p8) unless p8.include?("BEGIN PRIVATE KEY") # accept raw .p8 text or base64 of it
     api_key = app_store_connect_api_key(key_id: ENV["ASC_KEY_ID"].strip, issuer_id: ENV["ASC_ISSUER_ID"].strip, key_content: p8, duration: 1200, in_house: false)
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
+
+    # --- Distribution certificate: reuse the one matching DIST_CERT_KEY, create it once if missing ---
+    pkey = OpenSSL::PKey::RSA.new(ENV["DIST_CERT_KEY"].to_s.strip)
+    pub_der = pkey.public_key.to_der
+    dist_cert = nil
+    Spaceship::ConnectAPI::Certificate.all(filter: { certificateType: "DISTRIBUTION" }).each do |c|
+      next if c.certificate_content.to_s.empty?
+      x509 = OpenSSL::X509::Certificate.new(Base64.decode64(c.certificate_content))
+      next unless x509.public_key.to_der == pub_der && x509.not_after > Time.now + 86_400
+      dist_cert = c
+      break
+    end
+    if dist_cert
+      UI.message("Reusing Apple Distribution certificate #{dist_cert.id}")
+    else
+      UI.message("No Apple Distribution certificate for our key yet; creating one")
+      csr = OpenSSL::X509::Request.new
+      csr.version = 0
+      csr.subject = OpenSSL::X509::Name.new([["CN", "Little Days Distribution", OpenSSL::ASN1::UTF8STRING]])
+      csr.public_key = pkey.public_key
+      csr.sign(pkey, OpenSSL::Digest::SHA256.new)
+      dist_cert = Spaceship::ConnectAPI::Certificate.create(certificate_type: "DISTRIBUTION", csr_content: csr.to_pem)
+      UI.success("Created Apple Distribution certificate #{dist_cert.id}")
+    end
+
+    FastlaneCore::CertChecker.install_missing_wwdr_certificates(in_keychain: keychain_path) rescue UI.important("WWDR install skipped: #{$!.message}")
+    tmp = Dir.mktmpdir
+    begin
+      key_file = File.join(tmp, "dist_key.pem")
+      cer_file = File.join(tmp, "dist.cer")
+      File.write(key_file, pkey.to_pem)
+      File.binwrite(cer_file, Base64.decode64(dist_cert.certificate_content))
+      import_certificate(certificate_path: key_file, keychain_name: keychain_name, keychain_password: "")
+      import_certificate(certificate_path: cer_file, keychain_name: keychain_name, keychain_password: "")
+    ensure
+      FileUtils.rm_rf(tmp)
+    end
+    sh("security find-identity -v -p codesigning #{keychain_path.shellescape}")
+
+    # --- App Store provisioning profile (Push Notifications comes from the App ID) ---
+    get_provisioning_profile(api_key: api_key, app_identifier: APP_ID, adhoc: false, development: false,
+                             cert_id: dist_cert.id, team_id: team_id, keychain_path: keychain_path,
+                             force: false, readonly: false)
+    profile_name = lane_context[SharedValues::SIGH_NAME]
+    UI.message("Using provisioning profile '#{profile_name}'")
+
+    update_code_signing_settings(path: PROJECT, targets: ["App"], use_automatic_signing: false,
+                                 team_id: team_id, code_sign_identity: "Apple Distribution",
+                                 profile_name: profile_name, bundle_identifier: APP_ID)
 
     build_number = latest_testflight_build_number(api_key: api_key, app_identifier: APP_ID, initial_build_number: 0) + 1
     UI.message("Building Little Days build #{build_number}")
 
-    key_path = File.join(Dir.tmpdir, "AuthKey_#{ENV['ASC_KEY_ID'].strip}.p8")
-    auth = "-allowProvisioningUpdates -authenticationKeyPath #{key_path} -authenticationKeyID #{ENV['ASC_KEY_ID'].strip} -authenticationKeyIssuerID #{ENV['ASC_ISSUER_ID'].strip}"
-    begin
-      File.write(key_path, p8)
-      build_app(
-        project: PROJECT, scheme: "App", configuration: "Release", clean: true,
-        export_method: "app-store", output_directory: "build", output_name: "LittleDays.ipa",
-        xcargs: "DEVELOPMENT_TEAM=#{ENV['APPLE_TEAM_ID'].strip} CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION=#{build_number} #{auth}",
-        export_xcargs: auth,
-        export_options: { signingStyle: "automatic", teamID: ENV["APPLE_TEAM_ID"].strip, manageAppVersionAndBuildNumber: false }
-      )
-      upload_to_testflight(api_key: api_key, app_identifier: APP_ID, skip_waiting_for_build_processing: true)
-    ensure
-      File.delete(key_path) if File.exist?(key_path)
-    end
+    build_app(
+      project: PROJECT, scheme: "App", configuration: "Release", clean: true,
+      export_method: "app-store", output_directory: "build", output_name: "LittleDays.ipa",
+      codesigning_identity: "Apple Distribution",
+      xcargs: "DEVELOPMENT_TEAM=#{team_id} CURRENT_PROJECT_VERSION=#{build_number} OTHER_CODE_SIGN_FLAGS='--keychain #{keychain_path}'",
+      export_options: { method: "app-store", signingStyle: "manual", teamID: team_id,
+                        provisioningProfiles: { APP_ID => profile_name }, manageAppVersionAndBuildNumber: false }
+    )
+    upload_to_testflight(api_key: api_key, app_identifier: APP_ID, skip_waiting_for_build_processing: true)
   end
 end

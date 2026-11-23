@@ -26,9 +26,10 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          DIST_CERT_KEY: ${{ secrets.DIST_CERT_KEY }}
         run: |
           missing=""
-          for name in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID; do
+          for name in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID DIST_CERT_KEY; do
             if [ -z "${!name}" ]; then missing="$missing $name"; fi
           done
           if [ -n "$missing" ]; then
@@ -77,6 +78,7 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          DIST_CERT_KEY: ${{ secrets.DIST_CERT_KEY }}
         run: bundle exec fastlane ios beta
 
       - name: Keep the build log
