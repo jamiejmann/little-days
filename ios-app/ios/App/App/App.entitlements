@@ -5,5 +5,10 @@
 	<!-- Push Notifications capability. "production" to match the App Store distribution profile used for TestFlight / App Store builds. -->
 	<key>aps-environment</key>
 	<string>production</string>
+	<!-- Sign in with Apple. Jamie must also enable this capability on the App ID in the Apple Developer portal. -->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
 </dict>
 </plist>

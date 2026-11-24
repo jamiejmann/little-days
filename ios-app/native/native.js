@@ -3,6 +3,7 @@
  * - Native local notifications for the feeding alarm (fallback whenever server push isn't active for this phone).
  * - A short in-app explainer before the iOS notification permission dialog (never a bare system prompt).
  * - Apple's native App Store rating prompt after 7 distinct days of logging, once per app version.
+ * - Sign in with Apple (Continue with Apple on the auth screen; the button stays hidden on the website).
  * - Haptics on logging, status bar that follows night mode, splash screen.
  * The web app talks to this file through window.LDNative (onLogged / onAlarmChanged hooks in index.html are no-ops on the website),
  * and exposes what we need through window.__ldApp. Storage keys used here are new and only exist in the app. */
@@ -10,8 +11,30 @@
   const C = window.Capacitor;
   if (!C || !C.isNativePlatform || !C.isNativePlatform()) return;
   const P = C.Plugins || {};
-  const FS = P.Filesystem, SH = P.Share, PN = P.PushNotifications, LN = P.LocalNotifications, H = P.Haptics, SB = P.StatusBar, App = P.App, IR = P.InAppReview;
+  const FS = P.Filesystem, SH = P.Share, PN = P.PushNotifications, LN = P.LocalNotifications, H = P.Haptics, SB = P.StatusBar, App = P.App, IR = P.InAppReview, AS = P.AppleSignIn;
   document.documentElement.classList.add('native');
+
+  async function appleSignIn(hashedNonce) {
+    if (!AS || !AS.signIn) return { error: 'unavailable' };
+    try {
+      const result = await AS.signIn({ scopes: ['EMAIL', 'FULL_NAME'], nonce: hashedNonce });
+      if (!result || !result.idToken) return { error: 'no-token' };
+      return {
+        idToken: result.idToken,
+        authorizationCode: result.authorizationCode || null,
+        email: result.email || null,
+        givenName: result.givenName || null,
+        familyName: result.familyName || null
+      };
+    } catch (e) {
+      const msg = String((e && (e.message || e.errorMessage || e)) || '');
+      const code = String((e && (e.code || e.errorCode)) || '');
+      if (/cancel/i.test(msg + ' ' + code)) return null;
+      log('apple sign-in', e);
+      return { error: 'failed' };
+    }
+  }
+
 
   /* ---------- safe area: keep the header clear of the clock / Dynamic Island ---------- */
   function fixTopInset() {
@@ -33,6 +56,11 @@
   const st = { remote: false, checking: null, lastSig: '' };
   const app = () => window.__ldApp;
   const $ = (s) => document.querySelector(s);
+  /* Continue with Apple: only shown in the iPhone app, never on the website or PWA. */
+  const showApple = () => { const w = $('#appleWrap'); if (w) w.classList.remove('hidden'); };
+  showApple();
+  document.addEventListener('DOMContentLoaded', showApple);
+
   const on = () => localStorage.getItem(PREF) === 'on';
   const log = (...a) => { try { console.log('[LDNative]', ...a); } catch (e) {} };
 
@@ -323,5 +351,5 @@
   }
   const printDoc = shareDoc; // the iOS share sheet has Print in it
 
-  window.LDNative = { shareDoc, printDoc, refreshPushStatus, pushOn, enableAlerts, test, dropThisDevice, scheduleLocal, reset, onLogged, onAlarmChanged, _state: st, _plan: plan };
+  window.LDNative = { shareDoc, printDoc, refreshPushStatus, pushOn, enableAlerts, test, dropThisDevice, scheduleLocal, reset, onLogged, onAlarmChanged, appleSignIn, _state: st, _plan: plan };
 })();

@@ -53,6 +53,20 @@ You'll get an email ("Welcome to the Apple Developer Program"). Nothing below wo
 2. Name it `Little Days Push` and tick **Apple Push Notifications service (APNs)**. If you're asked for an environment, choose **Sandbox & Production**. Continue, then Register.
 3. Note the **Key ID** and click **Download** to get another `AuthKey_XXXXXXXXXX.p8`. **This download is also one-time only.**
 
+
+### 4c. Sign in with Apple (so parents can tap Continue with Apple in the iPhone app)
+
+Do this on a computer, signed into the same Apple Developer account.
+
+1. Go to [developer.apple.com/account](https://developer.apple.com/account) and open **Certificates, Identifiers & Profiles → Identifiers**.
+2. Open the App ID **`com.jamiejmann.littledays`**.
+3. Tick **Sign in with Apple**, then **Save**. If Apple asks you to confirm the provisioning profile, confirm it.
+4. Still under **Keys**, click **+**. Name it something like `Babyway Sign in with Apple`. Tick **Sign in with Apple**, click **Configure**, choose this App ID, then **Save**, **Continue**, and **Register**.
+5. Note the **Key ID** and click **Download** to get the `.p8` file. **This download is one-time only.** Keep the file somewhere safe on your computer. Don't paste it into chat, email, or the code — you'll paste it only into Supabase in step 5c (or ask me for a secure form).
+6. You do **not** need a Services ID for the iPhone app. That's only if we later turn on Sign in with Apple on the website. Skip it for now.
+
+If you already have a key that has **Sign in with Apple** enabled for this App ID, you can reuse that Key ID and `.p8` instead of making a new key. Don't reuse the push-notification (APNs) key unless that same key also has Sign in with Apple ticked.
+
 ## 5. Paste the secrets into the right places
 
 ### 5a. GitHub, for building the app
@@ -76,6 +90,35 @@ Go to **supabase.com → your Little Days project → Edge Functions → Secrets
 
 That's all it takes to switch server push on. Until these are set, the app still alerts parents using reminders scheduled on the phone itself. Once they're set, the server also alerts every parent's phone when the baby is due a feed, even if the feed was logged on another phone.
 
+### 5c. Supabase, for Sign in with Apple (and to revoke it when someone deletes their account)
+
+**A. Turn the Apple sign-in provider on**
+
+1. Open your Supabase project → **Authentication → Sign In / Providers** (or **Authentication → Providers**).
+2. Open **Apple** and turn it **on**.
+3. In **Client IDs**, enter exactly: `com.jamiejmann.littledays`
+4. If the page also asks for a **Secret Key** (or Team ID, Key ID, and a private key) and will not save without it, paste those only on this page, not in chat. If you get stuck, ask me and I'll send a **secure form** or walk you through it. The iPhone app uses "Sign in with ID token," so the important field is the Client ID above.
+5. Save.
+
+**B. Edge Function secrets, so deleting an account can tell Apple to forget the login**
+
+Go to **Project Settings → Edge Functions → Secrets**. Add these (paste the `.p8` only here, or through a secure form — never in chat):
+
+| Secret name | What to paste |
+|---|---|
+| `APPLE_CLIENT_ID` | `com.jamiejmann.littledays` |
+| `APPLE_TEAM_ID` | Your Team ID from step 1 |
+| `APPLE_KEY_ID` | The Key ID from step 4c |
+| `APPLE_PRIVATE_KEY` | The whole contents of the step 4c `.p8` file, including the BEGIN and END lines |
+
+**C. Database + function (when you say yes)**
+
+Two more pieces live in the code, but they are not live until you apply them:
+
+1. In the Supabase **SQL editor**, run `supabase/011_apple_sign_in.sql`. This only adds a private table used for Apple token revocation. It does not touch real families' logs.
+2. Deploy the **apple-auth** Edge Function (the same way **feed-alarm** was deployed). Until this is deployed and the secrets above are set, Continue with Apple can still sign people in once the provider is on, but account deletion may not be able to revoke the Apple token yet. Email/password sign-in and account deletion themselves still work.
+
+
 ## 6. Build and send to TestFlight
 1. On GitHub, open the **Actions** tab, then **iOS app -> TestFlight**, then **Run workflow**.
 2. It takes about 15–25 minutes. If a secret is missing, the run stops early and says which one.
@@ -90,7 +133,7 @@ You can run the workflow again any time. Each run uploads a new build number aut
 3. Under Price Schedule, click **Add Pricing**. Set the base country to **United States (USD)** and the price to **$9.99**. Apple fills in matching prices for other countries. Click Confirm.
 4. Availability: all countries, or only the ones you want.
 5. Don't add any in-app purchases. The whole family shares one purchase, because invited parents use the same account system.
-   - Note: each parent who wants the iPhone app needs it on their phone. A paid app can be shared through Apple **Family Sharing** automatically, so people in your Apple Family can download it without paying again. Partners outside your Apple Family would buy it once themselves.
+   - Note: each parent who wants the iPhone app needs it on their phone. Turn **Family Sharing** on for this app in Pricing and Availability. A paid app can then be shared through Apple Family Sharing, so people in your Apple Family can download it without paying again. Partners outside your Apple Family would buy it once themselves.
 
 ## 8. App Privacy ("nutrition label")
 Go to **Apps → Little Days → App Privacy**, then **Get Started**.
@@ -102,15 +145,16 @@ Go to **Apps → Little Days → App Privacy**, then **Get Started**.
 |---|---|---|---|
 | **Contact Info → Email Address** | Signing in | Yes | No |
 | **Contact Info → Name** | The parent's display name shown to family members | Yes | No |
-| **Health & Fitness → Health** | The baby's feeds, sleep, diapers, growth, and notes about health | Yes | No |
+| **Health & Fitness → Health** | The baby's feeds, pumping, sleep, diapers, medicine, growth, and notes about health | Yes | No |
 | **User Content → Other User Content** | Free-text notes on entries | Yes | No |
 | **Identifiers → User ID** | The account ID that links your family's data | Yes | No |
 
 - For each type, the purpose is **App Functionality** only. Don't tick Analytics, Advertising, Product Personalization, or Other.
 - **Tracking:** No. The app has no ads, no analytics, and no third-party SDKs. Data is stored in your Supabase database and shared only with the family members you invite.
 - Don't tick these: Location, Contacts, Photos, Purchases, Financial info, Browsing history, Search history, Diagnostics, Usage data, or Device ID. The push-notification token is used only to deliver your alerts, and Apple doesn't count it as a "Device ID".
-- **Privacy Policy URL:** `https://jamiejmann.github.io/little-days/privacy.html`. It's already live, with thelittledaysapp@gmail.com as the contact address. Having a lawyer look over the policy is a good idea.
-- **Support URL / contact:** thelittledaysapp@gmail.com.
+- **Privacy Policy URL (current):** `https://thelittledaysapp.com/privacy.html` (marketing site) or `https://jamiejmann.github.io/little-days/privacy.html` (in-app copy). Both are drafts for a lawyer to review. After getbabyway.com is pointed at the site, switch this to `https://getbabyway.com/privacy.html`.
+- **Terms of Use URL (current):** `https://thelittledaysapp.com/terms.html` or `https://jamiejmann.github.io/little-days/terms.html`. After the new domain is pointed, use `https://getbabyway.com/terms.html`. Add this link in the App Store listing (description or the Terms of Use field). These pages are also drafts for a lawyer to review.
+- **Support URL / contact:** https://thelittledaysapp.com/support.html and thelittledaysapp@gmail.com.
 
 ## 9. Age rating
 Go to **Apps → Little Days → App Information → Age Rating → Edit**. Answer **None** or **No** to everything:
@@ -125,8 +169,8 @@ The result is **4+**. Don't choose the "Made for Kids" category, because the app
 ## 10. Before you press "Submit for Review"
 - **Account deletion (required by Apple):** done. It's under **Family → Settings → Delete my account**, and also on the welcome screen. You confirm by typing DELETE. Mention it in the review notes.
 - **Screenshots:** upload 6.9-inch iPhone screenshots (1320×2868 or 1290×2796). I can make these.
-- **App Review information:** give a demo login (an email and password for a test family with sample data) so the reviewer can sign in. Add a note like this one:
-  > "Babyway is a shared baby tracker for parents. Native features: feeding alarms delivered as local notifications and APNs push to every parent in the family, haptic feedback when logging, offline logging with sync."
+- **App Review information:** create a demo login yourself in the app (don't send the password in chat). Then, when you're ready, run `supabase/seed_reviewer_demo.sql` in the Supabase SQL editor (change the email at the top first). That script adds only fake sample data for that login. It will refuse to run if you haven't changed the email, if the account doesn't exist, or if that account is already on a baby. Put the email and password only in App Store Connect. A copy-paste checklist, including review notes, is in `/workspace/little-days-marketing/app-store-connect-checklist-babyway.txt`.
+- **Review notes, something like:** "Babyway is a shared baby tracker for parents. Demo account is preloaded with a sample baby, Olive (review sample). The Family screen shows invite code REVIEW. Continue with Apple is on the sign-in screen in the iPhone app. Account deletion: Family → Settings → Delete my account (type DELETE). Feeding alarms use local notifications and APNs. Growth percentiles are WHO charts, labeled information only, not medical advice. $9.99 paid app, no in-app purchases."
 - **Description, keywords, support URL:** the support URL can be the GitHub Pages site.
 
 ## What's already done (no action needed)

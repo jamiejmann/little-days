@@ -82,6 +82,8 @@ nav button.on{background:var(--lav);color:var(--ink)}
 .btn.danger{background:#F8D3D3;color:#7A3A3A}
 .btn.mint{background:var(--mint)} .btn.peach{background:var(--peach)} .btn.blue{background:var(--blue)}
 .btn.full{width:100%}
+.btn.apple{background:#000;color:#fff;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn.apple .ap{font-size:22px;line-height:1;font-weight:700}
 .row{display:flex;gap:10px;align-items:center}
 .row>*{flex:1}
 /* sheet */
@@ -288,6 +290,10 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
     <h1>Babyway</h1>
     <div class="muted" style="margin-bottom:16px">Feeds, diapers, sleep, pumping &amp; medicine, shared by everyone who loves your baby</div>
     <div class="msg ok hidden" id="inviteNote">💌 You've been invited to join a baby! Sign in or create an account and you'll be added automatically.</div>
+    <div id="appleWrap" class="hidden">
+      <button class="btn apple full" id="appleBtn" type="button"><span class="ap" aria-hidden="true"></span> Continue with Apple</button>
+      <div class="or">or</div>
+    </div>
     <div class="card" style="margin-top:14px">
       <div class="seg" id="authSeg"><button data-a="in" class="on">Sign in</button><button data-a="up">Create account</button></div>
       <div id="nameRow" class="hidden"><label class="f">Your name</label><input id="aName" placeholder="e.g. Jamie" autocomplete="name"></div>
@@ -299,7 +305,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
     </div>
     <div class="or">or</div>
     <button class="btn ghost full" id="tryDemo">👀 Try the demo with sample data (no account)</button>
-    <div class="legal"><a href="privacy.html">Privacy policy</a></div>
+    <div class="legal"><a href="privacy.html">Privacy policy</a> · <a href="terms.html">Terms of Use</a></div>
   </div>
 </div>
 
@@ -325,7 +331,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
     </div>
     <div class="msg hidden" id="sMsg"></div>
     <button class="link" id="sBack">Back to my baby</button> <button class="link" id="sOut">Sign out</button>
-    <div class="legal"><a href="privacy.html">Privacy policy</a> · <button class="link" id="sDelete">Delete my account</button></div>
+    <div class="legal"><a href="privacy.html">Privacy policy</a> · <a href="terms.html">Terms of Use</a> · <button class="link" id="sDelete">Delete my account</button></div>
   </div>
 </div>
 
@@ -449,7 +455,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
       <label class="switch">Show today's goals<input type="checkbox" id="goalsOn"></label>
       <div class="muted" id="goalsHint" style="margin-top:-4px;margin-bottom:8px">Typical newborn ranges for the first 8 weeks.</div>
       <div class="row" style="flex-wrap:wrap" id="settingsBtns"></div>
-      <div class="legal" id="legalRow"><a href="privacy.html">Privacy policy</a> · <a href="mailto:thelittledaysapp@gmail.com">Contact us</a><span id="delWrap"> · <button class="link" id="delAcct">Delete my account</button></span></div>
+      <div class="legal" id="legalRow"><a href="privacy.html">Privacy policy</a> · <a href="terms.html">Terms of Use</a> · <a href="mailto:thelittledaysapp@gmail.com">Contact us</a><span id="delWrap"> · <button class="link" id="delAcct">Delete my account</button></span></div>
     </div>
   </section>
 </div>
@@ -482,6 +488,7 @@ const SUPABASE_KEY='sb_publishable_D4r76K6cH2xcEhwnJYyNMw_JSJKhg4k';
 const SUPABASE_CDN='https://esm.sh/@supabase/supabase-js@2';
 const VAPID_PUBLIC_KEY='BJbwZLxJLiYgjQ9YIhb3STsQ8kFhXaZN_hD685Vziz6kq-byEsmx1TZjdokl0Gk9sLCPB9bLlUfDjSTrkK7aSwo'; // public half only; the private key lives in Supabase Vault
 const ALARM_FN=SUPABASE_URL+'/functions/v1/feed-alarm';
+const APPLE_FN=SUPABASE_URL+'/functions/v1/apple-auth';
 
 const DEMO_KEY='littledays.v2.demo', PREF_KEY='littledays.prefs', MODE_KEY='littledays.mode', QUEUE_KEY='littledays.queue', BABY_KEY='littledays.baby';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -1489,6 +1496,20 @@ window.__ldtest={docText:()=>docText(),docImage:t=>docImage(t||docText()),whoPct
 
 function copy(t,msg){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast(msg),()=>prompt('Copy this:',t))}
 
+
+async function sha256hex(s){
+  const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function randomNonce(){
+  const a=new Uint8Array(32); crypto.getRandomValues(a);
+  return [...a].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function callAppleFn(action, extra={}){
+  if(!sb) return {error:'not signed in'};
+  const {data}=await sb.auth.getSession(); if(!data.session) return {error:'not signed in'};
+  return fetch(APPLE_FN,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+data.session.access_token,apikey:SUPABASE_KEY},body:JSON.stringify({action,...extra})}).then(r=>r.json()).catch(e=>({error:String(e)}));
+}
 // auth screen
 let authMode='in';
 $$('#authSeg button').forEach(b=>b.onclick=()=>{authMode=b.dataset.a;$$('#authSeg button').forEach(x=>x.classList.toggle('on',x===b));
@@ -1511,6 +1532,29 @@ $('#aMagic').onclick=async()=>{const email=$('#aEmail').value.trim(),m=$('#aMsg'
   try{await loadSupabase()}catch(e){return setMsg(m,"Can't reach the internet right now.")}
   const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:true}});
   setMsg(m,error?authFriendly(error,false).replace(/^That email and password.*$/,"We couldn't send a sign-in link. Please check the email address and try again."):'If that email can sign in, a sign-in link is on its way. Check your email ✨',!error)};
+
+$('#appleBtn')&&($('#appleBtn').onclick=async()=>{
+  const m=$('#aMsg'), btn=$('#appleBtn');
+  if(!window.LDNative||!LDNative.appleSignIn)return setMsg(m,'Sign in with Apple is only available in the iPhone app.');
+  btn.disabled=true; setMsg(m,'One moment…',true);
+  try{
+    try{await loadSupabase()}catch(e){setMsg(m,"Can't reach the internet right now. You can still try the demo.");return}
+    const raw=randomNonce(), hashed=await sha256hex(raw);
+    const apple=await LDNative.appleSignIn(hashed);
+    if(!apple){setMsg(m,'');return} // cancelled
+    if(apple.error){setMsg(m,"We couldn't sign in with Apple. Please try again, or use email.");return}
+    const r=await sb.auth.signInWithIdToken({provider:'apple',token:apple.idToken,nonce:raw});
+    if(r.error){setMsg(m,"We couldn't sign in with Apple. Please try again, or use email.");return}
+    const name=[apple.givenName,apple.familyName].filter(Boolean).join(' ').trim();
+    if(name&&r.data&&r.data.user){
+      try{await sb.from('profiles').update({display_name:name.slice(0,40)}).eq('id',r.data.user.id)}catch(e){}
+    }
+    if(apple.authorizationCode){
+      try{await callAppleFn('store',{code:apple.authorizationCode})}catch(e){}
+    }
+    setMsg(m,'');
+  }finally{btn.disabled=false}
+});
 $('#tryDemo').onclick=startDemo;
 // setup screen
 $('#sCreate').onclick=async()=>{const name=$('#sName').value.trim(),m=$('#sMsg');if(!name)return setMsg(m,"Please type your baby's name.");
@@ -1544,6 +1588,7 @@ async function openDeleteAccount(){
       const go=$('#delGo'),t=$('#delTxt');t.oninput=()=>{go.disabled=t.value.trim()!=='DELETE'};$('#delNo').onclick=closeSheet;
       go.onclick=async()=>{if(t.value.trim()!=='DELETE')return;go.disabled=true;go.textContent='Deleting…';
         try{await dropThisDevice()}catch(e){}
+        try{await callAppleFn('revoke')}catch(e){}
         const {error}=await sb.rpc('delete_my_account',{p_confirm:'DELETE'});
         if(error){go.disabled=false;go.textContent='Delete my account';return toast(friendly(error,"Couldn't delete your account"))}
         try{if(window.LDNative&&LDNative.reset)await LDNative.reset()}catch(e){}
