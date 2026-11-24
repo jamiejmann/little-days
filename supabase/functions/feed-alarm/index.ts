@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
     }
     return json({ claimed: (babies || []).length, results });
   } catch (e) {
-    console.error(e);
-    return json({ error: String(e) }, 500);
+    console.error(e); // details stay in the function logs; callers only get a generic message
+    return json({ error: "Something went wrong" }, 500);
   }
 });

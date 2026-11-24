@@ -515,6 +515,23 @@ const person=id=>(D&&D.people.find(c=>c.id===id))||{name:'Former caregiver',colo
 const running=(type,sub)=>D.entries.find(e=>e.type===type&&!e.end&&(!sub||e.subtype===sub));
 function show(id){['offlineScreen','authScreen','setupScreen','app'].forEach(x=>$('#'+x).classList.toggle('hidden',x!==id));$('#nav').classList.toggle('hidden',id!=='app')}
 function setMsg(el,text,ok){el.textContent=text;el.className='msg '+(ok?'ok':'err');el.classList.toggle('hidden',!text)}
+// Friendly, generic error text for people; the technical details only go to the console.
+function logErr(where,err){try{console.error('[Little Days] '+where,err)}catch(_){}}
+function errText(err){return String((err&&(err.message||err.msg||err.error_description||err.error))||err||'')}
+function friendly(err,what){logErr(what||'error',err);const m=errText(err),c=(err&&(err.code||err.error_code))||'';
+  if(!navigator.onLine||/failed to fetch|network|load failed/i.test(m))return "You're offline right now. Please try again when you're back online.";
+  if(/rate.?limit|too many/i.test(c+' '+m))return 'Too many tries. Please wait a few minutes and try again.';
+  if(/jwt|not signed in|refresh token|session/i.test(m))return 'Please sign out and sign in again.';
+  return (what||'Something went wrong')+'. Please try again.'}
+function authFriendly(err,signUp){logErr('auth',err);const c=(err&&(err.code||err.error_code))||'',m=errText(err);
+  if(!navigator.onLine||/failed to fetch|network|load failed/i.test(m))return "Can't reach the internet right now. Please try again.";
+  if(/rate.?limit|too many/i.test(c+' '+m))return 'Too many tries. Please wait a few minutes and try again.';
+  if(c==='weak_password'||/password.*(weak|short|characters)|pwned|leaked/i.test(m))return 'Please choose a stronger password (at least 8 characters, and not one that is easy to guess).';
+  if(c==='email_address_invalid'||/invalid.*email|email.*invalid|unable to validate email/i.test(m))return 'Please check your email address.';
+  if(c==='email_not_confirmed'||/not confirmed/i.test(m))return 'Please tap the link in your confirmation email first, then sign in.';
+  if(signUp)return "We couldn't create an account with those details. If you already have an account, tap Sign in, or use “Email me a sign-in link” below.";
+  return "That email and password don't match. Try again, or use “Email me a sign-in link” below."}
+const JOIN_FAIL="That code didn't work. Check the 6 letters, or ask for a new code (codes last 7 days).";
 
 /* ======================= DEMO MODE (this device only) ======================= */
 function demoSeed(){
@@ -582,9 +599,9 @@ async function startCloudInner(){
   const code=localStorage.getItem('littledays.pendingInvite');
   if(code){const {data,error}=await sb.rpc('join_baby_with_code',{code});
     localStorage.removeItem('littledays.pendingInvite');history.replaceState(null,'',location.pathname);
-    if(error)toast('Invite: '+error.message);else{localStorage.setItem(BABY_KEY,data);toast('You joined the family! 💜')}}
+    if(error)toast(friendly(error,"Couldn't join with that invite"));else if(!data)toast(JOIN_FAIL);else{localStorage.setItem(BABY_KEY,data);toast('You joined the family! 💜')}}
   const {data:babies,error}=await sb.from('babies').select('*').order('created_at');
-  if(error){toast(error.message);return}
+  if(error){toast(friendly(error,"Couldn't load your family"));return}
   myBabies=babies||[];
   if(!myBabies.length){openSetup();return}
   const want=localStorage.getItem(BABY_KEY);
@@ -607,7 +624,7 @@ async function loadBaby(id){
     sb.from('invites').select('code,expires_at').eq('baby_id',id).gt('expires_at',new Date().toISOString()).order('created_at',{ascending:false}).limit(1),
     sb.from('growth').select('*').eq('baby_id',id).order('measured_on')
   ]);
-  if(mem.error||ent.error){toast((mem.error||ent.error).message);return}
+  if(mem.error||ent.error){toast(friendly(mem.error||ent.error,"Couldn't load the log"));return}
   D={baby,me:user.id,people:[],entries:ent.data.map(fromRow),growth:gro.error?[]:gro.data.map(fromG)};
   invite=(inv.data||[])[0]||null;
   await loadPeople(mem.data);
@@ -667,7 +684,7 @@ async function flushQueue(){
       else r=await sb.from(tb).delete().eq('id',o.id);
     }catch(err){r={error:{message:String(err),network:true}}}
     if(r.error&&(r.error.network||/fetch|network/i.test(r.error.message||''))){break} // offline: keep and retry later
-    if(r.error)toast('Could not save: '+r.error.message);
+    if(r.error)toast(friendly(r.error,"Couldn't save that change"));
     Q.shift();saveQ();
   }
   flushing=false;renderWho();
@@ -885,7 +902,7 @@ function renderFamily(){
   if(MODE==='cloud'){const me=person(D.me);
     $('#meCard').innerHTML=`<h2>You</h2><div class="card"><label class="f">Your name (shown on entries)</label><input id="meName" value="${esc(me.name)}"><label class="f">Your color</label><div class="chips" style="justify-content:flex-start">${COLORS.map(c=>`<button class="chip ${c===me.color?'on':''}" data-c="${c}" style="background:${c};width:40px;height:40px"></button>`).join('')}</div><button class="btn full" id="saveMe">Save</button><div class="muted" style="margin-top:8px">${esc(user.email)}</div></div>`;
     let col=me.color;$$('[data-c]').forEach(b=>b.onclick=()=>{col=b.dataset.c;$$('[data-c]').forEach(x=>x.classList.toggle('on',x===b))});
-    $('#saveMe').onclick=async()=>{const {error}=await sb.from('profiles').update({display_name:$('#meName').value.trim()||'Parent',color:col}).eq('id',user.id);if(error)return toast(error.message);await loadPeople();render();toast('Saved 💜')};
+    $('#saveMe').onclick=async()=>{const {error}=await sb.from('profiles').update({display_name:$('#meName').value.trim()||'Parent',color:col}).eq('id',user.id);if(error)return toast(friendly(error,"Couldn't save your name"));await loadPeople();render();toast('Saved 💜')};
   }else $('#meCard').innerHTML='';
   if($('#goalsOn'))$('#goalsOn').checked=!P.hideGoals;
   $$('#unitSeg button').forEach(b=>b.classList.toggle('on',b.dataset.u===P.unit));
@@ -903,23 +920,23 @@ function renderFamily(){
     $('#addBaby').onclick=openSetup;$('#delAcct').onclick=openDeleteAccount;
     $('#signOut').onclick=async()=>{await dropThisDevice();if(window.LDNative&&LDNative.reset)await LDNative.reset();await sb.auth.signOut();showAuth()};
     if($('#leaveBaby'))$('#leaveBaby').onclick=async()=>{if(!confirm('Leave '+D.baby.name+'? You will stop seeing its log.'))return;
-      const {error}=await sb.from('baby_members').delete().eq('baby_id',D.baby.id).eq('user_id',user.id);if(error)return toast(error.message);localStorage.removeItem(BABY_KEY);user=null;await sb.auth.getSession().then(({data})=>{user=data.session.user});startCloud()};
+      const {error}=await sb.from('baby_members').delete().eq('baby_id',D.baby.id).eq('user_id',user.id);if(error)return toast(friendly(error,"Couldn't leave"));localStorage.removeItem(BABY_KEY);user=null;await sb.auth.getSession().then(({data})=>{user=data.session.user});startCloud()};
   }
 }
 async function saveBaby(){
   if(MODE==='demo'){saveDemo();render();return}
   const {error}=await sb.from('babies').update({name:D.baby.name,birthdate:D.baby.birthdate||null,emoji:D.baby.emoji,birth_time:D.baby.birth_time||null,day_start:D.baby.day_start||'midnight',feed_alarm_enabled:!!D.baby.feed_alarm_enabled,feed_interval_min:D.baby.feed_interval_min||180,feed_alarm_night:D.baby.feed_alarm_night!==false,sex:D.baby.sex||null,tz:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'}).eq('id',D.baby.id);
-  if(error)toast(error.message);else{const b=myBabies.find(x=>x.id===D.baby.id);if(b)Object.assign(b,D.baby)}render();
+  if(error)toast(friendly(error,"Couldn't save the baby's details"));else{const b=myBabies.find(x=>x.id===D.baby.id);if(b)Object.assign(b,D.baby)}render();
 }
 async function makeInvite(){
   const {data,error}=await sb.from('invites').insert({baby_id:D.baby.id,created_by:user.id}).select('code,expires_at').single();
-  if(error)return toast(error.message);invite=data;render();toast('New invite code ready 💌');
+  if(error)return toast(friendly(error,"Couldn't make an invite code"));invite=data;render();toast('New invite code ready 💌');
 }
 async function removePerson(id){
   const c=person(id);if(!confirm('Remove '+c.name+'? Their past entries stay.'))return;
   if(MODE==='demo'){D.people=D.people.filter(x=>x.id!==id);if(D.me===id)D.me=D.people[0].id;saveDemo();render();return}
   const {error}=await sb.from('baby_members').delete().eq('baby_id',D.baby.id).eq('user_id',id);
-  if(error)return toast(error.message);await loadPeople();render();toast(c.name+' removed');
+  if(error)return toast(friendly(error,"Couldn't remove "+c.name));await loadPeople();render();toast(c.name+' removed');
 }
 function leaveDemo(){teardown();MODE=null;localStorage.removeItem(MODE_KEY);boot(true)}
 
@@ -1484,22 +1501,22 @@ $('#aGo').onclick=async()=>{
   if(authMode==='up')r=await sb.auth.signUp({email,password,options:{data:{display_name:$('#aName').value.trim()||email.split('@')[0]},emailRedirectTo:location.origin+location.pathname}});
   else r=await sb.auth.signInWithPassword({email,password});
   $('#aGo').disabled=false;
-  if(r.error)return setMsg(m,r.error.message);
+  if(r.error)return setMsg(m,authFriendly(r.error,authMode==='up'));
   if(!r.data.session)return setMsg(m,'Almost there! Check your email and tap the confirmation link, then come back and sign in. 💌',true);
   setMsg(m,''); // onAuthStateChange starts the app
 };
 $('#aMagic').onclick=async()=>{const email=$('#aEmail').value.trim(),m=$('#aMsg');if(!email)return setMsg(m,'Type your email first.');
   try{await loadSupabase()}catch(e){return setMsg(m,"Can't reach the internet right now.")}
   const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:true}});
-  setMsg(m,error?error.message:'Check your email for a sign-in link ✨',!error)};
+  setMsg(m,error?authFriendly(error,false).replace(/^That email and password.*$/,"We couldn't send a sign-in link. Please check the email address and try again."):'If that email can sign in, a sign-in link is on its way. Check your email ✨',!error)};
 $('#tryDemo').onclick=startDemo;
 // setup screen
 $('#sCreate').onclick=async()=>{const name=$('#sName').value.trim(),m=$('#sMsg');if(!name)return setMsg(m,"Please type your baby's name.");
   const emoji=($('#sEmoji .chip.on')||{}).dataset?.e||'🐣';
   const {data,error}=await sb.rpc('create_baby',{p_name:name,p_birthdate:$('#sBirth').value||null,p_emoji:emoji,p_birth_time:$('#sBirthTime').value||null});
-  if(error)return setMsg(m,error.message);myBabies.push(data);toast('Welcome, '+data.name+'! 🎉');loadBaby(data.id)};
+  if(error)return setMsg(m,friendly(error,"Couldn't create the baby"));myBabies.push(data);toast('Welcome, '+data.name+'! 🎉');loadBaby(data.id)};
 $('#sJoin').onclick=async()=>{const code=$('#sCode').value.trim(),m=$('#sMsg');if(!code)return setMsg(m,'Type the 6-letter code.');
-  const {data,error}=await sb.rpc('join_baby_with_code',{code});if(error)return setMsg(m,error.message);
+  const {data,error}=await sb.rpc('join_baby_with_code',{code});if(error)return setMsg(m,/too many tries/i.test(errText(error))?(logErr('join',error),'Too many tries. Please wait 15 minutes and try again.'):friendly(error,"Couldn't join"));if(!data)return setMsg(m,JOIN_FAIL);
   localStorage.setItem(BABY_KEY,data);toast('You joined the family! 💜');startCloud()};
 $('#sBack').onclick=()=>startCloud();
 $('#sOut').onclick=async()=>{if(window.LDNative&&LDNative.reset)await LDNative.reset();await sb.auth.signOut();showAuth()};
@@ -1509,7 +1526,7 @@ $('#sDelete').onclick=()=>openDeleteAccount();
 async function openDeleteAccount(){
   if(MODE==='demo'||!sb||!user)return;
   if(!navigator.onLine)return toast('You need to be online to delete your account');
-  const {data:pv,error}=await sb.rpc('account_deletion_preview');if(error)return toast(error.message);
+  const {data:pv,error}=await sb.rpc('account_deletion_preview');if(error)return toast(friendly(error,"Couldn't open account deletion"));
   const line=x=>x.action==='delete'?`🗑️ <b>${esc(x.baby)}</b> and its whole log (feeds, diapers, sleep, pumping, medicine, growth, notes) will be <b>deleted</b>. No one else is on it.`
     :x.action==='transfer'?`👑 <b>${esc(x.baby)}</b> stays with your family. <b>${esc(x.to)}</b> becomes the owner, because they've been a caregiver the longest.`
     :`👋 You'll leave <b>${esc(x.baby)}</b>. Everyone else keeps it.`;
@@ -1526,7 +1543,7 @@ async function openDeleteAccount(){
       go.onclick=async()=>{if(t.value.trim()!=='DELETE')return;go.disabled=true;go.textContent='Deleting…';
         try{await dropThisDevice()}catch(e){}
         const {error}=await sb.rpc('delete_my_account',{p_confirm:'DELETE'});
-        if(error){go.disabled=false;go.textContent='Delete my account';return toast('Could not delete: '+error.message)}
+        if(error){go.disabled=false;go.textContent='Delete my account';return toast(friendly(error,"Couldn't delete your account"))}
         try{if(window.LDNative&&LDNative.reset)await LDNative.reset()}catch(e){}
         [QUEUE_KEY,BABY_KEY,MODE_KEY,'littledays.pendingInvite'].forEach(k=>localStorage.removeItem(k));Q=[];
         try{await sb.auth.signOut({scope:'local'})}catch(e){}
@@ -1620,13 +1637,13 @@ $('#pushOn').onclick=async()=>{
     if(error)throw error;
     if(!D.baby.feed_alarm_enabled){D.baby.feed_alarm_enabled=true;saveBaby()}
     toast('Alerts on 🔔');
-  }catch(e){toast('Could not turn on alerts: '+(e.message||e))}
+  }catch(e){toast(friendly(e,"Couldn't turn on alerts"))}
   refreshPushStatus();
 };
 $('#pushTest').onclick=async()=>{
   const {data}=await sb.auth.getSession();if(!data.session)return;
   const r=await fetch(ALARM_FN,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+data.session.access_token,apikey:SUPABASE_KEY},body:JSON.stringify({action:'test'})}).then(r=>r.json()).catch(e=>({error:String(e)}));
-  toast(r.error?'Test failed: '+r.error:'Test sent to '+r.devices+' device'+(r.devices===1?'':'s')+' 🔔');
+  if(r.error)logErr('push test',r.error);toast(r.error?"The test alert didn't send. Please try again.":'Test sent to '+r.devices+' device'+(r.devices===1?'':'s')+' 🔔');
 };
 async function dropThisDevice(){
   try{const sub=await currentSub();if(!sub)return;if(sb&&user)await sb.from('push_subscriptions').delete().eq('endpoint',sub.endpoint);await sub.unsubscribe()}catch(e){}
