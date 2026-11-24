@@ -36,7 +36,7 @@ body{min-height:100vh;padding-bottom:96px;position:relative;overflow-x:hidden}
 body.night .blob{display:none}
 .wrap{max-width:520px;margin:0 auto;padding:16px 18px;position:relative;z-index:1}
 header{display:flex;align-items:center;gap:12px;margin:6px 0 14px}
-.avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--peach),var(--lav));display:grid;place-items:center;font-size:26px;flex:none;box-shadow:var(--shadow)}
+.avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--peach),var(--lav));display:grid;place-items:center;font-size:26px;flex:none;box-shadow:var(--shadow);overflow:hidden}
 .hname{font-size:22px;font-weight:800;line-height:1.1}
 .hage{font-size:14px;color:var(--soft)}
 .iconbtn{margin-left:auto;border:none;background:var(--card);width:44px;height:44px;border-radius:50%;font-size:20px;box-shadow:var(--shadow);cursor:pointer;color:var(--ink)}
@@ -152,7 +152,9 @@ body.night .due.over{background:#7a4a35;color:#FFE3D3}
 .l24t .l{font-size:11px;color:var(--soft);font-weight:700;margin-top:2px}
 .daysub{font-size:12px;color:var(--soft);font-weight:700}
 .auth{max-width:420px;margin:0 auto;padding-top:28px;text-align:center}
-.logo{width:96px;height:96px;border-radius:50%;margin:0 auto 10px;background:linear-gradient(135deg,var(--peach),var(--lav));display:grid;place-items:center;font-size:48px;box-shadow:var(--shadow)}
+.logo{width:96px;height:96px;border-radius:50%;margin:0 auto 10px;background:linear-gradient(135deg,var(--peach),var(--lav));display:grid;place-items:center;font-size:48px;box-shadow:var(--shadow);overflow:hidden}
+.logo img,.avatar img,.doc .dh .av img{width:100%;height:100%;display:block;object-fit:cover}
+.chip img.bw{width:1.35em;height:1.35em;border-radius:30%;vertical-align:-.3em;display:inline-block}
 .auth h1{margin:6px 0 2px;font-size:28px}
 .auth .card{text-align:left}
 .msg{border-radius:16px;padding:10px 14px;font-size:14px;margin-top:10px}
@@ -240,7 +242,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
 .docbar .btn{color:#4A4560}
 .doc{max-width:760px;margin:6px auto 40px;background:#fff;color:#2E2B3A;border-radius:18px;padding:26px 24px;box-shadow:0 6px 24px rgba(80,60,100,.10);font-size:14px;line-height:1.4}
 .doc .dh{display:flex;align-items:center;gap:14px;border-bottom:2px solid #EFEAF7;padding-bottom:14px}
-.doc .dh .av{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#FFD9C4,#DCD3F5);display:grid;place-items:center;font-size:26px;flex:none}
+.doc .dh .av{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#FFD9C4,#DCD3F5);display:grid;place-items:center;font-size:26px;flex:none;overflow:hidden}
 .doc h1{font-size:21px;margin:0;line-height:1.2}.doc .meta{color:#6B6680;font-size:13px}
 .doc h2{font-size:12.5px;text-transform:uppercase;letter-spacing:.07em;color:#7A6FB0;margin:20px 0 6px;padding:0}
 .doc table{width:100%;border-collapse:collapse;font-size:13.5px}
@@ -287,7 +289,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
 </div>
 <div class="wrap hidden" id="authScreen">
   <div class="auth">
-    <div class="logo">🐣</div>
+    <div class="logo"><img src="icons/icon-192.png" alt="Babyway"></div>
     <h1>Babyway</h1>
     <div class="muted" style="margin-bottom:16px">Feeds, diapers, sleep, pumping &amp; medicine, shared by everyone who loves your baby</div>
     <div class="msg ok hidden" id="inviteNote">💌 You've been invited to join a baby! Sign in or create an account and you'll be added automatically.</div>
@@ -338,7 +340,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
 
 <div class="wrap hidden" id="app">
   <header>
-    <div class="avatar" id="avatar">🐣</div>
+    <div class="avatar" id="avatar"><img src="icons/icon-192.png" alt=""></div>
     <div><div class="hname" id="hname">Baby</div><div class="hage" id="hage"></div></div>
     <button class="iconbtn" id="nightBtn" title="Night mode (dim for night feeds)">🌙</button>
   </header>
@@ -495,6 +497,9 @@ const DEMO_KEY='littledays.v2.demo', PREF_KEY='littledays.prefs', MODE_KEY='litt
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const uuid=()=>crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)});
 const COLORS=['#FFD9C4','#BFDDF5','#C6EBDD','#DCD3F5','#FFF0BF','#F8D3E3'];
+const BW_IMG='<img src="icons/icon-192.png" alt="">';
+const babyPic=e=>(!e||e==='🐣')?BW_IMG:esc(e);
+const chipPic=e=>e==='🐣'?'<img class="bw" src="icons/icon-192.png" alt="Babyway chick">':e;
 const EMOJIS=['🐣','🌸','⭐','🌙','🐻','🐰','🦋','🍓'];
 
 let P=Object.assign({unit:'oz',night:false,hideGoals:false},JSON.parse(localStorage.getItem(PREF_KEY)||'{}'));
@@ -618,7 +623,7 @@ async function startCloudInner(){
 async function openSetup(){
   const {data:p}=await sb.from('profiles').select('display_name').eq('id',user.id).maybeSingle();
   $('#setupName').textContent=p?', '+p.display_name:'';$('#sBack').classList.toggle('hidden',!myBabies.length);
-  $('#sEmoji').innerHTML=EMOJIS.map((e,i)=>`<button class="chip ${i?'':'on'}" data-e="${e}">${e}</button>`).join('');
+  $('#sEmoji').innerHTML=EMOJIS.map((e,i)=>`<button class="chip ${i?'':'on'}" data-e="${e}">${chipPic(e)}</button>`).join('');
   $$('#sEmoji .chip').forEach(b=>b.onclick=()=>$$('#sEmoji .chip').forEach(x=>x.classList.toggle('on',x===b)));
   setMsg($('#sMsg'),'');show('setupScreen');
 }
@@ -766,7 +771,7 @@ function renderGoals(){
 function render(){
   if(!D)return;
   document.body.classList.toggle('night',!!P.night);
-  $('#hname').textContent=D.baby.name||'Baby';$('#hage').textContent=ageText(D.baby.birthdate)+(lifeDay(curWindow())?' · Day '+lifeDay(curWindow()):'');$('#avatar').textContent=D.baby.emoji||'🐣';
+  $('#hname').textContent=D.baby.name||'Baby';$('#hage').textContent=ageText(D.baby.birthdate)+(lifeDay(curWindow())?' · Day '+lifeDay(curWindow()):'');$('#avatar').innerHTML=babyPic(D.baby.emoji);
   renderWho();
   const hasSample=MODE==='demo'&&D.entries.some(e=>e.sample);
   $('#banner').innerHTML=MODE==='demo'?`<div class="banner">✨ <span><b>Demo mode</b>${hasSample?' with sample data':''}. It stays on this device only.</span><button class="btn sm" id="goReal">Make it real</button></div>`:'';
@@ -886,7 +891,7 @@ function renderFamily(){
   if(document.activeElement!==$('#pName'))$('#pName').value=D.baby.name;if(document.activeElement!==$('#pBirth'))$('#pBirth').value=D.baby.birthdate||'';if(document.activeElement!==$('#pBirthTime'))$('#pBirthTime').value=String(D.baby.birth_time||'').slice(0,5);
   $$('#dayStartSeg button').forEach(b=>b.classList.toggle('on',b.dataset.ds===(D.baby.day_start||'midnight')));
   $('#dayStartHint').textContent=D.baby.day_start==='birth'?(D.baby.birth_time?'Each day runs '+fmtT(windowStart(Date.now()))+' to '+fmtT(windowStart(Date.now()))+', counted from birth. Shared with everyone in the family.':'Add a birth time above to use baby-days.'):'Days run midnight to midnight. Shared with everyone in the family.';
-  $('#emojiChips').innerHTML=EMOJIS.map(e=>`<button class="chip ${e===D.baby.emoji?'on':''}" data-e="${e}">${e}</button>`).join('');
+  $('#emojiChips').innerHTML=EMOJIS.map(e=>`<button class="chip ${e===D.baby.emoji?'on':''}" data-e="${e}">${chipPic(e)}</button>`).join('');
   $$('#emojiChips .chip').forEach(b=>b.onclick=()=>{D.baby.emoji=b.dataset.e;saveBaby()});
   $('#babySwitch').innerHTML=MODE==='cloud'&&myBabies.length>1?`<label class="f">Switch baby</label><select id="babySel">${myBabies.map(b=>`<option value="${b.id}" ${b.id===D.baby.id?'selected':''}>${esc(b.emoji+' '+b.name)}</option>`).join('')}</select>`:'';
   if($('#babySel'))$('#babySel').onchange=e=>loadBaby(e.target.value);
@@ -1437,7 +1442,7 @@ function renderDoc(){
   const who=D.people.map(p=>p.name).join(', ');
   const gRows=['w','l','h'].map(m=>{const c=gChange(m);if(!c)return'';const p=whoPct(m,c.cur);
     return `<tr><td>${GNAME[m]}${m==='h'?' circ.':''}</td><td class="n"><b>${fmtGV(m,c.cur[m])}</b><br><span style="color:#7C778E">${fmtD(c.cur.date,true)}</span></td><td>${changeText(m,c)}</td><td class="n">${p!=null?pctText(p):'—'}</td></tr>`}).join('');
-  $('#docMain').innerHTML=`<div class="dh"><div class="av">${esc(b.emoji||'🐣')}</div><div style="flex:1"><h1>${esc(b.name)}</h1>
+  $('#docMain').innerHTML=`<div class="dh"><div class="av">${babyPic(b.emoji)}</div><div style="flex:1"><h1>${esc(b.name)}</h1>
       <div class="meta">${[born,ageLong(),n?'Day '+n+' of life':'',b.sex?(b.sex==='female'?'Girl':'Boy'):''].filter(Boolean).map(esc).join(' · ')}</div></div>
       <div class="meta" style="text-align:right">Pediatrician summary<br>${esc(new Date().toLocaleString([], {month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}))}</div></div>
     <div class="keep"><h2>Feeding, diapers &amp; sleep</h2>
@@ -1489,7 +1494,7 @@ async function shareDoc(){if(notesDirty){clearTimeout(notesT);await saveNotes()}
   const text=docText(),title=D.baby.name+': summary for the pediatrician';
   if(window.LDNative&&LDNative.shareDoc)return LDNative.shareDoc(text,title);
   try{let files=null;
-    try{const blob=await docImage(text);const f=new File([blob],'little-days-summary.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))files=[f]}catch(e){}
+    try{const blob=await docImage(text);const f=new File([blob],'babyway-summary.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))files=[f]}catch(e){}
     if(navigator.share){await navigator.share(files?{files,title,text}:{title,text});return}
   }catch(e){if(e&&e.name==='AbortError')return}
   copy(text,'Summary copied. Paste it into a message or email')}
@@ -1509,7 +1514,9 @@ function randomNonce(){
 async function callAppleFn(action, extra={}){
   if(!sb) return {error:'not signed in'};
   const {data}=await sb.auth.getSession(); if(!data.session) return {error:'not signed in'};
-  return fetch(APPLE_FN,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+data.session.access_token,apikey:SUPABASE_KEY},body:JSON.stringify({action,...extra})}).then(r=>r.json()).catch(e=>({error:String(e)}));
+  // never let this block sign-in or account deletion (e.g. while the apple-auth function isn't deployed yet)
+  const ac=new AbortController(), tm=setTimeout(()=>ac.abort(),8000);
+  return fetch(APPLE_FN,{method:'POST',signal:ac.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+data.session.access_token,apikey:SUPABASE_KEY},body:JSON.stringify({action,...extra})}).then(r=>r.json()).catch(e=>({error:String(e)})).finally(()=>clearTimeout(tm));
 }
 // auth screen
 let authMode='in';
@@ -1589,7 +1596,8 @@ async function openDeleteAccount(){
       const go=$('#delGo'),t=$('#delTxt');t.oninput=()=>{go.disabled=t.value.trim()!=='DELETE'};$('#delNo').onclick=closeSheet;
       go.onclick=async()=>{if(t.value.trim()!=='DELETE')return;go.disabled=true;go.textContent='Deleting…';
         try{await dropThisDevice()}catch(e){}
-        try{await callAppleFn('revoke')}catch(e){}
+        const viaApple=((user.app_metadata&&user.app_metadata.providers)||[]).includes('apple')||(user.app_metadata&&user.app_metadata.provider)==='apple';
+        if(viaApple){try{await callAppleFn('revoke')}catch(e){}}
         const {error}=await sb.rpc('delete_my_account',{p_confirm:'DELETE'});
         if(error){go.disabled=false;go.textContent='Delete my account';return toast(friendly(error,"Couldn't delete your account"))}
         try{if(window.LDNative&&LDNative.reset)await LDNative.reset()}catch(e){}

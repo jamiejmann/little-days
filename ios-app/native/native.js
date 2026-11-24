@@ -339,7 +339,7 @@
   async function shareDoc(text, title) {
     try {
       if (!FS || !SH) throw new Error('share unavailable');
-      const name = 'Little-Days-summary-' + new Date().toISOString().slice(0, 10) + '.pdf';
+      const name = 'Babyway-summary-' + new Date().toISOString().slice(0, 10) + '.pdf';
       const w = await FS.writeFile({ path: name, data: makePdf(text), directory: 'CACHE' });
       await SH.share({ title, dialogTitle: title, files: [w.uri] });
     } catch (e) {
