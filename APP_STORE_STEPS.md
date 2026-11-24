@@ -1,9 +1,11 @@
-# Little Days on the App Store: your steps
+# Babyway on the App Store: your steps
 
 The iOS app is ready to build. These are the steps only you can do, because they need your Apple account. Do them in order. Each step says what to copy and where it goes.
 
 **Bundle ID:** `com.jamiejmann.littledays`
-**App name:** Little Days · **Price:** $9.99 one-time, whole family, no in-app purchases · **Devices:** iPhone only
+
+> **Renamed from Little Days.** The bundle ID stays `com.jamiejmann.littledays` because Apple doesn't let you change it, and users never see it. If the app record already exists in App Store Connect as "Little Days", rename it under **App Information → Name** (and the subtitle on the version page). Steps below that say "Apps → Little Days" mean the same app record.
+**App name:** Babyway (App Store name: "Babyway: Baby Tracker") · **Price:** $9.99 one-time, whole family, no in-app purchases · **Devices:** iPhone only
 
 > **Keep keys out of chat.** Apple gives you two secret files (`.p8`) and a few IDs. Never paste them into a chat, email, or the code. Paste them yourself into the two places listed in step 5: GitHub's **Secrets** page and Supabase's **Edge Function Secrets** page. If you'd like me to do it for you, ask me for a **secure form** and I'll send one. Don't paste them in a message.
 
@@ -27,7 +29,7 @@ You'll get an email ("Welcome to the Apple Developer Program"). Nothing below wo
 1. Go to <https://appstoreconnect.apple.com>, then **Apps**, then **+**, then **New App**.
 2. Fill it in like this:
    - Platform: **iOS**
-   - Name: **Little Days** (if the name is taken, try "Little Days – Baby Tracker")
+   - Name: **Babyway: Baby Tracker** (fallback: "Babyway: Baby & Feed Log")
    - Primary language: English (U.S.)
    - Bundle ID: pick **com.jamiejmann.littledays** from the list
    - SKU: `littledays-ios-1` (this is only for your records)
@@ -124,7 +126,7 @@ The result is **4+**. Don't choose the "Made for Kids" category, because the app
 - **Account deletion (required by Apple):** done. It's under **Family → Settings → Delete my account**, and also on the welcome screen. You confirm by typing DELETE. Mention it in the review notes.
 - **Screenshots:** upload 6.9-inch iPhone screenshots (1320×2868 or 1290×2796). I can make these.
 - **App Review information:** give a demo login (an email and password for a test family with sample data) so the reviewer can sign in. Add a note like this one:
-  > "Little Days is a shared baby tracker for parents. Native features: feeding alarms delivered as local notifications and APNs push to every parent in the family, haptic feedback when logging, offline logging with sync."
+  > "Babyway is a shared baby tracker for parents. Native features: feeding alarms delivered as local notifications and APNs push to every parent in the family, haptic feedback when logging, offline logging with sync."
 - **Description, keywords, support URL:** the support URL can be the GitHub Pages site.
 
 ## What's already done (no action needed)

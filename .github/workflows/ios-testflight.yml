@@ -1,4 +1,4 @@
-# Builds the Little Days iOS app and uploads it to TestFlight.
+# Builds the Babyway iOS app and uploads it to TestFlight.
 # Manual only (Actions tab -> "iOS app -> TestFlight" -> Run workflow). It does nothing until the
 # four secrets below exist; see APP_STORE_STEPS.md. It never touches the website.
 name: iOS app -> TestFlight

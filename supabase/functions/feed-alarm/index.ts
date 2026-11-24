@@ -1,4 +1,4 @@
-// Little Days feed-alarm Edge Function.
+// Babyway feed-alarm Edge Function.
 // - Called every minute by pg_cron (header x-cron-secret) -> sends overdue-feed alerts to every family member's
 //   web browsers (Web Push) and iPhones running the app (APNs).
 // - Called by a signed-in user with {"action":"test"} -> sends a test alert to that user's own devices.
@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
     if (body.action === "test") {
       const u = await userFrom(req); if (!u) return json({ error: "Please sign in" }, 401);
       const { subs, devs } = await devicesFor([u.id]);
-      const p = { title: "Little Days 🍼", body: "Test alert: feeding alarms are working on this phone.", tag: "test" };
+      const p = { title: "Babyway 🍼", body: "Test alert: feeding alarms are working on this phone.", tag: "test" };
       const results = await Promise.all([...subs.map((s) => send(s, p)), ...devs.map((d) => sendApns(d, p, apnsConfig(), devChange))]);
       return json({ devices: results.filter((r) => r !== "apns-disabled").length, results });
     }

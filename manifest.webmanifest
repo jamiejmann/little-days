@@ -1,6 +1,6 @@
 {
-  "name": "Little Days · Baby Tracker",
-  "short_name": "Little Days",
+  "name": "Babyway · Baby Tracker",
+  "short_name": "Babyway",
   "description": "A gentle, shared baby tracker for feeds, diapers and sleep.",
   "start_url": "./",
   "scope": "./",

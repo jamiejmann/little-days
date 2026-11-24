@@ -1,4 +1,4 @@
-/* Little Days iOS app layer (Capacitor). Loaded only in the app build, never on the website.
+/* Babyway iOS app layer (Capacitor). Loaded only in the app build, never on the website.
  * - Native push (APNs) instead of Web Push; tokens go to Supabase `device_tokens` via register_device_token().
  * - Native local notifications for the feeding alarm (fallback whenever server push isn't active for this phone).
  * - Haptics on logging, status bar that follows night mode, splash screen.
@@ -91,7 +91,7 @@
       .filter(([, t]) => t > Date.now() + 5000 && (D.baby.feed_alarm_night !== false || !night(t)))
       .map(([id, t, k]) => ({
         id, title: k === 'due' ? `${name}'s feed is due 🍼` : `Reminder: ${name}'s feed`,
-        body: `Last feed was at ${fmtT(lf)}. Fed on another phone? Open Little Days to check.`,
+        body: `Last feed was at ${fmtT(lf)}. Fed on another phone? Open Babyway to check.`,
         schedule: { at: new Date(t), allowWhileIdle: true }, threadIdentifier: 'feed-' + D.baby.id, extra: { babyId: D.baby.id, kind: k },
       }));
   }
@@ -121,11 +121,11 @@
     const steps = $('#iosSteps'); if (steps) steps.classList.add('hidden');
     b.classList.remove('hidden');
     const p = await perm();
-    if (p === 'denied') { s.textContent = 'Notifications are off for Little Days. Turn them on in Settings → Little Days → Notifications.'; b.classList.add('hidden'); t.classList.add('hidden'); return; }
+    if (p === 'denied') { s.textContent = 'Notifications are off for Babyway. Turn them on in Settings → Babyway → Notifications.'; b.classList.add('hidden'); t.classList.add('hidden'); return; }
     if (on() && p === 'granted') {
       s.innerHTML = '✅ <b>Alerts are on for this phone.</b> ' + (st.remote ? 'Sent by our server, so a feed logged on any phone resets them.' : 'Scheduled on this phone from the latest log.');
       b.textContent = 'Turn off'; t.classList.remove('hidden');
-    } else { s.textContent = 'Get a gentle notification when a feed is due, even when Little Days is closed.'; b.textContent = 'Enable alerts'; t.classList.add('hidden'); }
+    } else { s.textContent = 'Get a gentle notification when a feed is due, even when Babyway is closed.'; b.textContent = 'Enable alerts'; t.classList.add('hidden'); }
   }
   async function pushOn() {
     const a = app();
@@ -145,7 +145,7 @@
     const a = app();
     if (st.remote) { const r = await callFn('test'); a && a.toast(r && !r.error ? 'Test sent to ' + r.devices + ' device' + (r.devices === 1 ? '' : 's') + ' 🔔' : 'Test failed: ' + (r && r.error)); return; }
     if (!LN) return;
-    await LN.schedule({ notifications: [{ id: 7199, title: 'Little Days 🍼', body: 'Test alert: feeding alarms work on this phone.', schedule: { at: new Date(Date.now() + 5000) } }] });
+    await LN.schedule({ notifications: [{ id: 7199, title: 'Babyway 🍼', body: 'Test alert: feeding alarms work on this phone.', schedule: { at: new Date(Date.now() + 5000) } }] });
     a && a.toast('Test alert in 5 seconds. You can close the app 🔔');
   }
   async function dropThisDevice() {
@@ -174,7 +174,7 @@
     const put = (t, size, bold, color, gap) => { doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(size); doc.setTextColor(...color);
       for (const ln of doc.splitTextToSize(t, W - 2 * M)) { if (y + size > Hh - M) { doc.addPage(); y = M; } doc.text(ln, M, y + size); y += size * 1.35; } y += gap || 0; };
     lines.forEach((l, i) => {
-      if (/^Made with Little Days/.test(l)) return;
+      if (/^Made with Babyway/.test(l)) return;
       if (i === 0) return put(l, 18, true, [43, 39, 64], 4);
       if (i <= 2) return put(l, 11, false, [110, 105, 130], i === 2 ? 6 : 0);
       if (!l.trim()) { y += 8; return; }
@@ -182,7 +182,7 @@
       put(l, 11, false, [30, 30, 30]);
     });
     if (y + 40 > Hh - M) { doc.addPage(); y = M; }
-    y += 14; put('Made with Little Days · thelittledaysapp.com', 9, false, [140, 135, 155]);
+    y += 14; put('Made with Babyway · thelittledaysapp.com', 9, false, [140, 135, 155]);
     return doc.output('datauristring').split(',')[1];
   }
   async function shareDoc(text, title) {

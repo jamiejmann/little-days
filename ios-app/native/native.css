@@ -1,4 +1,4 @@
-/* Little Days iOS app only (never shipped to the website). */
+/* Babyway iOS app only (never shipped to the website). */
 /* status bar overlays the web view (StatusBar.overlaysWebView=true), so everything at the top clears it.
    --ld-top = the safe-area inset; native.js sets a fallback if WebKit reports 0 on a phone with a notch/Dynamic Island. */
 html.native{--ld-top:env(safe-area-inset-top,0px)}

@@ -9,9 +9,9 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Little Days">
+<meta name="apple-mobile-web-app-title" content="Babyway">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>Little Days · Baby Tracker</title>
+<title>Babyway · Baby Tracker</title>
 <style>
 :root{
   --bg:#FBF7F0; --card:#FFFFFF; --ink:#4A4560; --soft:#8C87A3; --line:#EFE8DD;
@@ -278,14 +278,14 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
   <div class="auth">
     <div class="logo">☁️</div>
     <h1>You're offline</h1>
-    <p class="msg ok" style="margin-top:14px">You're still signed in, and anything saved on this phone is safe. Little Days will open and sync as soon as you're back online.</p>
+    <p class="msg ok" style="margin-top:14px">You're still signed in, and anything saved on this phone is safe. Babyway will open and sync as soon as you're back online.</p>
     <button class="btn" id="offRetry" style="margin-top:16px">Try again</button>
   </div>
 </div>
 <div class="wrap hidden" id="authScreen">
   <div class="auth">
     <div class="logo">🐣</div>
-    <h1>Little Days</h1>
+    <h1>Babyway</h1>
     <div class="muted" style="margin-bottom:16px">Feeds, diapers, sleep, pumping &amp; medicine, shared by everyone who loves your baby</div>
     <div class="msg ok hidden" id="inviteNote">💌 You've been invited to join a baby! Sign in or create an account and you'll be added automatically.</div>
     <div class="card" style="margin-top:14px">
@@ -333,7 +333,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
   <header>
     <div class="avatar" id="avatar">🐣</div>
     <div><div class="hname" id="hname">Baby</div><div class="hage" id="hage"></div></div>
-    <button class="iconbtn" id="nightBtn" title="Night mode (dim for 3am)">🌙</button>
+    <button class="iconbtn" id="nightBtn" title="Night mode (dim for night feeds)">🌙</button>
   </header>
 
   <div class="who" id="whoBar"></div>
@@ -419,12 +419,12 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
       </div>
       <div style="border-top:2px dashed var(--line);margin:14px 0 4px"></div>
       <h3 style="margin-top:10px">🔔 Alerts on this phone</h3>
-      <div class="muted" id="pushStatus">Get a gentle notification even when Little Days is closed.</div>
+      <div class="muted" id="pushStatus">Get a gentle notification even when Babyway is closed.</div>
       <div class="row" style="margin-top:10px"><button class="btn peach" id="pushOn">Enable alerts</button><button class="btn ghost hidden" id="pushTest">Send test</button></div>
       <div class="steps hidden" id="iosSteps"><b>On iPhone (iOS 16.4 or newer):</b><ol>
         <li>Tap the <b>Share</b> button <span style="font-size:16px">⬆️</span> at the bottom of Safari.</li>
         <li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li>
-        <li>Open <b>Little Days</b> from your home screen and sign in.</li>
+        <li>Open <b>Babyway</b> from your home screen and sign in.</li>
         <li>Come back here and tap <b>Enable alerts</b>, then <b>Allow</b>.</li></ol>
         <div class="muted">Apple only allows website notifications from apps added to the Home Screen.</div></div>
     </div>
@@ -469,7 +469,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
       <textarea id="docNotes" maxlength="4000" placeholder="Write questions as they come up, e.g. “Is 2 dirty diapers a day OK?”. Shared with your family."></textarea>
       <div class="notesPrint" id="docNotesPrint"></div><div class="saved" id="docSaved"></div></div>
     <div class="fine" id="docFine"></div>
-    <div class="credit">Made with Little Days · <a href="https://thelittledaysapp.com">thelittledaysapp.com</a></div>
+    <div class="credit">Made with Babyway · <a href="https://thelittledaysapp.com">thelittledaysapp.com</a></div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -516,7 +516,7 @@ const running=(type,sub)=>D.entries.find(e=>e.type===type&&!e.end&&(!sub||e.subt
 function show(id){['offlineScreen','authScreen','setupScreen','app'].forEach(x=>$('#'+x).classList.toggle('hidden',x!==id));$('#nav').classList.toggle('hidden',id!=='app')}
 function setMsg(el,text,ok){el.textContent=text;el.className='msg '+(ok?'ok':'err');el.classList.toggle('hidden',!text)}
 // Friendly, generic error text for people; the technical details only go to the console.
-function logErr(where,err){try{console.error('[Little Days] '+where,err)}catch(_){}}
+function logErr(where,err){try{console.error('[Babyway] '+where,err)}catch(_){}}
 function errText(err){return String((err&&(err.message||err.msg||err.error_description||err.error))||err||'')}
 function friendly(err,what){logErr(what||'error',err);const m=errText(err),c=(err&&(err.code||err.error_code))||'';
   if(!navigator.onLine||/failed to fetch|network|load failed/i.test(m))return "You're offline right now. Please try again when you're back online.";
@@ -891,7 +891,7 @@ function renderFamily(){
       <div class="row"><button class="btn peach" id="copyLink">Copy invite link</button><button class="btn ghost" id="newCode">New code</button></div>`
       :`<button class="btn peach full" id="newCode" style="margin-top:12px">💌 Make an invite code</button>`}`;
     $('#newCode').onclick=makeInvite;
-    if(valid)$('#copyLink').onclick=()=>copy(`Join ${D.baby.name} on Little Days 🍼 Open ${inviteLink(invite.code)} (or enter code ${invite.code})`,'Invite link copied');
+    if(valid)$('#copyLink').onclick=()=>copy(`Join ${D.baby.name} on Babyway 🍼 Open ${inviteLink(invite.code)} (or enter code ${invite.code})`,'Invite link copied');
   }
   $('#cgList').innerHTML=D.people.map(c=>{const n=D.entries.filter(e=>e.by===c.id).length;
     const canRm=MODE==='demo'?D.people.length>1:(isOwner&&c.id!==D.me);
@@ -1399,7 +1399,7 @@ const bt=(s,k=1)=>s.oz||s.ml?bottleTotal({oz:s.oz/k,ml:s.ml/k}):'—';
 const mins=v=>Math.round(v)+' min';
 const per=(v,k)=>(Math.round(v/k*10)/10);
 function docText(){const {d24,d7,span,days}=docData(),b=D.baby,n=lifeDay(curWindow()),L=[];
-  L.push('Little Days · Pediatrician summary');
+  L.push('Babyway · Pediatrician summary');
   L.push(`${b.name}${b.birthdate?' · born '+fmtD(b.birthdate,true)+(b.birth_time?' at '+fmtT(Date.parse(b.birthdate+'T'+String(b.birth_time).slice(0,5))):''):''}${ageLong()?' · '+ageLong():''}${n?' · day '+n+' of life':''}${b.sex?' · '+(b.sex==='female'?'girl':'boy'):''}`);
   L.push('Prepared '+new Date().toLocaleString([], {month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}));
   const blk=(t,s,k)=>{L.push('',t);
@@ -1418,7 +1418,7 @@ function docText(){const {d24,d7,span,days}=docData(),b=D.baby,n=lifeDay(curWind
   const md=recentMeds();if(md.length){L.push('','MEDICINE (last 7 days)');md.forEach(e=>L.push(fmtD2(e.start)+' · '+[e.details.name,e.details.dose].filter(Boolean).join(', ')))}
   const rn=recentNotes();if(rn.length){L.push('','NOTES FROM THE LOG (last 7 days)');rn.forEach(e=>L.push(fmtD2(e.start)+' · '+noteType(e)+': '+e.details.note))}
   const nt=(b.doctor_notes||'').trim();if(nt)L.push('','QUESTIONS FOR THE DOCTOR',nt);
-  L.push('','Made with Little Days · thelittledaysapp.com');
+  L.push('','Made with Babyway · thelittledaysapp.com');
   return L.join('\n')}
 function renderDoc(){
   const {d24,d7,span,days}=docData(),b=D.baby,n=lifeDay(curWindow()),k=span;
@@ -1453,7 +1453,7 @@ function renderDoc(){
     ${(()=>{const md=recentMeds();if(!md.length)return'';return `<div class="keep"><h2>Medicine · last 7 days</h2><table><tbody>${md.map(e=>`<tr><td style="white-space:nowrap">${esc(fmtD2(e.start))}</td><td><b>${esc(e.details.name||'')}</b></td><td>${esc(e.details.dose||'')}</td><td>${esc(person(e.by).name)}</td></tr>`).join('')}</tbody></table><div class="fine" style="margin-top:4px">As logged by the family.</div></div>`})()}
     ${(()=>{const rn=recentNotes();if(!rn.length)return'';return `<div class="keep"><h2>Notes from the log · last 7 days</h2><table><tbody>${rn.map(e=>`<tr><td style="white-space:nowrap">${esc(fmtD2(e.start))}</td><td>${esc(noteType(e))}</td><td>${esc(e.details.note)}</td></tr>`).join('')}</tbody></table></div>`})()}
     <div class="keep"><h2>Growth</h2>${gRows?`<table><thead><tr><th></th><th class="n">Latest</th><th>Change since last measurement</th><th class="n">WHO percentile</th></tr></thead><tbody>${gRows}</tbody></table>`:'<div class="meta">No measurements logged yet.</div>'}</div>`;
-  $('#docFine').innerHTML=`Logged at home by ${esc(who||'family')} with Little Days. A “wet” or “dirty” count includes diapers that were both.${gRows?' Percentiles compare with the WHO Child Growth Standards (birth to 2 years)'+(b.sex?'':' and need the baby’s sex to be set')+'. They are for information only and are not medical advice.':''}`;
+  $('#docFine').innerHTML=`Logged at home by ${esc(who||'family')} with Babyway. A “wet” or “dirty” count includes diapers that were both.${gRows?' Percentiles compare with the WHO Child Growth Standards (birth to 2 years)'+(b.sex?'':' and need the baby’s sex to be set')+'. They are for information only and are not medical advice.':''}`;
   if(document.activeElement!==$('#docNotes')&&!notesDirty){$('#docNotes').value=b.doctor_notes||'';$('#docNotesPrint').textContent=b.doctor_notes||''}
 }
 async function openDoc(){try{if(D.baby.sex&&D.baby.birthdate)await loadWHO()}catch(e){}renderDoc();$('#docView').classList.add('on');$('#docView').scrollTop=0;document.body.style.overflow='hidden'}
@@ -1468,7 +1468,7 @@ async function saveNotes(){const v=$('#docNotes').value.slice(0,4000);notesDirty
   notesDirty=false;$('#docSaved').textContent='Saved · shared with your family';const bb=myBabies.find(x=>x.id===D.baby.id);if(bb)bb.doctor_notes=v}
 function docImage(text){ // a calm, simple PNG of the summary text for the Share sheet
   const W=1080,P=64,c=document.createElement('canvas'),x=c.getContext('2d'),font=(w,s)=>`${w} ${s}px Nunito, "Segoe UI", system-ui, sans-serif`;
-  const lines=[];text.split('\n').forEach((ln,i)=>{const head=/^(LAST 24|LAST 7|BY DAY|GROWTH|QUESTIONS)/.test(ln),credit=/^Made with Little Days/.test(ln);const f=i===0?font(800,40):i===1?font(800,34):head?font(800,26):credit?font(600,22):font(500,27);
+  const lines=[];text.split('\n').forEach((ln,i)=>{const head=/^(LAST 24|LAST 7|BY DAY|GROWTH|QUESTIONS)/.test(ln),credit=/^Made with Babyway/.test(ln);const f=i===0?font(800,40):i===1?font(800,34):head?font(800,26):credit?font(600,22):font(500,27);
     x.font=f;const words=ln.split(' ');let cur='';words.forEach(w=>{const t=cur?cur+' '+w:w;if(x.measureText(t).width>W-2*P&&cur){lines.push([cur,f,head,i,credit]);cur=w}else cur=t});lines.push([cur,f,head,i,credit])});
   const lh=l=>l[3]===0?56:l[3]===1?48:l[0]===''?18:l[4]?32:40;c.width=W;c.height=P*2+lines.reduce((a,l)=>a+lh(l),0)+30;
   x.fillStyle='#FBF7F0';x.fillRect(0,0,W,c.height);x.fillStyle='#FFFFFF';x.beginPath();x.roundRect?x.roundRect(24,24,W-48,c.height-48,36):x.rect(24,24,W-48,c.height-48);x.fill();
@@ -1532,7 +1532,7 @@ async function openDeleteAccount(){
     :`👋 You'll leave <b>${esc(x.baby)}</b>. Everyone else keeps it.`;
   const shared=(pv||[]).some(x=>x.action!=='delete');
   openSheet(`<h2 style="margin-top:0">Delete my account</h2>
-    <div class="muted">This permanently deletes your Little Days account (${esc(user.email)}). It can't be undone.</div>
+    <div class="muted">This permanently deletes your Babyway account (${esc(user.email)}). It can't be undone.</div>
     <div class="delbox">${(pv||[]).length?(pv||[]).map(x=>`<p>${line(x)}</p>`).join(''):'<p>You are not on any baby yet.</p>'}
     ${shared?`<p>📝 Entries you logged on babies that stay are kept for the family and will show as <b>“Former caregiver”</b>.</p>`:''}
     <p>🔕 Your name, sign-in, invite codes and alert settings on all your devices are removed.</p></div>
@@ -1547,7 +1547,7 @@ async function openDeleteAccount(){
         try{if(window.LDNative&&LDNative.reset)await LDNative.reset()}catch(e){}
         [QUEUE_KEY,BABY_KEY,MODE_KEY,'littledays.pendingInvite'].forEach(k=>localStorage.removeItem(k));Q=[];
         try{await sb.auth.signOut({scope:'local'})}catch(e){}
-        try{if(channel)sb.removeChannel(channel)}catch(e){}channel=null;user=null;D=null;myBabies=[];closeSheet();showAuth();$('#aPass').value='';$('#aEmail').value='';setMsg($('#aMsg'),'Your account and its data have been deleted. Thank you for using Little Days 💜',true)}});
+        try{if(channel)sb.removeChannel(channel)}catch(e){}channel=null;user=null;D=null;myBabies=[];closeSheet();showAuth();$('#aPass').value='';$('#aEmail').value='';setMsg($('#aMsg'),'Your account and its data have been deleted. Thank you for using Babyway 💜',true)}});
 }
 
 setInterval(()=>{if(D&&D.entries.some(e=>!e.end))renderToday()},1000);
@@ -1617,11 +1617,11 @@ async function refreshPushStatus(){
   const st=$('#pushStatus'),on=$('#pushOn'),test=$('#pushTest');if(!st)return;
   $('#iosSteps').classList.toggle('hidden',!(isIOS()&&!isStandalone()));
   if(MODE!=='cloud'){st.textContent='Phone alerts need a free account (the demo only chimes while open).';on.textContent='Create account';test.classList.add('hidden');return}
-  if(!pushSupported()){st.textContent=isIOS()?'Add Little Days to your Home Screen first (steps below).':'This browser can\'t show notifications. The app will still chime while it\'s open.';on.classList.toggle('hidden',!isIOS());on.textContent='Enable alerts';test.classList.add('hidden');return}
+  if(!pushSupported()){st.textContent=isIOS()?'Add Babyway to your Home Screen first (steps below).':'This browser can\'t show notifications. The app will still chime while it\'s open.';on.classList.toggle('hidden',!isIOS());on.textContent='Enable alerts';test.classList.add('hidden');return}
   const sub=await currentSub().catch(()=>null);
   if(Notification.permission==='denied'){st.textContent='Notifications are blocked for this site. Turn them on in your phone\'s Settings → Notifications.';test.classList.add('hidden');return}
   if(sub&&Notification.permission==='granted'){st.innerHTML='✅ <b>Alerts are on for this phone.</b>';on.textContent='Turn off';test.classList.remove('hidden')}
-  else{st.textContent='Get a gentle notification even when Little Days is closed.';on.textContent='Enable alerts';test.classList.add('hidden')}
+  else{st.textContent='Get a gentle notification even when Babyway is closed.';on.textContent='Enable alerts';test.classList.add('hidden')}
 }
 $('#pushOn').onclick=async()=>{
   if(MODE!=='cloud')return leaveDemo();
@@ -1661,7 +1661,7 @@ if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostnam
     setInterval(chk,30*60*1000);window.__swCheck=chk;
   }).catch(()=>{});
 }
-if(sessionStorage.getItem('littledays.updated')){sessionStorage.removeItem('littledays.updated');setTimeout(()=>toast('Updated ✨ Little Days is up to date'),600)}
+if(sessionStorage.getItem('littledays.updated')){sessionStorage.removeItem('littledays.updated');setTimeout(()=>toast('Updated ✨ Babyway is up to date'),600)}
 
 // Offline cold start while signed in: keep the session, mode and offline queue; reopen when the network is back.
 const isNetErr=e=>!navigator.onLine||!!(e&&(e.name==='AuthRetryableFetchError'||/fetch|network/i.test(e.message||'')));

@@ -1,4 +1,4 @@
-// APNs (Apple Push Notification service) sender for the Little Days iOS app.
+// APNs (Apple Push Notification service) sender for the Babyway iOS app.
 // Token-based auth: an ES256 JWT signed with the .p8 key from App Store Connect (Keys -> APNs).
 // Disabled (returns "apns-disabled") until APNS_KEY_ID, APNS_TEAM_ID and APNS_PRIVATE_KEY are set as Edge Function secrets.
 export type Payload = { title: string; body: string; tag: string; babyId?: string; kind?: string };

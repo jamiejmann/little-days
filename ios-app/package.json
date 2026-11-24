@@ -2,7 +2,7 @@
   "name": "little-days-ios",
   "private": true,
   "version": "1.0.0",
-  "description": "Native iOS app for Little Days (Capacitor). The web app is bundled locally; the backend stays on Supabase.",
+  "description": "Native iOS app for Babyway (Capacitor). The web app is bundled locally; the backend stays on Supabase.",
   "scripts": {
     "build:web": "node scripts/build-web.mjs",
     "sync": "npm run build:web && npx cap sync ios",
