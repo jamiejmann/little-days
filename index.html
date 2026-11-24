@@ -230,6 +230,28 @@ body.night .gs .p{background:rgba(0,0,0,.2)}
 .goal[data-k=wet] .goalDot.on{background:var(--mint-d)}
 .goal[data-k=stool] .goalDot.on{background:#C9A27E}
 body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
+/* today's moments card */
+.goal[data-k=tummy] .goalDot.on{background:var(--lav-d)}
+.mfocus{font-size:13px;color:var(--soft);margin:-4px 0 10px}
+.mo{border-top:1px solid var(--line);padding:10px 0}
+.mo:first-of-type{border-top:none;padding-top:2px}
+.moTop{display:flex;align-items:center;gap:10px;cursor:pointer}
+.moEm{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:17px;flex:none;background:var(--lav)}
+.moTxt{flex:1;min-width:0}
+.moT{font-weight:800;font-size:14.5px}
+.moD{font-size:12.5px;color:var(--soft);font-weight:700;margin-top:1px}
+.moChk{width:32px;height:32px;border-radius:50%;border:2px solid var(--line);background:transparent;display:grid;place-items:center;font:inherit;font-size:14px;font-weight:800;color:transparent;flex:none;cursor:pointer;padding:0}
+.moChk.part{border-color:var(--mint-d);color:var(--mint-d);font-size:11.5px}
+.mo.done .moChk{background:var(--mint-d);border-color:var(--mint-d);color:#fff}
+.mo.done .moT{color:var(--soft)}
+.moMore{display:none;margin:10px 0 2px 44px;font-size:13.5px;line-height:1.45}
+.mo.open .moMore{display:block}
+.moMore ol{margin:0 0 8px;padding-left:18px}.moMore li{margin-bottom:4px}
+.moMore p{margin:0 0 6px}
+.moSafe{background:var(--yellow);border-radius:12px;padding:6px 10px;font-size:12.5px;font-weight:700;margin-top:6px}
+.moArea{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.02em;color:var(--soft);text-transform:uppercase;margin-bottom:6px}
+.moRule{background:var(--mint);border-radius:14px;padding:8px 12px;font-size:12.5px;font-weight:700;margin-top:10px;line-height:1.4}
+.srcList{margin:8px 0 0;padding-left:18px;font-size:13.5px;line-height:1.5}.srcList a{color:inherit}
 /* pediatrician summary (always light, prints on one page) */
 #docView{position:fixed;inset:0;z-index:30;background:#F4F1EC;overflow:auto;display:none;-webkit-overflow-scrolling:touch}
 #docView.on{display:block}
@@ -354,6 +376,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
     <div class="medRow"><button class="medBtn" id="addMed">💊 Medicine</button><button class="lastMed hidden" id="lastMed" aria-label="Log the last medicine again"></button></div>
     <button class="again hidden" id="bAgain" aria-label="Log the same bottle again"></button>
     <div class="card hidden" id="goalsCard"></div>
+    <div class="card hidden" id="momentsCard"></div>
     <div class="card" id="l24card">
       <div class="l24head"><h3>🕐 Last 24 hours</h3><span class="muted" id="l24when"></span></div>
       <div class="l24grid" id="l24"></div>
@@ -448,6 +471,8 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
       <div class="seg" id="gunitSeg"><button data-gu="imperial">lb · oz · in</button><button data-gu="metric">kg · cm</button></div>
       <label class="switch">Show today's goals<input type="checkbox" id="goalsOn"></label>
       <div class="muted" id="goalsHint" style="margin-top:-4px;margin-bottom:8px">Typical newborn ranges for the first 8 weeks.</div>
+      <label class="switch">Show today's moments<input type="checkbox" id="momentsOn"></label>
+      <div class="muted" style="margin-top:-4px;margin-bottom:8px">2–3 short, age-based activities a day, through the first year.</div>
       <div class="row" style="flex-wrap:wrap" id="settingsBtns"></div>
       <div class="legal" id="legalRow"><a href="privacy.html">Privacy policy</a> · <a href="mailto:thelittledaysapp@gmail.com">Contact us</a><span id="delWrap"> · <button class="link" id="delAcct">Delete my account</button></span></div>
     </div>
@@ -474,6 +499,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
 </div>
 <div class="toast" id="toast"></div>
 <div id="alarmBannerWrap"></div>
+<script src="moments.js"></script>
 <script>
 (function(){
 /* ======== CONFIG (public values only: the publishable key is safe in a web page; RLS protects the data) ======== */
@@ -489,7 +515,7 @@ const uuid=()=>crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xx
 const COLORS=['#FFD9C4','#BFDDF5','#C6EBDD','#DCD3F5','#FFF0BF','#F8D3E3'];
 const EMOJIS=['🐣','🌸','⭐','🌙','🐻','🐰','🦋','🍓'];
 
-let P=Object.assign({unit:'oz',night:false,hideGoals:false},JSON.parse(localStorage.getItem(PREF_KEY)||'{}'));
+let P=Object.assign({unit:'oz',night:false,hideGoals:false,hideMoments:false},JSON.parse(localStorage.getItem(PREF_KEY)||'{}'));
 const savePrefs=()=>localStorage.setItem(PREF_KEY,JSON.stringify(P));
 let MODE=null;          // 'demo' | 'cloud'
 let D=null;             // current data: {baby, people:[{id,name,color,role}], me, entries:[]}
@@ -710,6 +736,7 @@ function describe(e){
   if(e.type==='pump'){const mn=e.end?Math.round((e.end-e.start)/6e4):0;
     return {i:'🧴',bg:'var(--lav)',t:e.end?'Pumping':'Pumping now',d:e.end?[e.amount?e.amount+' '+(e.unit||''):'',mn?mn+' min':'',d.pside?({L:'left',R:'right',both:'both sides'}[d.pside]):''].filter(Boolean).join(' · '):'timer running · since '+fmtT(e.start)}}
   if(e.type==='medicine')return {i:'💊',bg:'var(--yellow)',t:'Medicine',d:[d.name,d.dose].filter(Boolean).join(' · ')};
+  if(e.type==='moment'){const m=MOM&&MOM.byId(d.m);return {i:'🌱',bg:'var(--lav)',t:"Today's moment",d:m?m.title:''}}
   return {i:'🌙',bg:'var(--blue)',t:e.end?'Sleep':'Sleeping now',d:e.end?dur(e.end-e.start)+' · until '+fmtT(e.end):'since '+fmtT(e.start)+' · '+dur(Date.now()-e.start)}
 }
 
@@ -729,6 +756,7 @@ function renderGoals(){
   if(!g)return;
   const cw=curWindow(),s=dayStats(cw.getTime(),shiftWindow(cw,1).getTime());
   const rows=[['feeds','🍼 Feeds',s.feeds,g.feeds],['wet','💧 Wet diapers',s.pee+s.both,g.wet],['stool','💩 Poops',s.poop+s.both,g.stool]];
+  const tt=momentsShown()&&MOM.tummyTarget(n-1);if(tt)rows.push(['tummy','🐢 Tummy time',tummyCount(),{min:tt,plus:1}]);
   el.innerHTML=`<div class="l24head"><h3>Today's goals</h3><span class="muted">Day ${n}</span></div>`+
     rows.map(([k,name,count,t])=>{
       const done=count>=t.min,dots=Array.from({length:t.min},(_,i)=>`<i class="goalDot${i<count?' on':''}"></i>`).join('');
@@ -736,6 +764,43 @@ function renderGoals(){
     }).join('')+
     `<div class="disclaim">Typical ranges from a hospital newborn guide. Not medical advice; ask your pediatrician if you're worried.</div>`;
 }
+/* ---- today's moments: 2-3 short activities by age (content in moments.js) ----
+   A check-off is a diary entry of type 'moment' (details.m = activity id), so every caregiver sees it live. */
+const MOM=window.LD_MOMENTS||null;let momOpen=null;
+function momentAge(){const n=lifeDay(curWindow());return n?n-1:null}
+function momentsShown(){const a=momentAge();return !!(MOM&&!P.hideMoments&&a!=null&&MOM.bandFor(a))}
+function momentEntries(id){const cw=curWindow(),d0=cw.getTime(),d1=shiftWindow(cw,1).getTime();
+  return D.entries.filter(e=>e.type==='moment'&&e.start>=d0&&e.start<d1&&e.details&&(id?e.details.m===id:true))}
+function tummyCount(){return momentEntries().filter(e=>e.details.tummy).length}
+function momentAgeLabel(a){return a<56?'Week '+(Math.floor(a/7)+1):Math.floor(a/30.44)+' months'}
+function renderMoments(){
+  const el=$('#momentsCard');if(!el)return;
+  const show=momentsShown();el.classList.toggle('hidden',!show);if(!show)return;
+  const a=momentAge(),pk=MOM.pick(a,3),S=MOM.SAFETY;
+  el.innerHTML=`<div class="l24head"><h3>🌱 Today's moments</h3><span class="muted">${momentAgeLabel(a)}</span></div><div class="mfocus">${esc(pk.band.focus)} · tap one for how-to</div>`+
+    pk.items.map(m=>{const ar=MOM.AREAS[m.area]||{},times=m.times||1,c=momentEntries(m.id).length,done=c>=times;
+      const safe=m.safety?(S[m.safety]||m.safety):'';
+      return `<div class="mo${done?' done':''}${momOpen===m.id?' open':''}" data-m="${m.id}">
+        <div class="moTop" data-open="${m.id}"><div class="moEm" aria-hidden="true">${ar.emoji||'🌱'}</div><div class="moTxt"><div class="moT">${esc(m.title)}</div><div class="moD">${esc(m.dose)}</div></div>
+        <button class="moChk${!done&&c?' part':''}" data-chk="${m.id}" aria-label="${done?'Done. Tap to undo':'Mark '+esc(m.title)+' done'}">${done?'\u2713':c?c+'/'+times:''}</button></div>
+        <div class="moMore"><span class="moArea">${esc(ar.label||'')}</span><ol>${m.steps.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
+          <p><b>Why it helps:</b> ${esc(m.why)}</p>${m.notice?`<p><b>What to notice:</b> ${esc(m.notice)}</p>`:''}${safe?`<div class="moSafe">⚠️ ${esc(safe)}</div>`:''}</div></div>`}).join('')+
+    `<div class="moRule">💛 ${esc(S.always)}</div><div class="disclaim">${esc(S.medical)} <button class="link" id="momSrc" style="padding:0">Sources</button></div>`;
+  $$('#momentsCard [data-open]').forEach(t=>t.onclick=ev=>{if(ev.target.closest('[data-chk]'))return;momOpen=momOpen===t.dataset.open?null:t.dataset.open;renderMoments()});
+  $$('#momentsCard [data-chk]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();checkMoment(b.dataset.chk)});
+  $('#momSrc').onclick=momentSources;
+}
+function checkMoment(id){
+  const m=MOM.byId(id);if(!m)return;const times=m.times||1,mine=momentEntries(id);
+  if(mine.length>=times){mine.forEach(e=>delEntry(e.id));return toast('Unchecked')}
+  const d={m:id};if(m.tummy)d.tummy=true;const t=Date.now();addEntry({type:'moment',start:t,end:t,details:d});
+  const c=mine.length+1;toast(c>=times?'Nice! '+m.title+' done 💛':m.title+': '+c+' of '+times);
+}
+function momentSources(){const S=MOM.SOURCES;
+  openSheet(`<h2 style="text-align:center">Where these ideas come from</h2><div class="muted">Activities are written for Little Days in plain words and checked against this public guidance. They are ideas for play, not medical advice.</div>
+    <ul class="srcList">${Object.values(S).map(s=>`<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a></li>`).join('')}</ul>
+    <div class="moRule">💛 ${esc(MOM.SAFETY.always)}</div><div class="disclaim">${esc(MOM.SAFETY.medical)}</div>
+    <button class="btn full" id="srcClose" style="margin-top:14px">Close</button>`,()=>{$('#srcClose').onclick=closeSheet})}
 function render(){
   if(!D)return;
   document.body.classList.toggle('night',!!P.night);
@@ -790,11 +855,11 @@ function renderToday(){
   const lm=E.find(e=>e.type==='medicine'&&e.start<=Date.now()+6e4&&e.start>Date.now()-7*864e5);
   $('#lastMed').classList.toggle('hidden',!lm);$('#lastMed').dataset.id=lm?lm.id:'';
   if(lm)$('#lastMed').innerHTML=`<span>Last: <b style="background:none;padding:0">${esc((lm.details&&lm.details.name)||'Medicine')}</b> · ${esc(ago(lm.start))}</span><b>↻ Again</b>`;
-  renderL24();renderGoals();renderDue();renderAgain();
+  renderL24();renderGoals();renderMoments();renderDue();renderAgain();
   const ws=shiftWindow(curWindow(),-viewOffset),d0=ws.getTime(),d1=shiftWindow(ws,1).getTime(),isToday=viewOffset===0;
   $('#dayTitle').textContent=windowTitle(ws);$('#daySub').textContent=windowSub(ws);
   $('#nextDay').disabled=isToday;$('#nextDay').style.opacity=isToday?.4:1;
-  const list=E.filter(e=>(e.start>=d0&&e.start<d1)||(isToday&&!e.end));
+  const list=E.filter(e=>e.type!=='moment'&&((e.start>=d0&&e.start<d1)||(isToday&&!e.end)));
   $('#timeline').innerHTML=list.length?list.map(e=>{const x=describe(e),c=person(e.by);
     return `<li data-id="${e.id}"><div class="dot" style="background:${x.bg}">${x.i}</div><div><div class="t">${x.t}${e.sample?'<span class="sample">sample</span>':''}</div><div class="d">${esc(x.d)} <span class="by" style="background:${c.color}">${esc(c.name)}</span></div>${e.details&&e.details.note?`<div class="nt">📝 ${esc(e.details.note)}</div>`:''}</div><div class="time">${fmtT(e.start)}</div></li>`}).join('')
     :'<div class="empty">Nothing logged yet. Tap a big button above ☁️</div>';
@@ -876,7 +941,7 @@ function renderFamily(){
     $('#newCode').onclick=makeInvite;
     if(valid)$('#copyLink').onclick=()=>copy(`Join ${D.baby.name} on Little Days 🍼 Open ${inviteLink(invite.code)} (or enter code ${invite.code})`,'Invite link copied');
   }
-  $('#cgList').innerHTML=D.people.map(c=>{const n=D.entries.filter(e=>e.by===c.id).length;
+  $('#cgList').innerHTML=D.people.map(c=>{const n=D.entries.filter(e=>e.by===c.id&&e.type!=='moment').length;
     const canRm=MODE==='demo'?D.people.length>1:(isOwner&&c.id!==D.me);
     return `<div class="cg"><div class="ini" style="background:${c.color}">${esc((c.name||'?')[0])}</div><div style="flex:1"><b>${esc(c.name)}</b>${c.id===D.me?' <span class="muted">(you)</span>':''}<div class="muted">${c.role==='owner'?'Owner':'Caregiver'} · ${n} entries logged</div></div>${canRm?`<button class="btn sm ghost" data-rm="${c.id}">Remove</button>`:''}</div>`}).join('');
   $$('[data-rm]').forEach(b=>b.onclick=()=>removePerson(b.dataset.rm));
@@ -888,6 +953,7 @@ function renderFamily(){
     $('#saveMe').onclick=async()=>{const {error}=await sb.from('profiles').update({display_name:$('#meName').value.trim()||'Parent',color:col}).eq('id',user.id);if(error)return toast(error.message);await loadPeople();render();toast('Saved 💜')};
   }else $('#meCard').innerHTML='';
   if($('#goalsOn'))$('#goalsOn').checked=!P.hideGoals;
+  if($('#momentsOn'))$('#momentsOn').checked=!P.hideMoments;
   $$('#unitSeg button').forEach(b=>b.classList.toggle('on',b.dataset.u===P.unit));
   $$('#gunitSeg button').forEach(b=>b.classList.toggle('on',b.dataset.gu===GU()));
   $$('#sexSeg button').forEach(b=>b.classList.toggle('on',b.dataset.sx===(D.baby.sex||'')));
@@ -1228,6 +1294,7 @@ $('#saveProfile').onclick=()=>{D.baby.name=$('#pName').value.trim()||'Baby';D.ba
 $('#addCg').onclick=()=>{const n=$('#cgName').value.trim();if(!n)return toast('Type a name first');D.people.push({id:uuid(),name:n,role:'caregiver',color:COLORS[D.people.length%COLORS.length]});$('#cgName').value='';saveDemo();render();toast(n+' added')};
 $$('#unitSeg button').forEach(b=>b.onclick=()=>{P.unit=b.dataset.u;P.lastAmount=null;savePrefs();render()});
 $('#goalsOn').onchange=e=>{P.hideGoals=!e.target.checked;savePrefs();render();toast(e.target.checked?"Today's goals on":"Today's goals hidden")};
+$('#momentsOn').onchange=e=>{P.hideMoments=!e.target.checked;savePrefs();render();toast(e.target.checked?"Today's moments on":"Today's moments hidden")};
 $$('#gunitSeg button').forEach(b=>b.onclick=()=>{P.gunit=b.dataset.gu;savePrefs();render()});
 $$('#sexSeg button').forEach(b=>b.onclick=()=>{D.baby.sex=b.dataset.sx||null;saveBaby();toast(D.baby.sex?'Saved. WHO percentiles are on 📏':'Saved. Percentiles are hidden')});
 $$('#gMetric button').forEach(b=>b.onclick=()=>{gMetric=b.dataset.g;renderGrowth()});
@@ -1370,7 +1437,7 @@ function ageLong(){const b=D.baby.birthdate;if(!b)return'';const d=Math.floor((D
   const mo=Math.floor(d/30.4375);return mo+' months old'}
 function docStats(from,to){const s=dayStats(from,to),f=D.entries.filter(e=>e.type==='feed'&&e.start>=from&&e.start<to).map(e=>e.start).sort((a,b)=>a-b);
   const gaps=[];for(let i=1;i<f.length;i++)gaps.push(f[i]-f[i-1]);s.avgInt=gaps.length?gaps.reduce((a,b)=>a+b,0)/gaps.length:null;s.maxInt=gaps.length?Math.max(...gaps):null;return s}
-function docData(){const now=Date.now(),first=D.entries.reduce((a,e)=>Math.min(a,e.start),now),from7=now-7*864e5;
+function docData(){const now=Date.now(),first=D.entries.reduce((a,e)=>e.type==='moment'?a:Math.min(a,e.start),now),from7=now-7*864e5;
   const span=Math.min(7,Math.max(1,(now-Math.max(from7,first))/864e5)),d24=docStats(now-864e5,now),d7=docStats(from7,now),cw=curWindow(),days=[];
   for(let i=6;i>=0;i--){const ws=shiftWindow(cw,-i);days.push({ws,cur:i===0,s:dayStats(ws.getTime(),Math.min(shiftWindow(ws,1).getTime(),now))})}
   return {now,span,d24,d7,days}}

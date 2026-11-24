@@ -3,7 +3,7 @@
 import fs from 'node:fs'; import path from 'node:path'; import { execSync } from 'node:child_process'; import { build } from 'esbuild';
 const here = path.dirname(new URL(import.meta.url).pathname), app = path.resolve(here, '..'), root = path.resolve(app, '..'), www = path.join(app, 'www');
 fs.rmSync(www, { recursive: true, force: true }); fs.mkdirSync(path.join(www, 'vendor'), { recursive: true });
-for (const f of ['who-lms.js', 'manifest.webmanifest', 'privacy.html']) fs.copyFileSync(path.join(root, f), path.join(www, f));
+for (const f of ['who-lms.js', 'moments.js', 'manifest.webmanifest', 'privacy.html']) fs.copyFileSync(path.join(root, f), path.join(www, f));
 fs.cpSync(path.join(root, 'icons'), path.join(www, 'icons'), { recursive: true });
 for (const f of ['native.js', 'native.css']) fs.copyFileSync(path.join(app, 'native', f), path.join(www, f));
 
