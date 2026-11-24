@@ -213,6 +213,23 @@ html,body{max-width:100%;overflow-x:hidden}
 body.night .gs .p{background:rgba(0,0,0,.2)}
 .unitin{position:relative}.unitin input{padding-right:46px}.unitin span{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--soft);font-weight:700;font-size:14px;pointer-events:none}
 .disclaim{font-size:12px;color:var(--soft);margin-top:10px;line-height:1.4}
+
+/* today's goals card */
+.goal{margin-bottom:12px}
+.goal:last-of-type{margin-bottom:8px}
+.goalTop{display:flex;align-items:center;gap:8px}
+.goalName{font-weight:800;font-size:14px;flex:1}
+.goalCount{font-size:13px;font-weight:800;color:var(--soft);font-variant-numeric:tabular-nums}
+.goal.done .goalCount{color:var(--mint-d)}
+.goalMark{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;flex:none;border:2px solid var(--line);color:transparent;background:transparent}
+.goal.done .goalMark{background:var(--mint-d);border-color:var(--mint-d);color:#fff}
+.goalDots{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.goalDot{width:12px;height:12px;border-radius:50%;border:2px solid var(--line);background:transparent;box-sizing:border-box}
+.goalDot.on{border-color:transparent}
+.goal[data-k=feeds] .goalDot.on{background:var(--peach-d)}
+.goal[data-k=wet] .goalDot.on{background:var(--mint-d)}
+.goal[data-k=stool] .goalDot.on{background:#C9A27E}
+body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
 /* pediatrician summary (always light, prints on one page) */
 #docView{position:fixed;inset:0;z-index:30;background:#F4F1EC;overflow:auto;display:none;-webkit-overflow-scrolling:touch}
 #docView.on{display:block}
@@ -336,6 +353,7 @@ body.night .gs .p{background:rgba(0,0,0,.2)}
     </div>
     <div class="medRow"><button class="medBtn" id="addMed">💊 Medicine</button><button class="lastMed hidden" id="lastMed" aria-label="Log the last medicine again"></button></div>
     <button class="again hidden" id="bAgain" aria-label="Log the same bottle again"></button>
+    <div class="card hidden" id="goalsCard"></div>
     <div class="card" id="l24card">
       <div class="l24head"><h3>🕐 Last 24 hours</h3><span class="muted" id="l24when"></span></div>
       <div class="l24grid" id="l24"></div>
@@ -428,6 +446,8 @@ body.night .gs .p{background:rgba(0,0,0,.2)}
       <div class="seg" id="unitSeg"><button data-u="oz">oz</button><button data-u="ml">ml</button></div>
       <label class="f">Growth units</label>
       <div class="seg" id="gunitSeg"><button data-gu="imperial">lb · oz · in</button><button data-gu="metric">kg · cm</button></div>
+      <label class="switch">Show today's goals<input type="checkbox" id="goalsOn"></label>
+      <div class="muted" id="goalsHint" style="margin-top:-4px;margin-bottom:8px">Typical newborn ranges for the first 8 weeks.</div>
       <div class="row" style="flex-wrap:wrap" id="settingsBtns"></div>
       <div class="legal" id="legalRow"><a href="privacy.html">Privacy policy</a> · <a href="mailto:thelittledaysapp@gmail.com">Contact us</a><span id="delWrap"> · <button class="link" id="delAcct">Delete my account</button></span></div>
     </div>
@@ -469,7 +489,7 @@ const uuid=()=>crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xx
 const COLORS=['#FFD9C4','#BFDDF5','#C6EBDD','#DCD3F5','#FFF0BF','#F8D3E3'];
 const EMOJIS=['🐣','🌸','⭐','🌙','🐻','🐰','🦋','🍓'];
 
-let P=Object.assign({unit:'oz',night:false},JSON.parse(localStorage.getItem(PREF_KEY)||'{}'));
+let P=Object.assign({unit:'oz',night:false,hideGoals:false},JSON.parse(localStorage.getItem(PREF_KEY)||'{}'));
 const savePrefs=()=>localStorage.setItem(PREF_KEY,JSON.stringify(P));
 let MODE=null;          // 'demo' | 'cloud'
 let D=null;             // current data: {baby, people:[{id,name,color,role}], me, entries:[]}
@@ -692,6 +712,30 @@ function describe(e){
   if(e.type==='medicine')return {i:'💊',bg:'var(--yellow)',t:'Medicine',d:[d.name,d.dose].filter(Boolean).join(' · ')};
   return {i:'🌙',bg:'var(--blue)',t:e.end?'Sleep':'Sleeping now',d:e.end?dur(e.end-e.start)+' · until '+fmtT(e.end):'since '+fmtT(e.start)+' · '+dur(Date.now()-e.start)}
 }
+
+function goalTargets(n){
+  if(!n||n<1||n>56)return null;
+  if(n===1)return {feeds:{min:6,plus:1},wet:{min:1},stool:{min:1}};
+  if(n===2)return {feeds:{min:8,plus:1},wet:{min:2},stool:{min:1,max:2}};
+  if(n===3)return {feeds:{min:10,max:12},wet:{min:3},stool:{min:2,max:3}};
+  if(n===4)return {feeds:{min:8,max:10},wet:{min:4},stool:{min:2,max:4}};
+  return {feeds:{min:8,plus:1},wet:{min:6,max:8},stool:{min:3,plus:1}};
+}
+function goalRange(g){return g.max?g.min+'\u2013'+g.max:g.plus?g.min+'+':String(g.min)}
+function renderGoals(){
+  const el=$('#goalsCard');if(!el)return;
+  const n=lifeDay(curWindow()),g=(!P.hideGoals)&&goalTargets(n);
+  el.classList.toggle('hidden',!g);
+  if(!g)return;
+  const cw=curWindow(),s=dayStats(cw.getTime(),shiftWindow(cw,1).getTime());
+  const rows=[['feeds','🍼 Feeds',s.feeds,g.feeds],['wet','💧 Wet diapers',s.pee+s.both,g.wet],['stool','💩 Poops',s.poop+s.both,g.stool]];
+  el.innerHTML=`<div class="l24head"><h3>Today's goals</h3><span class="muted">Day ${n}</span></div>`+
+    rows.map(([k,name,count,t])=>{
+      const done=count>=t.min,dots=Array.from({length:t.min},(_,i)=>`<i class="goalDot${i<count?' on':''}"></i>`).join('');
+      return `<div class="goal${done?' done':''}" data-k="${k}"><div class="goalTop"><span class="goalName">${name}</span><span class="goalCount">${count} / ${goalRange(t)}</span><span class="goalMark" aria-hidden="true">\u2713</span></div><div class="goalDots" aria-hidden="true">${dots}</div></div>`;
+    }).join('')+
+    `<div class="disclaim">Typical ranges from a hospital newborn guide. Not medical advice; ask your pediatrician if you're worried.</div>`;
+}
 function render(){
   if(!D)return;
   document.body.classList.toggle('night',!!P.night);
@@ -746,7 +790,7 @@ function renderToday(){
   const lm=E.find(e=>e.type==='medicine'&&e.start<=Date.now()+6e4&&e.start>Date.now()-7*864e5);
   $('#lastMed').classList.toggle('hidden',!lm);$('#lastMed').dataset.id=lm?lm.id:'';
   if(lm)$('#lastMed').innerHTML=`<span>Last: <b style="background:none;padding:0">${esc((lm.details&&lm.details.name)||'Medicine')}</b> · ${esc(ago(lm.start))}</span><b>↻ Again</b>`;
-  renderL24();renderDue();renderAgain();
+  renderL24();renderGoals();renderDue();renderAgain();
   const ws=shiftWindow(curWindow(),-viewOffset),d0=ws.getTime(),d1=shiftWindow(ws,1).getTime(),isToday=viewOffset===0;
   $('#dayTitle').textContent=windowTitle(ws);$('#daySub').textContent=windowSub(ws);
   $('#nextDay').disabled=isToday;$('#nextDay').style.opacity=isToday?.4:1;
@@ -843,6 +887,7 @@ function renderFamily(){
     let col=me.color;$$('[data-c]').forEach(b=>b.onclick=()=>{col=b.dataset.c;$$('[data-c]').forEach(x=>x.classList.toggle('on',x===b))});
     $('#saveMe').onclick=async()=>{const {error}=await sb.from('profiles').update({display_name:$('#meName').value.trim()||'Parent',color:col}).eq('id',user.id);if(error)return toast(error.message);await loadPeople();render();toast('Saved 💜')};
   }else $('#meCard').innerHTML='';
+  if($('#goalsOn'))$('#goalsOn').checked=!P.hideGoals;
   $$('#unitSeg button').forEach(b=>b.classList.toggle('on',b.dataset.u===P.unit));
   $$('#gunitSeg button').forEach(b=>b.classList.toggle('on',b.dataset.gu===GU()));
   $$('#sexSeg button').forEach(b=>b.classList.toggle('on',b.dataset.sx===(D.baby.sex||'')));
@@ -1182,6 +1227,7 @@ $$('nav button').forEach(b=>b.onclick=()=>{$$('nav button').forEach(x=>x.classLi
 $('#saveProfile').onclick=()=>{D.baby.name=$('#pName').value.trim()||'Baby';D.baby.birthdate=$('#pBirth').value||null;D.baby.birth_time=$('#pBirthTime').value||null;if(!D.baby.birth_time||!D.baby.birthdate)D.baby.day_start='midnight';viewOffset=0;saveBaby();toast('Profile saved 💜')};
 $('#addCg').onclick=()=>{const n=$('#cgName').value.trim();if(!n)return toast('Type a name first');D.people.push({id:uuid(),name:n,role:'caregiver',color:COLORS[D.people.length%COLORS.length]});$('#cgName').value='';saveDemo();render();toast(n+' added')};
 $$('#unitSeg button').forEach(b=>b.onclick=()=>{P.unit=b.dataset.u;P.lastAmount=null;savePrefs();render()});
+$('#goalsOn').onchange=e=>{P.hideGoals=!e.target.checked;savePrefs();render();toast(e.target.checked?"Today's goals on":"Today's goals hidden")};
 $$('#gunitSeg button').forEach(b=>b.onclick=()=>{P.gunit=b.dataset.gu;savePrefs();render()});
 $$('#sexSeg button').forEach(b=>b.onclick=()=>{D.baby.sex=b.dataset.sx||null;saveBaby();toast(D.baby.sex?'Saved. WHO percentiles are on 📏':'Saved. Percentiles are hidden')});
 $$('#gMetric button').forEach(b=>b.onclick=()=>{gMetric=b.dataset.g;renderGrowth()});
