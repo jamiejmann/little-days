@@ -1,6 +1,6 @@
 // Babyway service worker: offline app shell + feeding-alarm notifications
 // bump this version on every release; old caches are removed on activate
-const CACHE = 'little-days-v22';
+const CACHE = 'little-days-v23';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './who-lms.js', './privacy.html', './terms.html'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => {

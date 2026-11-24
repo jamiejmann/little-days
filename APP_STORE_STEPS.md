@@ -175,6 +175,6 @@ The result is **4+**. Don't choose the "Made for Kids" category, because the app
 
 ## What's already done (no action needed)
 - The iOS app project is in `ios-app/`. The website is bundled inside the app, so it works without loading the site. It uses the same Supabase backend and the same accounts.
-- The push notification code, phone-only alarm reminders, haptics, pastel icon, splash screen, and status bar are all built in.
+- The push notification code, phone-only alarm reminders, haptics, Babyway chick icon, splash screen, and status bar are all built in.
 - The **iOS app → TestFlight** build workflow only runs when you start it, and it skips itself until the four GitHub secrets exist.
 - The privacy policy page and the in-app "Delete my account" button are live. This guide is kept out of the public website.

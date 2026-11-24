@@ -6,7 +6,7 @@
   "scripts": {
     "build:web": "node scripts/build-web.mjs",
     "sync": "npm run build:web && npx cap sync ios",
-    "assets": "npx @capacitor/assets generate --ios --iconBackgroundColor '#FBF7F0' --splashBackgroundColor '#FBF7F0' --splashBackgroundColorDark '#1E1B2A'"
+    "assets": "npx @capacitor/assets generate --ios --iconBackgroundColor '#0E7C7B' --splashBackgroundColor '#FBF7F0' --splashBackgroundColorDark '#1E1B2A'"
   },
   "dependencies": {
     "@capacitor-community/in-app-review": "8.0.0",
