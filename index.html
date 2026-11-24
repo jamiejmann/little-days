@@ -699,10 +699,12 @@ function addEntry(e){
   e.id=uuid();e.by=D.me;e.details=e.details||{};D.entries.push(e);
   if(MODE==='demo')saveDemo();else{Q.push({op:'insert',baby:D.baby.id,row:toRow(e)});saveQ();flushQueue()}
   render();
+  if(window.LDNative&&LDNative.onLogged)try{LDNative.onLogged(e)}catch(x){}
 }
 function updEntry(e){
   if(MODE==='demo')saveDemo();else{Q.push({op:'update',baby:D.baby.id,row:toRow(e)});saveQ();flushQueue()}
   render();
+  if(window.LDNative&&LDNative.onLogged)try{LDNative.onLogged(e)}catch(x){}
 }
 function delEntry(id){
   D.entries=D.entries.filter(x=>x.id!==id);
@@ -1604,7 +1606,7 @@ function renderAlarmCard(){
   $('#alOpts').style.opacity=b.feed_alarm_enabled?1:.45;
   refreshPushStatus();
 }
-$('#alOn').onchange=e=>{D.baby.feed_alarm_enabled=e.target.checked;saveBaby();toast(e.target.checked?'Feeding alarm on ⏰':'Feeding alarm off')};
+$('#alOn').onchange=e=>{D.baby.feed_alarm_enabled=e.target.checked;saveBaby();toast(e.target.checked?'Feeding alarm on ⏰':'Feeding alarm off');if(window.LDNative&&LDNative.onAlarmChanged)try{LDNative.onAlarmChanged(e.target.checked)}catch(x){}};
 $('#alInt').onchange=e=>{D.baby.feed_interval_min=+e.target.value;saveBaby();toast('Alert after '+hm(+e.target.value)+' without a feed')};
 $('#alNight').onchange=e=>{D.baby.feed_alarm_night=e.target.checked;saveBaby()};
 

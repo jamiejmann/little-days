@@ -9,6 +9,7 @@
     "assets": "npx @capacitor/assets generate --ios --iconBackgroundColor '#FBF7F0' --splashBackgroundColor '#FBF7F0' --splashBackgroundColorDark '#1E1B2A'"
   },
   "dependencies": {
+    "@capacitor-community/in-app-review": "8.0.0",
     "@capacitor/app": "8.1.2",
     "@capacitor/core": "8.6.2",
     "@capacitor/filesystem": "8.1.5",

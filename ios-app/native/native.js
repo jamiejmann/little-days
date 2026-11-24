@@ -1,14 +1,16 @@
 /* Babyway iOS app layer (Capacitor). Loaded only in the app build, never on the website.
  * - Native push (APNs) instead of Web Push; tokens go to Supabase `device_tokens` via register_device_token().
  * - Native local notifications for the feeding alarm (fallback whenever server push isn't active for this phone).
+ * - A short in-app explainer before the iOS notification permission dialog (never a bare system prompt).
+ * - Apple's native App Store rating prompt after 7 distinct days of logging, once per app version.
  * - Haptics on logging, status bar that follows night mode, splash screen.
- * The web app talks to this file through window.LDNative (hooks added by scripts/build-web.mjs at build time),
+ * The web app talks to this file through window.LDNative (onLogged / onAlarmChanged hooks in index.html are no-ops on the website),
  * and exposes what we need through window.__ldApp. Storage keys used here are new and only exist in the app. */
 (function () {
   const C = window.Capacitor;
   if (!C || !C.isNativePlatform || !C.isNativePlatform()) return;
   const P = C.Plugins || {};
-  const FS = P.Filesystem, SH = P.Share, PN = P.PushNotifications, LN = P.LocalNotifications, H = P.Haptics, SB = P.StatusBar, App = P.App;
+  const FS = P.Filesystem, SH = P.Share, PN = P.PushNotifications, LN = P.LocalNotifications, H = P.Haptics, SB = P.StatusBar, App = P.App, IR = P.InAppReview;
   document.documentElement.classList.add('native');
 
   /* ---------- safe area: keep the header clear of the clock / Dynamic Island ---------- */
@@ -23,6 +25,10 @@
 
   const PREF = 'littledays.native.alerts';   // 'on' | 'off'
   const TOKEN = 'littledays.native.apnsToken';
+  const SNOOZE = 'littledays.native.notifSnooze'; // ms timestamp: don't auto-ask until then
+  const LOGDAYS = 'littledays.native.logDays';    // JSON array of local YYYY-MM-DD days this phone logged
+  const REVIEWED = 'littledays.native.reviewFor'; // app version we already asked Apple to prompt for
+  const SNOOZE_MS = 3 * 864e5;
   const ALARM_IDS = [7101, 7102];
   const st = { remote: false, checking: null, lastSig: '' };
   const app = () => window.__ldApp;
@@ -127,19 +133,24 @@
       b.textContent = 'Turn off'; t.classList.remove('hidden');
     } else { s.textContent = 'Get a gentle notification when a feed is due, even when Babyway is closed.'; b.textContent = 'Enable alerts'; t.classList.add('hidden'); }
   }
-  async function pushOn() {
+  async function enableAlerts() {
     const a = app();
-    if (on()) { localStorage.setItem(PREF, 'off'); await dropThisDevice(); await scheduleLocal(true); a && a.toast('Alerts off for this phone'); return refreshPushStatus(); }
     let p = 'prompt';
     try { p = (await (LN ? LN.requestPermissions() : PN.requestPermissions())).display || 'prompt'; } catch (e) {}
     if (p !== 'granted') { a && a.toast('Notifications were not allowed'); return refreshPushStatus(); }
     try { if (PN) await PN.requestPermissions(); } catch (e) {}
     localStorage.setItem(PREF, 'on');
+    localStorage.removeItem(SNOOZE);
     if (a && a.data && a.data.baby && !a.data.baby.feed_alarm_enabled) { const al = $('#alOn'); if (al) { al.checked = true; al.dispatchEvent(new Event('change')); } }
     if (a && a.mode === 'cloud') await registerRemote();
     await scheduleLocal(true);
     a && a.toast('Alerts on 🔔');
     refreshPushStatus();
+  }
+  async function pushOn() {
+    const a = app();
+    if (on()) { localStorage.setItem(PREF, 'off'); await dropThisDevice(); await scheduleLocal(true); a && a.toast('Alerts off for this phone'); return refreshPushStatus(); }
+    return enableAlerts(); // Enable alerts button already explains why; go straight to the system dialog
   }
   async function test() {
     const a = app();
@@ -164,6 +175,118 @@
     try { if (LN) await LN.cancel({ notifications: ALARM_IDS.concat([7199]).map((id) => ({ id })) }); } catch (e) {}
     window.__ldScheduled = [];
   }
+
+  /* ---------- pre-permission explainer + Apple's rating prompt ---------- */
+  let promptEl = null, explainedThisSession = false;
+
+  function dayKey(d) {
+    const t = d instanceof Date ? d : new Date(d);
+    return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+  }
+  function hidden(id) { const e = $('#' + id); return !e || e.classList.contains('hidden'); }
+  function isQuiet() {
+    const appEl = $('#app');
+    if (!appEl || appEl.classList.contains('hidden')) return false;
+    if (!hidden('authScreen') || !hidden('setupScreen') || !hidden('offlineScreen')) return false;
+    const scrim = $('#scrim'); if (scrim && scrim.classList.contains('on')) return false;
+    const doc = $('#docView'); if (doc && doc.classList.contains('on')) return false;
+    if (promptEl && promptEl.classList.contains('on')) return false;
+    return true;
+  }
+  function isOvernightMoment() {
+    if (document.body.classList.contains('night')) return true;
+    const D = app() && app().data;
+    if (!D || !D.entries) return false;
+    const running = D.entries.some((e) => (e.type === 'feed' || e.type === 'sleep' || e.type === 'pump') && !e.end);
+    return running && night(Date.now());
+  }
+  function isCompletedFeed(e) { return !!(e && e.type === 'feed' && (e.subtype !== 'breast' || e.end)); }
+  function whenQuiet(fn, tries) {
+    const left = tries == null ? 12 : tries;
+    if (isQuiet()) { fn(); return; }
+    if (left <= 0) return;
+    setTimeout(() => whenQuiet(fn, left - 1), 700);
+  }
+
+  function ensurePrompt() {
+    if (promptEl) return promptEl;
+    const wrap = document.createElement('div');
+    wrap.id = 'ldNotifPrompt';
+    wrap.className = 'ldPrompt';
+    wrap.innerHTML = '<div class="ldPromptCard" role="dialog" aria-modal="true" aria-labelledby="ldNotifTitle">'
+      + '<div class="ldPromptEmoji" aria-hidden="true">🔔</div>'
+      + '<h2 id="ldNotifTitle">Get a gentle reminder when the next feed is due</h2>'
+      + "<p>We'll ping this phone when it's time, even if Babyway is closed. You can turn this off anytime in Family.</p>"
+      + '<button class="btn peach full" id="ldNotifOn" type="button">Turn on</button>'
+      + '<button class="btn ghost full" id="ldNotifLater" type="button">Not now</button>'
+      + '</div>';
+    document.body.appendChild(wrap);
+    wrap.querySelector('#ldNotifOn').addEventListener('click', async () => { hidePrompt(); await enableAlerts(); });
+    wrap.querySelector('#ldNotifLater').addEventListener('click', () => {
+      localStorage.setItem(SNOOZE, String(Date.now() + SNOOZE_MS));
+      hidePrompt();
+    });
+    promptEl = wrap;
+    return wrap;
+  }
+  function hidePrompt() { if (promptEl) promptEl.classList.remove('on'); }
+  function showPrompt() {
+    if (on()) return;
+    explainedThisSession = true;
+    const el = ensurePrompt();
+    el.classList.add('on');
+    const btn = el.querySelector('#ldNotifOn'); if (btn) btn.focus();
+  }
+  async function canExplain() {
+    if (on()) return false;
+    const p = await perm();
+    return p === 'prompt' || p === 'prompt-with-rationale';
+  }
+  async function maybeExplain(reason) {
+    if (promptEl && promptEl.classList.contains('on')) return;
+    if (!(await canExplain())) return;
+    // "Not now" snoozes the automatic post-feed ask; turning on the feeding alarm is a fresh choice, so we ask again.
+    if (reason !== 'alarm') {
+      const until = +localStorage.getItem(SNOOZE) || 0;
+      if (until > Date.now()) return;
+    }
+    whenQuiet(() => { if (on()) return; showPrompt(); });
+  }
+
+  function recordLogDay() {
+    let days = [];
+    try { days = JSON.parse(localStorage.getItem(LOGDAYS) || '[]'); } catch (e) { days = []; }
+    if (!Array.isArray(days)) days = [];
+    const k = dayKey(new Date());
+    if (!days.includes(k)) days.push(k);
+    days = days.filter((d) => typeof d === 'string').sort().slice(-30);
+    localStorage.setItem(LOGDAYS, JSON.stringify(days));
+    return days;
+  }
+  function maybeReview() {
+    if (explainedThisSession) return;
+    const ver = (window.__ldBuild && window.__ldBuild.version) || '1.0.0';
+    if (localStorage.getItem(REVIEWED) === ver) return;
+    let days = [];
+    try { days = JSON.parse(localStorage.getItem(LOGDAYS) || '[]'); } catch (e) { days = []; }
+    if (!Array.isArray(days) || new Set(days).size < 7) return;
+    if (isOvernightMoment()) return;
+    if (!IR || !IR.requestReview) return;
+    whenQuiet(() => {
+      if (explainedThisSession) return;
+      if (localStorage.getItem(REVIEWED) === ver) return;
+      if (isOvernightMoment()) return;
+      // Record first so a retry cannot fire again this version, even if Apple hides the dialog.
+      localStorage.setItem(REVIEWED, ver);
+      IR.requestReview().catch((e) => log('review', e));
+    });
+  }
+  function onLogged(e) {
+    recordLogDay();
+    if (isCompletedFeed(e)) maybeExplain('feed');
+    setTimeout(maybeReview, 2500);
+  }
+  function onAlarmChanged(enabled) { if (enabled) maybeExplain('alarm'); }
 
   /* ---------- pediatrician summary: a real PDF, handed to the iOS share sheet (Print, Mail, Messages, Files, AirDrop) ---------- */
   const clean = (t) => String(t).replace(/[\u2013\u2014]/g, '-').replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"').replace(/\u2026/g, '...').replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, '').replace(/ {2,}/g, ' ');
@@ -200,5 +323,5 @@
   }
   const printDoc = shareDoc; // the iOS share sheet has Print in it
 
-  window.LDNative = { shareDoc, printDoc, refreshPushStatus, pushOn, test, dropThisDevice, scheduleLocal, reset, _state: st, _plan: plan };
+  window.LDNative = { shareDoc, printDoc, refreshPushStatus, pushOn, enableAlerts, test, dropThisDevice, scheduleLocal, reset, onLogged, onAlarmChanged, _state: st, _plan: plan };
 })();
