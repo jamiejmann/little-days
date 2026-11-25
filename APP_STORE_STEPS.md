@@ -146,7 +146,7 @@ Go to **Apps → Little Days → App Privacy**, then **Get Started**.
 |---|---|---|---|
 | **Contact Info → Email Address** | Signing in | Yes | No |
 | **Contact Info → Name** | The parent's display name shown to family members | Yes | No |
-| **Health & Fitness → Health** | The baby's feeds, pumping, sleep, diapers, medicine, growth, and notes about health | Yes | No |
+| **Health & Fitness → Health** | The baby's feeds, pumping, sleep, diapers, medicine and supplements, growth, and notes about health | Yes | No |
 | **User Content → Other User Content** | Free-text notes on entries | Yes | No |
 | **Identifiers → User ID** | The account ID that links your family's data | Yes | No |
 

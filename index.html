@@ -236,6 +236,20 @@ header>div:nth-child(2){min-width:0;flex:0 1 auto}
 #vSave:disabled{opacity:.45}
 html,body{max-width:100%;overflow-x:hidden}
 .lastMed{border:none;font:inherit;font-weight:700;cursor:pointer}
+/* supplements: one compact row of chips that shares the medicine row (no extra row on Today) */
+.medRow .medBtn,.medRow .lastMed{min-height:44px}
+.medBtn.icon{padding:9px 14px}
+.suppChips{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:4px 2px 8px;margin:-4px -2px -8px;-webkit-overflow-scrolling:touch}
+.suppChips::-webkit-scrollbar{display:none}
+.suppChip{flex:none;min-height:44px;border:none;border-radius:999px;padding:6px 12px 6px 8px;background:var(--card);box-shadow:var(--shadow);font:inherit;font-weight:800;font-size:0.7647rem;color:var(--ink);cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+.suppChip .sm{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:0.6471rem;flex:none;color:transparent;box-sizing:border-box}
+.suppChip.done .sm{background:var(--mint-d);border-color:var(--mint-d);color:#fff}
+.suppChip .st{color:var(--soft);font-weight:700}
+.suppChip:active{transform:scale(.97)}
+.suppStat{text-align:center;font-weight:700;margin:6px 0 4px}
+.suppAdh{background:var(--bg);border-radius:16px;padding:10px 14px;margin:10px 0;font-size:0.8235rem;line-height:1.5}
+.suppNote{font-size:0.7059rem;color:var(--soft);text-align:center;margin-top:10px;line-height:1.4}
+.sheet .btn{min-height:44px}
 .side.hint{box-shadow:0 0 0 5px var(--lav),var(--shadow)}
 .hintTxt{text-align:center;font-size:0.7647rem;font-weight:800;color:var(--lav-d);margin:-4px 0 6px}
 .when.ago .chip{font-size:0.7647rem;padding:6px 12px}
@@ -332,10 +346,10 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
   <div class="auth">
     <div class="logo"><img src="icons/icon-192.png" alt="Babyway"></div>
     <h1>Babyway</h1>
-    <div class="muted" style="margin-bottom:16px">Feeds, diapers, sleep, pumping &amp; medicine, shared by everyone who loves your baby</div>
+    <div class="muted" style="margin-bottom:16px">Feeds, diapers, sleep, pumping, medicine &amp; supplements, shared by everyone who loves your baby</div>
     <div class="msg ok hidden" id="inviteNote">💌 You've been invited to join a baby! Sign in or create an account and you'll be added automatically.</div>
     <div class="consent" id="consentBox">
-      <label class="consentRow"><input type="checkbox" id="aConsent"><span>I agree that Babyway stores the baby information I log (feeds, diapers, sleep, pumping, medicine, growth and notes) so the caregivers I invite and I can see it. I can withdraw this anytime by deleting my account.</span></label>
+      <label class="consentRow"><input type="checkbox" id="aConsent"><span>I agree that Babyway stores the baby information I log (feeds, diapers, sleep, pumping, medicine and supplements, growth and notes) so the caregivers I invite and I can see it. I can withdraw this anytime by deleting my account.</span></label>
       <div class="consentTerms">By creating an account, you agree to the <a href="terms.html">Terms of Use</a> and <a href="privacy.html">Privacy policy</a>.</div>
     </div>
     <div id="appleWrap" class="hidden">
@@ -407,7 +421,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
       <button class="bigbtn diaper" id="bDiaper"><div class="em" aria-hidden="true">🧷</div>Diaper<small>pee · poop</small></button>
       <button class="bigbtn sleep" id="bSleep"><div class="em" aria-hidden="true">🌙</div><span id="sleepLbl">Sleep</span><small id="sSleep">tap to log</small></button>
     </div>
-    <div class="medRow"><button class="medBtn" id="addMed">💊 Medicine</button><button class="lastMed hidden" id="lastMed" aria-label="Log the last medicine again"></button></div>
+    <div class="medRow"><button class="medBtn" id="addMed">💊 Medicine</button><div class="suppChips hidden" id="suppChips" role="group" aria-label="Supplements today"></div><button class="lastMed hidden" id="lastMed" aria-label="Log the last medicine again"></button></div>
     <button class="again hidden" id="bAgain" aria-label="Log the same bottle again"></button>
     <div class="card hidden" id="goalsCard"></div>
     <div class="card" id="l24card">
@@ -545,7 +559,7 @@ const WEB_APP_URL='https://jamiejmann.github.io/little-days/'; // where email an
 const appLinkBase=()=>/^https?:$/.test(location.protocol)?location.origin+location.pathname:WEB_APP_URL;
 const FEEDBACK_EMAIL='hello@getbabyway.com';
 const BETA_SURVEY_URL=''; // TODO(Jamie): paste the Google Form link for the beta survey here; the button stays hidden while this is empty
-const WEB_VERSION='web-v32'; // keep in step with the CACHE number in sw.js
+const WEB_VERSION='web-v34'; // keep in step with the CACHE number in sw.js
 const appVersion=()=>window.__ldBuild?('ios '+__ldBuild.version+' '+__ldBuild.web):WEB_VERSION;
 
 /* ---------- private error log (migration 012) ----------
@@ -669,9 +683,11 @@ function sampleEntries(people,now){
   // Vitamin D today, always in the past on this calendar day when possible
   let vitT=day0+9*36e5+Math.round(r()*20)*6e4;
   if(vitT>=now){const span=now-day0;vitT=span>25*6e4?day0+10*6e4+r()*(span-20*6e4):now-5*6e4}
-  if(vitT<now) out.push({id:uuid(),type:'medicine',start:vitT,end:vitT,details:{name:'Vitamin D',dose:'1 drop'},by:people[0].id,sample:true});
+  // supplements: the sample family's Vitamin D log keeps the dose they "typed" (as before); the newer sample supplements carry none
+  const VITD={name:'Vitamin D',dose:'1 drop',supp:true,how:'dropper'};
+  if(vitT<now) out.push({id:uuid(),type:'medicine',start:vitT,end:vitT,details:Object.assign({},VITD),by:people[0].id,sample:true});
   for(let d=1;d<=6;d++){const vt=day0-d*864e5+9*36e5+Math.round(r()*20)*6e4;
-    out.push({id:uuid(),type:'medicine',start:vt,end:vt,details:{name:'Vitamin D',dose:'1 drop'},by:people[0].id,sample:true})}
+    out.push({id:uuid(),type:'medicine',start:vt,end:vt,details:Object.assign({},VITD),by:people[0].id,sample:true})}
   // Earlier feeds, around the clock, plus a diaper after most of them
   for(let t=lastFeedAt-(2.5+r())*36e5;t>now-7*864e5;t-=(2.5+r())*36e5){
     const who=pick();addFeed(t,who);
@@ -710,7 +726,23 @@ function sampleEntries(people,now){
     if(!out.some(e=>e.type==='diaper'&&Math.abs(e.start-extra)<30*6e4)) addDiaper(extra,pick());
     extra+=80*6e4;
   }
+  sampleSupps(out,people,now,day0);
   return out;
+}
+// Older Vitamin D days (with two missed), Iron added to a formula bottle (started 20 days ago, by Dad) and a probiotic
+// (started 9 days ago, not given yet today) so Today, the details sheet and the pediatrician summary all have something to show.
+// Uses its own seed so the feeds, diapers and sleep above stay exactly as before.
+function sampleSupps(out,people,now,day0){
+  let s=11;const r=()=>{s=(s*9301+49297)%233280;return s/233280};
+  const P=i=>(people[i]||people[0]).id,add=(t,d,by)=>{if(t<now)out.push({id:uuid(),type:'medicine',start:t,end:t,details:d,by,sample:true})};
+  const VITD={name:'Vitamin D',dose:'1 drop',supp:true,how:'dropper'};
+  for(let d=7;d<30;d++){if(d===12||d===23)continue;add(day0-d*864e5+(9+r()*.5)*36e5,Object.assign({},VITD),P(0))}
+  const bottles=out.filter(e=>e.type==='feed'&&e.subtype==='bottle').sort((a,b)=>a.start-b.start);
+  for(let d=0;d<20;d++){if(d===9)continue;const ds=day0-d*864e5,de=ds+864e5;
+    const b=bottles.find(x=>x.start>=ds+8*36e5&&x.start<de&&x.start<now);
+    if(b){b.details=Object.assign({},b.details,{milk:'Formula'});add(b.start+2*6e4,{name:'Iron',supp:true,how:'bottle',milk:'Formula',feed:b.id},P(1))}
+    else{const t=d?ds+(13+r())*36e5:Math.min(now-40*6e4,ds+12.5*36e5);if(t>ds+8*36e5)add(t,{name:'Iron',supp:true,how:'dropper'},P(1))}}
+  for(let d=1;d<=9;d++){if(d===4)continue;add(day0-d*864e5+(19+r())*36e5,{name:'Probiotic',supp:true,how:'dropper'},P(2))}
 }
 function sampleNewest(entries){
   let t=0;(entries||[]).forEach(e=>{if(e.start>t)t=e.start;if(e.end>t)t=e.end});return t;
@@ -903,11 +935,12 @@ function describe(e){
   if(e.type==='feed'){
     if(e.subtype==='breast'){if(!e.end)return {i:'🤱',bg:'var(--peach)',t:'Nursing now',d:'timer running · '+(d.side?'on '+d.side:'paused')};
       return {i:'🤱',bg:'var(--peach)',t:'Breastfeed',d:'L '+Math.round((d.left||0)/60)+'m · R '+Math.round((d.right||0)/60)+'m'}}
-    return {i:'🍼',bg:'var(--peach)',t:'Bottle',d:(e.amount??'?')+' '+(e.unit||'')+(d.milk?' · '+d.milk:'')}}
+    const ls=linkedSupps(e).map(x=>x.details.name).filter(Boolean);
+    return {i:'🍼',bg:'var(--peach)',t:'Bottle',d:(e.amount??'?')+' '+(e.unit||'')+(d.milk?' · '+d.milk:'')+(ls.length?' · with '+ls.join(', '):'')}}
   if(e.type==='diaper'){const m={pee:['💧','Wet diaper'],poop:['💩','Dirty diaper'],both:['<span style="font-size:0.8235rem">💧💩</span>','Wet + dirty']}[e.subtype]||['🧷','Diaper'];return {i:m[0],bg:'var(--mint)',t:m[1],d:poopy(e)?poopText(d):''}}
   if(e.type==='pump'){const mn=e.end?Math.round((e.end-e.start)/6e4):0;
     return {i:'🧴',bg:'var(--lav)',t:e.end?'Pumping':'Pumping now',d:e.end?[e.amount?e.amount+' '+(e.unit||''):'',mn?mn+' min':'',d.pside?({L:'left',R:'right',both:'both sides'}[d.pside]):''].filter(Boolean).join(' · '):'timer running · since '+fmtT(e.start)}}
-  if(e.type==='medicine')return {i:'💊',bg:'var(--yellow)',t:'Medicine',d:[d.name,d.dose].filter(Boolean).join(' · ')};
+  if(e.type==='medicine'){if(isSupp(e))return {i:'💊',bg:'var(--yellow)',t:'Supplement',d:[d.name,suppHowText(d),d.dose].filter(Boolean).join(' · ')};return {i:'💊',bg:'var(--yellow)',t:'Medicine',d:[d.name,d.dose].filter(Boolean).join(' · ')}}
   return {i:'🌙',bg:'var(--blue)',t:e.end?'Sleep':'Sleeping now',d:e.end?dur(e.end-e.start)+' · until '+fmtT(e.end):'since '+fmtT(e.start)+' · '+dur(Date.now()-e.start)}
 }
 
@@ -985,7 +1018,7 @@ function renderToday(){
   $('#bSleep').classList.toggle('running',!!sl);$('#sleepLbl').textContent=sl?'Wake up':'Sleep';
   $('#sSleep').textContent=sl?clock(Date.now()-sl.start)+' · '+person(sl.by).name:'tap to log';
   const ft=running('feed','breast'),pt=running('pump');$('#bFeed').classList.toggle('running',!!(ft||pt));$('#sFeed').textContent=ft?'nursing '+clock(feedTotal(ft)*1000):pt?'pumping '+clock(Date.now()-pt.start):'tap to log';
-  const lm=E.find(e=>e.type==='medicine'&&e.start<=Date.now()+6e4&&e.start>Date.now()-7*864e5);
+  const sups=renderSupps(),lm=E.find(e=>e.type==='medicine'&&e.start<=Date.now()+6e4&&e.start>Date.now()-7*864e5&&!(sups.length&&isSupp(e)));
   $('#lastMed').classList.toggle('hidden',!lm);$('#lastMed').dataset.id=lm?lm.id:'';
   if(lm)$('#lastMed').innerHTML=`<span>Last: <b style="background:none;padding:0">${esc((lm.details&&lm.details.name)||'Medicine')}</b> · ${esc(ago(lm.start))}</span><b>↻ Again</b>`;
   renderL24();renderGoals();renderDue();renderAgain();
@@ -1214,26 +1247,144 @@ function pumpSheet(){
     paint();clearInterval(sheetTick);if(pt)sheetTick=setInterval(paint,1000);
   });
 }
+/* SUPP-LIB-START: supplement helpers with no app state (unit-tested in tests/supplements.test.js).
+   A supplement is a 'medicine' entry (same table, same family sharing and RLS) with details.supp=true,
+   or one whose name is a common infant supplement or one the family saved. Babyway never suggests a dose. */
+const SUPP_RX=/\b(vitamin|vitamins|vit d|iron|probiotics?|multivitamins?|fortifiers?|dha|omega ?3|fluoride|zinc|supplements?)\b/;
+function suppKey(n){return String(n==null?'':n).trim().toLowerCase().replace(/\s+/g,' ')}
+function isSuppName(n,saved){const k=suppKey(n);if(!k)return false;if((saved||[]).some(x=>suppKey(x)===k))return true;return SUPP_RX.test(k)}
+function isSuppEntry(e,saved){if(!e||e.type!=='medicine'||!e.details)return false;const d=e.details;if(d.supp===false)return false;return d.supp===true||isSuppName(d.name,saved)}
+function suppEntries(entries,name,saved){const k=suppKey(name);return (entries||[]).filter(e=>isSuppEntry(e,saved)&&suppKey(e.details.name)===k)}
+/* names to show on Today: saved on this device first, then anything the family logged as a supplement in the last 14 days, minus ones hidden here */
+function activeSupps(entries,o){o=o||{};const now=o.now==null?Date.now():o.now,saved=o.saved||[],hidden=(o.hidden||[]).map(suppKey),out=[],seen=new Set();
+  const add=n=>{const k=suppKey(n);if(!k||seen.has(k)||hidden.includes(k))return;seen.add(k);out.push(String(n).trim())};
+  saved.forEach(add);
+  (entries||[]).filter(e=>isSuppEntry(e,saved)&&e.start>=now-14*864e5&&e.start<=now+6e4).sort((a,b)=>a.start-b.start).forEach(e=>add(e.details.name));
+  return out}
+/* every supplement name logged in [from, now] (for the pediatrician summary), oldest first */
+function loggedSupps(entries,from,now,saved){const out=[],seen=new Set();(entries||[]).filter(e=>isSuppEntry(e,saved)&&e.start>=from&&e.start<=now+6e4).sort((a,b)=>a.start-b.start).forEach(e=>{const k=suppKey(e.details.name);if(!seen.has(k)){seen.add(k);out.push(e.details.name.trim())}});return out}
+/* newest entry of this supplement in [from, to) */
+function lastGiven(entries,name,from,to,saved){return suppEntries(entries,name,saved).filter(e=>e.start>=from&&e.start<to).sort((a,b)=>b.start-a.start)[0]||null}
+/* defaults for a one-tap log: copy how / milk / dose from the family's last log of it (never a suggested dose) */
+function suppDefaults(entries,name,saved){const l=suppEntries(entries,name,saved).sort((a,b)=>b.start-a.start)[0],d={name:l?l.details.name:String(name).trim(),supp:true};
+  if(l){if(l.details.dose)d.dose=l.details.dose;if(l.details.how)d.how=l.details.how;if(l.details.how==='bottle'&&l.details.milk)d.milk=l.details.milk}return d}
+/* Days given, counted in the app's day windows (birth-time days when that's on). o: {now, days, dayStart(t)->Date, shift(Date,n)->Date, saved}
+   The range ends today if it was given today, otherwise yesterday, so a day still in progress never counts as missed.
+   If the first log is more recent than the range, only the days since then count. */
+function suppAdherence(entries,name,o){const ts=suppEntries(entries,name,o.saved).map(e=>e.start).filter(t=>t<=o.now+6e4);if(!ts.length)return null;
+  const cw=o.dayStart(o.now),first=+o.dayStart(Math.min.apply(null,ts)),todayGiven=ts.some(t=>t>=+cw),end=todayGiven?cw:o.shift(cw,-1);
+  let total=0,given=0;for(let i=0;i<o.days;i++){const ws=o.shift(end,-i);if(+ws<first)break;total++;const we=+o.shift(ws,1);if(ts.some(t=>t>=+ws&&t<we))given++}
+  if(!total)return null;return {given,total,days:o.days,pct:Math.round(100*given/total),since:first,partial:total<o.days}}
+/* neutral wording only: "Vitamin D: given 26 of 30 days (87%)" */
+function adherenceText(name,a){if(!a)return '';return (name?name+': ':'')+'given '+a.given+' of '+a.total+' day'+(a.total===1?'':'s')+' ('+a.pct+'%)'}
+function suppHowText(d){d=d||{};if(d.how==='bottle')return 'added to '+(d.milk==='Formula'?'formula':d.milk==='Breast milk'?'pumped milk':'a bottle');if(d.how==='dropper')return 'by dropper';return ''}
+/* voice: map a parsed 'medicine' result (voice.js) to a supplement entry when the name is a supplement.
+   "gave iron in her bottle" -> added to a bottle; "vitamin D" -> the family's usual way. Returns null for other medicine. */
+function suppFromVoice(r,heard,saved){if(!r||r.kind!=='medicine'||!isSuppName(r.name,saved))return null;const t=' '+suppKey(heard)+' ',d={name:r.name,supp:true};if(r.dose)d.dose=r.dose;
+  if(/ (in|into|to|with) (the |her |his |a |their |my )?(bottle|formula|milk|breast ?milk|pumped milk) /.test(t)){d.how='bottle';if(/ formula /.test(t))d.milk='Formula';else if(/ (breast ?milk|pumped milk|milk) /.test(t))d.milk='Breast milk'}
+  else if(/ (dropper|drops?|by mouth|syringe) /.test(t))d.how='dropper';
+  return {type:'medicine',start:r.at||null,details:d}}
+/* SUPP-LIB-END */
+/* ---- supplements on Today: one compact chip row in the medicine row. Tap = log now (or details if already given today); press and hold = details. ---- */
+const SUPP_KEY='littledays.supps'; // per device: names saved to Today / hidden from Today, by baby
+function suppStore(){let all={};try{all=JSON.parse(localStorage.getItem(SUPP_KEY)||'{}')||{}}catch(e){}const k=(D&&D.baby&&D.baby.id)||'none';all[k]=Object.assign({saved:[],hidden:[]},all[k]);return {all,me:all[k]}}
+function suppPut(st){try{localStorage.setItem(SUPP_KEY,JSON.stringify(st.all))}catch(e){}}
+function suppSaved(){return suppStore().me.saved}
+function rememberSupp(name){const st=suppStore(),k=suppKey(name);st.me.hidden=st.me.hidden.filter(x=>suppKey(x)!==k);if(!st.me.saved.some(x=>suppKey(x)===k))st.me.saved.push(String(name).trim());suppPut(st)}
+function hideSupp(name){const st=suppStore(),k=suppKey(name);st.me.saved=st.me.saved.filter(x=>suppKey(x)!==k);if(!st.me.hidden.some(x=>suppKey(x)===k))st.me.hidden.push(String(name).trim());suppPut(st)}
+function suppList(){const m=suppStore().me;return activeSupps(D.entries,{saved:m.saved,hidden:m.hidden,now:Date.now()})}
+function isSupp(e){return isSuppEntry(e,suppSaved())}
+function suppToday(name){const ws=curWindow();return lastGiven(D.entries,name,+ws,+shiftWindow(ws,1),suppSaved())}
+function suppAdh(name,days){return suppAdherence(D.entries,name,{now:Date.now(),days,dayStart:windowStart,shift:shiftWindow,saved:suppSaved()})}
+const SUPP_NOTE='Give supplements the way your pediatrician directs. Babyway doesn’t suggest doses or give medical advice.';
+function suppStatusText(e){if(!e)return 'Not yet today';const d=e.details||{};return ['Given at '+fmtT(e.start)+' by '+person(e.by).name,suppHowText(d),d.dose].filter(Boolean).join(' · ')}
+function renderSupps(){
+  const el=$('#suppChips');if(!el)return [];const names=suppList();el.classList.toggle('hidden',!names.length);
+  el.innerHTML=names.map(n=>{const g=suppToday(n);
+    const lab=g?`${n}, given today at ${fmtT(g.start)} by ${person(g.by).name}. Opens details.`:`${n}, not yet today. Tap to log it now. Press and hold for options.`;
+    return `<button class="suppChip${g?' done':''}" data-supp="${esc(n)}" aria-label="${esc(lab)}"><span class="sm" aria-hidden="true">✓</span>${esc(n)}${g?`<span class="st" aria-hidden="true">${esc(fmtT(g.start))}</span>`:''}</button>`}).join('');
+  const b=$('#addMed');b.classList.toggle('icon',!!names.length);b.textContent=names.length?'💊':'💊 Medicine';
+  b.setAttribute('aria-label',names.length?'Log a medicine or supplement':'Log a medicine or supplement');
+  return names}
+let suppTapAt=0;
+function quickLogSupp(name){if(Date.now()-suppTapAt<1500)return;suppTapAt=Date.now();
+  const d=suppDefaults(D.entries,name,suppSaved()),ne={type:'medicine',start:Date.now(),end:Date.now(),details:d};addEntry(ne);
+  savedUndo('Saved '+d.name+' ✓',undoAdd(ne))}
+function suppDetail(name){
+  const g=suppToday(name),a7=suppAdh(name,7),a30=suppAdh(name,30),last=!g&&suppEntries(D.entries,name,suppSaved()).filter(e=>e.start<=Date.now()+6e4).sort((x,y)=>y.start-x.start)[0];
+  const since=a=>a&&a.partial?' · since '+new Date(a.since).toLocaleDateString([], {month:'short',day:'numeric'}):'';
+  openSheet(`<h2 style="text-align:center">💊 ${esc(name)}</h2>
+    <div class="suppStat">${g?'✓ ':''}${esc(suppStatusText(g))}</div>
+    ${last?`<div class="muted" style="text-align:center">Last given ${esc(fmtD2(last.start))} by ${esc(person(last.by).name)}</div>`:''}
+    ${a7?`<div class="suppAdh" aria-label="Days given"><div>Last 7 days: ${esc(adherenceText('',a7))}${esc(since(a7))}</div>${a30&&a30.total>a7.total?`<div>Last 30 days: ${esc(adherenceText('',a30))}${esc(since(a30))}</div>`:''}</div>`:''}
+    <button class="btn full" id="sdLog" style="background:var(--yellow)">${g?'Log another':'Log '+esc(name)+' now'}</button>
+    <div class="row" style="margin-top:8px"><button class="btn ghost" id="sdMore">More options</button>${g?'<button class="btn ghost" id="sdEdit">Edit today’s entry</button>':''}</div>
+    <button class="btn ghost full" id="sdHide" style="margin-top:8px">Remove from Today</button>
+    <div class="suppNote">${SUPP_NOTE} The full summary is in Reports › Pediatrician summary.</div>`,()=>{
+    $('#sdLog').onclick=()=>{closeSheet();suppTapAt=0;quickLogSupp(name)};
+    $('#sdMore').onclick=()=>medSheet(name,{supp:true});
+    if($('#sdEdit'))$('#sdEdit').onclick=()=>editEntry(g.id);
+    $('#sdHide').onclick=()=>{hideSupp(name);closeSheet();render();toast(name+' removed from Today. Log it again to bring it back.')};
+  })}
+(function bindSuppChips(){const el=$('#suppChips');if(!el)return;let timer=null,held=false;
+  const chip=ev=>ev.target.closest&&ev.target.closest('.suppChip');
+  el.addEventListener('pointerdown',ev=>{const c=chip(ev);if(!c)return;held=false;clearTimeout(timer);timer=setTimeout(()=>{held=true;if(navigator.vibrate)try{navigator.vibrate(10)}catch(x){}suppDetail(c.dataset.supp)},500)});
+  ['pointerup','pointercancel','pointerleave'].forEach(t=>el.addEventListener(t,()=>clearTimeout(timer)));
+  el.addEventListener('scroll',()=>clearTimeout(timer),{passive:true});
+  el.addEventListener('contextmenu',ev=>{if(chip(ev))ev.preventDefault()});
+  el.addEventListener('click',ev=>{const c=chip(ev);if(!c)return;if(held){held=false;return}clearTimeout(timer);const n=c.dataset.supp;if(suppToday(n))suppDetail(n);else quickLogSupp(n)});
+})();
+function recentBottles(){const now=Date.now();return D.entries.filter(e=>e.type==='feed'&&e.subtype==='bottle'&&e.start>now-6*36e5&&e.start<=now+6e4).sort((a,b)=>b.start-a.start).slice(0,4)}
+function linkedSupps(feed){return D.entries.filter(x=>x.type==='medicine'&&x.details&&x.details.feed===feed.id)}
 /* ---- medicine & vitamins: name, dose as written, time. No dosing advice. ---- */
 function medNames(){const seen=[];D.entries.filter(e=>e.type==='medicine'&&e.details&&e.details.name).sort((a,b)=>b.start-a.start).forEach(e=>{const n=e.details.name.trim();if(n&&!seen.some(x=>x.toLowerCase()===n.toLowerCase()))seen.push(n)});
   ['Vitamin D','Tylenol'].forEach(n=>{if(!seen.some(x=>x.toLowerCase()===n.toLowerCase()))seen.push(n)});return seen.slice(0,6)}
 function lastDose(name){const e=D.entries.filter(x=>x.type==='medicine'&&x.details&&(x.details.name||'').toLowerCase()===String(name).toLowerCase()).sort((a,b)=>b.start-a.start)[0];return e?e.details.dose||'':''}
-function medSheet(pref){
-  let earlier=false;
-  openSheet(`<h2 style="text-align:center">💊 Medicine</h2><div class="muted" style="text-align:center">Log what was given and when</div>
-    <label class="f">What</label><div class="chips" style="justify-content:flex-start;margin-bottom:6px">${medNames().map(n=>`<button class="chip" data-mn="${esc(n)}">${esc(n)}</button>`).join('')}</div>
-    <input id="mName" maxlength="40" placeholder="e.g. Vitamin D" value="${esc(pref||'')}">
-    <label class="f">Dose (optional)</label><input id="mDose" maxlength="40" placeholder="As written on the label, e.g. 1 drop" value="${esc(pref?lastDose(pref):'')}">
+function medSheet(pref,opt){
+  opt=opt||{};let earlier=false,how=null,milk=null,feed=null;
+  const supNames=suppList(),names=medNames().filter(n=>!supNames.some(x=>suppKey(x)===suppKey(n))),chips=supNames.concat(names).slice(0,8);
+  if(pref){const df=suppDefaults(D.entries,pref,suppSaved());how=df.how||null;milk=df.milk||null}
+  openSheet(`<h2 style="text-align:center">💊 Medicine or supplement</h2><div class="muted" style="text-align:center">Log what was given and when</div>
+    <label class="f" for="mName">What</label><div class="chips" style="justify-content:flex-start;margin-bottom:6px">${chips.map(n=>`<button class="chip" data-mn="${esc(n)}">${esc(n)}</button>`).join('')}</div>
+    <input id="mName" maxlength="40" placeholder="e.g. Vitamin D, Iron, Tylenol" value="${esc(pref||'')}">
+    <label class="switch">Supplement · show on Today<input type="checkbox" id="mSupp" aria-describedby="mSuppHint"></label>
+    <div id="mSuppBox" class="hidden">
+      <div class="muted" id="mSuppHint" style="margin:-6px 0 6px">Like vitamin D, iron, a probiotic or a fortifier. Everyone in the family sees whether it was given today.</div>
+      <div class="choose2" role="group" aria-label="How it was given"><button class="chip" data-mh="dropper">By dropper</button><button class="chip" data-mh="bottle">Added to a bottle</button></div>
+      <div id="mBottle" class="hidden" style="margin-top:8px">
+        <div class="choose2" role="group" aria-label="Which milk"><button class="chip" data-mk="Formula">Formula</button><button class="chip" data-mk="Breast milk">Pumped milk</button></div>
+        <div id="mFeedBox"></div>
+      </div>
+    </div>
+    <label class="f" for="mDose">Dose (optional)</label><input id="mDose" maxlength="40" placeholder="As written on the label, e.g. 1 drop" value="${esc(pref?lastDose(pref):'')}">
     <div class="when" style="margin-top:12px"><button class="chip on" data-mw="now">Just now</button><button class="chip" data-mw="earlier">🕘 Earlier</button></div>
     <div id="mwBox" class="hidden">${agoChips('mWhen')}<label class="f">Time given</label><input type="datetime-local" id="mWhen" max="${toLocalInput(Date.now())}"></div>
     ${noteBlock('nMed','')}<div class="perr" id="mErr"></div>
-    <button class="btn full" id="mSave" style="background:var(--yellow)">Save medicine</button>`,()=>{
-    $$('[data-mn]').forEach(b=>b.onclick=()=>{$('#mName').value=b.dataset.mn;const ld=lastDose(b.dataset.mn);if(ld&&!$('#mDose').value)$('#mDose').value=ld;$$('[data-mn]').forEach(x=>x.classList.toggle('on',x===b))});
+    <button class="btn full" id="mSave" style="background:var(--yellow)">Save</button>
+    <div class="suppNote hidden" id="mSuppNote">${SUPP_NOTE}</div>`,()=>{
+    const paint=()=>{const sup=$('#mSupp').checked;$('#mSuppBox').classList.toggle('hidden',!sup);$('#mSuppNote').classList.toggle('hidden',!sup);
+      $('#mDose').placeholder=sup?'As your pediatrician directed':'As written on the label, e.g. 1 drop';
+      $$('[data-mh]').forEach(x=>{x.classList.toggle('on',x.dataset.mh===how);x.setAttribute('aria-pressed',String(x.dataset.mh===how))});
+      $('#mBottle').classList.toggle('hidden',how!=='bottle');
+      $$('[data-mk]').forEach(x=>{x.classList.toggle('on',x.dataset.mk===milk);x.setAttribute('aria-pressed',String(x.dataset.mk===milk))});
+      const bs=recentBottles();
+      $('#mFeedBox').innerHTML=how==='bottle'&&bs.length?`<label class="f">Link to a bottle (optional)</label><div class="chips" style="justify-content:flex-start" role="group" aria-label="Link to a bottle">${bs.map(b=>`<button class="chip${feed===b.id?' on':''}" data-mf="${b.id}" aria-pressed="${feed===b.id}">${esc(fmtT(b.start))} · ${esc((b.amount??'?')+' '+(b.unit||''))}</button>`).join('')}</div>`:'';
+      $$('[data-mf]').forEach(x=>x.onclick=()=>{feed=feed===x.dataset.mf?null:x.dataset.mf;const b=D.entries.find(e=>e.id===feed);if(b&&b.details&&b.details.milk&&!milk)milk=b.details.milk;paint()})};
+    const autoSupp=()=>{$('#mSupp').checked=opt.supp===true||isSuppName($('#mName').value,suppSaved());paint()};
+    autoSupp();
+    $('#mName').addEventListener('input',autoSupp);$('#mSupp').onchange=paint;
+    $$('[data-mh]').forEach(b=>b.onclick=()=>{how=how===b.dataset.mh?null:b.dataset.mh;if(how!=='bottle')feed=null;paint()});
+    $$('[data-mk]').forEach(b=>b.onclick=()=>{milk=milk===b.dataset.mk?null:b.dataset.mk;paint()});
+    $$('[data-mn]').forEach(b=>b.onclick=()=>{$('#mName').value=b.dataset.mn;const ld=lastDose(b.dataset.mn);if(ld&&!$('#mDose').value)$('#mDose').value=ld;$$('[data-mn]').forEach(x=>x.classList.toggle('on',x===b));
+      const df=suppDefaults(D.entries,b.dataset.mn,suppSaved());if(df.how&&!how)how=df.how;if(df.milk&&!milk)milk=df.milk;autoSupp()});
     $$('[data-mw]').forEach(b=>b.onclick=()=>{earlier=b.dataset.mw==='earlier';$$('[data-mw]').forEach(x=>x.classList.toggle('on',x===b));$('#mwBox').classList.toggle('hidden',!earlier);
       if(earlier&&!$('#mWhen').value)$('#mWhen').value=toLocalInput(Math.floor((Date.now()-30*6e4)/6e4)*6e4);$('#mErr').textContent=''});
     $('#mSave').onclick=()=>{const name=$('#mName').value.trim().slice(0,40),dose=$('#mDose').value.trim().slice(0,40);if(!name){$('#mErr').textContent='Add what was given';return}
       let t=Date.now();if(earlier){t=new Date($('#mWhen').value).getTime();const er=pastErr(t,t);if(er){$('#mErr').textContent=er;return}}
-      const d=withNote({name},'nMed');if(dose)d.dose=dose;const ne={type:'medicine',start:t,end:t,details:d};addEntry(ne);closeSheet();savedUndo('Saved 💊 '+name+(earlier?' at '+fmtT(t):''),undoAdd(ne))};
+      const sup=$('#mSupp').checked,d=withNote({name},'nMed');if(dose)d.dose=dose;
+      if(sup){d.supp=true;if(how)d.how=how;if(how==='bottle'){if(milk)d.milk=milk;if(feed)d.feed=feed}rememberSupp(name)}
+      else if(isSuppName(name,suppSaved()))d.supp=false; // logged as plain medicine on purpose
+      const ne={type:'medicine',start:t,end:t,details:d};addEntry(ne);closeSheet();savedUndo('Saved 💊 '+name+(earlier?' at '+fmtT(t):''),undoAdd(ne))};
   });
 }
 /* ---- quick "15 / 30 / 60 min ago" buttons for any time field ---- */
@@ -1328,7 +1479,11 @@ function poopStats(from,to){const r={dirty:0,detailed:0,color:{},texture:{},amou
     ['color','texture','amount'].forEach(k=>{if(d[k]&&poopLbl(k,d[k])){r[k][d[k]]=(r[k][d[k]]||0)+1;any=true}});if(any)r.detailed++;
     if(POOP_FLAG.includes(d.color))r.flagged.push(e)});
   r.flagged.sort((a,b)=>b.start-a.start);return r}
-function recentMeds(){const now=Date.now();return D.entries.filter(e=>e.type==='medicine'&&e.details&&e.start>=now-7*864e5&&e.start<=now+6e4).sort((a,b)=>b.start-a.start)}
+function recentMeds(){const now=Date.now();return D.entries.filter(e=>e.type==='medicine'&&e.details&&!isSupp(e)&&e.start>=now-7*864e5&&e.start<=now+6e4).sort((a,b)=>b.start-a.start)}
+/* supplement days-given rows for the pediatrician summary and the text export */
+function suppSummary(){const now=Date.now();return loggedSupps(D.entries,now-31*864e5,now,suppSaved()).map(n=>{const l=suppEntries(D.entries,n,suppSaved()).sort((a,b)=>b.start-a.start)[0];
+  return {name:n,a7:suppAdh(n,7),a30:suppAdh(n,30),how:[suppHowText(l.details),l.details.dose].filter(Boolean).join(' · ')}}).filter(r=>r.a7||r.a30)}
+const suppSince=a=>a&&a.partial?' · since '+new Date(a.since).toLocaleDateString([], {month:'short',day:'numeric'}):'';
 function recentNotes(){const now=Date.now();return D.entries.filter(e=>e.details&&e.details.note&&e.start>=now-7*864e5&&e.start<=now).sort((a,b)=>b.start-a.start)}
 const noteType=e=>describe(e).t.replace(/<[^>]+>/g,'');
 const poopCounts=(r,k)=>POOP[k].filter(o=>r[k][o[0]]).map(o=>o[1]+' '+r[k][o[0]]).join(', ');
@@ -1379,6 +1534,7 @@ function editEntry(id){
   if(e.type==='sleep')f+=`<label class="f">Woke up</label><input type="datetime-local" id="eEnd" value="${e.end?toLocalInput(e.end):''}">`;
   if(e.type==='feed'&&e.subtype==='breast')f+=`<div class="row"><div><label class="f">Left (min)</label><input type="number" id="eL" value="${Math.round((d.left||0)/60)}"></div><div><label class="f">Right (min)</label><input type="number" id="eR" value="${Math.round((d.right||0)/60)}"></div></div>`;
   if(e.type==='medicine')f+=`<label class="f">What</label><input id="eMName" maxlength="40" value="${esc(d.name||'')}"><label class="f">Dose (optional)</label><input id="eMDose" maxlength="40" value="${esc(d.dose||'')}">`;
+  if(isSupp(e)){const hv=d.how==='bottle'?'bottle:'+(d.milk||''):d.how||'';f+=`<label class="f" for="eMHow">How it was given</label><select id="eMHow">${[['','Not noted'],['dropper','By dropper'],['bottle:Formula','Added to formula'],['bottle:Breast milk','Added to pumped milk'],['bottle:','Added to a bottle']].map(o=>`<option value="${o[0]}" ${o[0]===hv?'selected':''}>${o[1]}</option>`).join('')}</select>`}
   if(e.type==='pump')f+=`<label class="f">Minutes</label><input type="number" min="0" max="180" id="ePMin" value="${Math.round((e.end-e.start)/6e4)}">`;
   if((e.type==='feed'&&e.subtype==='bottle')||e.type==='pump')f+=`<div class="row"><div><label class="f">Amount</label><input type="number" step="0.5" id="eAmt" value="${e.amount??''}"></div><div><label class="f">Unit</label><select id="eUnit"><option ${e.unit==='oz'?'selected':''}>oz</option><option ${e.unit==='ml'?'selected':''}>ml</option></select></div></div>`;
   const pd={color:d.color,texture:d.texture,amount:d.amount};Object.keys(pd).forEach(k=>{if(!pd[k])delete pd[k]});
@@ -1397,7 +1553,8 @@ function editEntry(id){
       if($('#eL')){const L=Math.max(0,+$('#eL').value||0),R=Math.max(0,+$('#eR').value||0);if((L!==Math.round((d.left||0)/60)||R!==Math.round((d.right||0)/60))&&e.end)e.end=e.start+(L+R)*6e4;d.left=L*60;d.right=R*60;e.details=d}
       if($('#eAmt')){e.amount=+$('#eAmt').value||0;e.unit=$('#eUnit').value}
       if($('#ePMin')){const mn=Math.round(+$('#ePMin').value||0);if(mn<0||mn>180){toast('Minutes should be between 0 and 180');return}if(e.start+mn*6e4>Date.now()+6e4){toast('That would end in the future');return}e.end=e.start+mn*6e4}
-      if($('#eMName')){const nm=$('#eMName').value.trim().slice(0,40);if(!nm){toast('Add what was given');return}const nd=Object.assign({},e.details||{},{name:nm});const ds=$('#eMDose').value.trim().slice(0,40);if(ds)nd.dose=ds;else delete nd.dose;e.details=nd}
+      if($('#eMName')){const nm=$('#eMName').value.trim().slice(0,40);if(!nm){toast('Add what was given');return}const nd=Object.assign({},e.details||{},{name:nm});const ds=$('#eMDose').value.trim().slice(0,40);if(ds)nd.dose=ds;else delete nd.dose;
+        if($('#eMHow')){const [hw,mk]=$('#eMHow').value.split(':');delete nd.how;delete nd.milk;if(hw)nd.how=hw;if(hw==='bottle'&&mk)nd.milk=mk;if(hw!=='bottle')delete nd.feed}e.details=nd}
       if($('#eKind')){e.subtype=$('#eKind').value;const nd=Object.assign({},e.details||{});['color','texture','amount'].forEach(k=>{delete nd[k];if(poopy(e)&&pd[k])nd[k]=pd[k]});e.details=nd}
       if($('#eBy'))e.by=$('#eBy').value;
       e.details=withNote(Object.assign({},e.details||{}),'eNote');
@@ -1433,7 +1590,7 @@ function voiceListen(){
       .catch(err=>{if(vCtl!==ctl)return;vCtl=null;voiceMiss('',err&&err.code||'error')});
   });
 }
-function voiceOpts(){return {unit:P.unit,meds:medNames()}}
+function voiceOpts(){const m=medNames();suppList().forEach(n=>{if(!m.some(x=>suppKey(x)===suppKey(n)))m.push(n)});return {unit:P.unit,meds:m}}
 function voiceHandle(text){
   const r=parseVoice(text,Date.now(),voiceOpts());
   if(!r.kind)return voiceMiss(text,r.reason);
@@ -1464,6 +1621,9 @@ function voiceConfirm(r){
     if(v.action==='start'&&rs)v.warn='A sleep timer is already running since '+fmtT(rs.start)+'. Say “woke up” to end it first.';
     if(v.action==='end'&&!rs){v.action='log';v.end=v.end||Date.now();v.at=null}}
   if(v.kind==='medicine'&&v.name&&!v.dose)v.dose=lastDose(v.name);
+  // supplements: "gave iron", "vitamin D", "iron in her bottle" become supplement entries (how it was given from the words, else the family's usual way)
+  const vs=v.kind==='medicine'?suppFromVoice(v,r.heard,suppSaved()):null;
+  if(vs){const df=suppDefaults(D.entries,vs.details.name,suppSaved());v.supp=true;v.how=vs.details.how||df.how||null;v.vmilk=vs.details.milk||(v.how==='bottle'?df.milk:null)||null}
   const unit=v.unit||P.unit;
   const timeField=(id,label,t,req)=>`<label class="f" for="${id}">${label}</label><input type="datetime-local" id="${id}" value="${t!=null?toLocalInput(t):(req?'':toLocalInput(Date.now()))}" max="${toLocalInput(Date.now())}">`;
   const amountRow=(a,u)=>`<div class="row"><div><label class="f" for="vAmt">Amount</label><input type="number" inputmode="decimal" step="0.5" min="0" id="vAmt" value="${a??''}"></div><div><label class="f" for="vUnit">Unit</label><select id="vUnit"><option ${u==='oz'?'selected':''}>oz</option><option ${u==='ml'?'selected':''}>ml</option></select></div></div>`;
@@ -1477,6 +1637,7 @@ function voiceConfirm(r){
   else if(v.kind==='sleep'&&v.action==='start'){title='🌙 Fell asleep';body=timeField('vT','Fell asleep',v.at)}
   else if(v.kind==='sleep'&&v.action==='end'){const rs=running('sleep');title='☀️ Woke up';body=`<div class="muted" style="text-align:center">Ends the sleep that started at ${fmtT(rs.start)}</div>`+timeField('vE','Woke up',v.end)}
   else if(v.kind==='sleep'){title='🌙 Sleep';body=timeField('vT','Fell asleep',v.at,true)+timeField('vE','Woke up',v.end)}
+  else if(v.kind==='medicine'&&v.supp){title='💊 Supplement';body=`<label class="f" for="vMName">What</label><input id="vMName" maxlength="40" value="${esc(v.name||'')}">`+chips('vhow',[['dropper','By dropper'],['bottle','Added to a bottle']],v.how,'How it was given')+`<label class="f" for="vMDose">Dose (optional)</label><input id="vMDose" maxlength="40" placeholder="As your pediatrician directed" value="${esc(v.dose||'')}">`+timeField('vT','Time',v.at)+`<div class="suppNote">${SUPP_NOTE}</div>`}
   else if(v.kind==='medicine'){title='💊 Medicine';body=`<label class="f" for="vMName">What</label><input id="vMName" maxlength="40" list="vMedList" value="${esc(v.name||'')}" placeholder="e.g. Vitamin D"><datalist id="vMedList">${medNames().map(n=>`<option value="${esc(n)}">`).join('')}</datalist><label class="f" for="vMDose">Dose (optional)</label><input id="vMDose" maxlength="40" value="${esc(v.dose||'')}">`+timeField('vT','Time',v.at)}
   openSheet(`<h2 style="text-align:center;margin-bottom:2px">${title}</h2>
     <div class="vHeard small">“${esc(r.heard)}”</div>
@@ -1486,7 +1647,7 @@ function voiceConfirm(r){
     <button class="btn peach full" id="vSave" ${v.warn?'disabled':''}>Save</button>
     <button class="textlink" id="vNo">Cancel</button>`,()=>{
     const pick=name=>$$(`[data-${name}]`).forEach(b=>b.onclick=()=>{$$(`[data-${name}]`).forEach(x=>{x.classList.remove('on');x.setAttribute('aria-pressed','false')});b.classList.add('on');b.setAttribute('aria-pressed','true')});
-    ['vmilk','vside','vdk'].forEach(pick);
+    ['vmilk','vside','vdk','vhow'].forEach(pick);
     const on=n=>{const b=document.querySelector(`[data-${n}].on`);return b?b.getAttribute('data-'+n):null};
     $$('[data-vk]').forEach(b=>b.onclick=()=>{const k=b.dataset.vk;if(k===v.kind)return;P.lastFeedTab=k;const t=$('#vT')&&$('#vT').value?new Date($('#vT').value).getTime():v.at;voiceConfirm(Object.assign({},r,{at:t}))});
     $('#vNo').onclick=closeSheet;
@@ -1507,7 +1668,9 @@ function voiceConfirm(r){
         rs.end=en;upd=rs;msg='Good morning! Slept '+dur(rs.end-rs.start)+' ☀️'}
       else if(v.kind==='sleep'){const en=tv('vE');if(isNaN(t)||isNaN(en))return err('Please pick both times');if(en<=t)return err('Woke up has to be after fell asleep');if(en-t>SLEEP_MAX_H*36e5)return err('That’s longer than '+SLEEP_MAX_H+' hours');const e=pastErr(t,en);if(e)return err(e);
         ne={type:'sleep',start:t,end:en,details:{past:true}};msg='Sleep saved · '+dur(en-t)+' 🌙'}
-      else if(v.kind==='medicine'){const nm=$('#vMName').value.trim().slice(0,40);if(!nm)return err('Add what was given');const ds=$('#vMDose').value.trim().slice(0,40),e=pastErr(t,t);if(e)return err(e);const d={name:nm};if(ds)d.dose=ds;ne={type:'medicine',start:t,end:t,details:d};msg='Saved 💊 '+nm+(ds?' · '+ds:'')}
+      else if(v.kind==='medicine'){const nm=$('#vMName').value.trim().slice(0,40);if(!nm)return err('Add what was given');const ds=$('#vMDose').value.trim().slice(0,40),e=pastErr(t,t);if(e)return err(e);const d={name:nm};if(ds)d.dose=ds;
+        if(v.supp&&isSuppName(nm,suppSaved().concat([v.name]))){d.supp=true;const hw=on('vhow');if(hw)d.how=hw;if(hw==='bottle'&&v.vmilk)d.milk=v.vmilk;rememberSupp(nm)}
+        ne={type:'medicine',start:t,end:t,details:d};msg='Saved 💊 '+nm+(ds?' · '+ds:'')}
       if(upd){updEntry(upd);closeSheet();savedUndo(msg,()=>{upd.end=null;updEntry(upd)});return}
       if(!ne)return;addEntry(ne);closeSheet();savedUndo(msg,undoAdd(ne))};
   });
@@ -1703,6 +1866,9 @@ function docText(){const {d24,d7,span,days}=docData(),b=D.baby,n=lifeDay(curWind
   const pr=poopStats(Date.now()-7*864e5,Date.now());
   if(pr.detailed){L.push('','POOP DETAILS (last 7 days, '+pr.detailed+' of '+pr.dirty+' dirty diapers described)');['color','texture','amount'].forEach(k=>{const c=poopCounts(pr,k);if(c)L.push(POOP_NAME[k]+': '+c)});
     if(pr.flagged.length)L.push('Noted: '+pr.flagged.map(e=>poopLbl('color',e.details.color).toLowerCase()+' poop on '+fmtD2(e.start)).join('; '))}
+  const ss=suppSummary();if(ss.length){L.push('','SUPPLEMENTS, LAST 7 DAYS (days given, as logged)');ss.forEach(r=>{if(r.a7)L.push(adherenceText(r.name,r.a7)+suppSince(r.a7))});
+    L.push('','SUPPLEMENTS, LAST 30 DAYS');ss.forEach(r=>{if(r.a30)L.push(adherenceText(r.name,r.a30)+suppSince(r.a30)+(r.how?' · '+r.how:''))});
+    L.push(useBirthDay()?'Days start at birth time. Today counts once it is logged.':'Today counts once it is logged.')}
   const md=recentMeds();if(md.length){L.push('','MEDICINE (last 7 days)');md.forEach(e=>L.push(fmtD2(e.start)+' · '+[e.details.name,e.details.dose].filter(Boolean).join(', ')))}
   const rn=recentNotes();if(rn.length){L.push('','NOTES FROM THE LOG (last 7 days)');rn.forEach(e=>L.push(fmtD2(e.start)+' · '+noteType(e)+': '+e.details.note))}
   const nt=(b.doctor_notes||'').trim();if(nt)L.push('','QUESTIONS FOR THE DOCTOR',nt);
@@ -1738,6 +1904,7 @@ function renderDoc(){
       return `<div class="keep"><h2>Poop details · last 7 days</h2><table><tbody>${['color','texture','amount'].map(k=>`<tr><td>${POOP_NAME[k]}</td><td>${esc(poopCounts(pr,k)||'—')}</td></tr>`).join('')}</tbody></table>
       <div class="fine" style="margin-top:4px">Described on ${pr.detailed} of ${pr.dirty} dirty diapers.</div>
       ${pr.flagged.length?`<div class="flag" style="margin-top:8px;padding:8px 10px;border-radius:10px;background:#FFF4D6;border:1px solid #EBD9A6;font-size:0.7647rem"><b>Noted for the doctor:</b> ${pr.flagged.map(e=>esc(poopLbl('color',e.details.color).toLowerCase()+' poop, '+fmtD2(e.start))).join('; ')}</div>`:''}</div>`})()}
+    ${(()=>{const ss=suppSummary();if(!ss.length)return'';return `<div class="keep" id="docSupp"><h2>Supplements · days given</h2><table><tbody>${ss.map(r=>`<tr><td><b>${esc(r.name)}</b>${r.how?` <span style="color:#7C778E">· ${esc(r.how)}</span>`:''}${r.a7?`<br>Last 7 days: ${esc(adherenceText('',r.a7)+suppSince(r.a7))}`:''}${r.a30&&(!r.a7||r.a30.total>r.a7.total)?`<br>Last 30 days: ${esc(adherenceText('',r.a30)+suppSince(r.a30))}`:''}</td></tr>`).join('')}</tbody></table><div class="fine" style="margin-top:4px">As logged by the family${useBirthDay()?', with days starting at birth time':''}. Today counts once it’s logged. The way it was given is from the latest log; doses are what the family entered.</div>`})()}
     ${(()=>{const md=recentMeds();if(!md.length)return'';return `<div class="keep"><h2>Medicine · last 7 days</h2><table><tbody>${md.map(e=>`<tr><td style="white-space:nowrap">${esc(fmtD2(e.start))}</td><td><b>${esc(e.details.name||'')}</b></td><td>${esc(e.details.dose||'')}</td><td>${esc(person(e.by).name)}</td></tr>`).join('')}</tbody></table><div class="fine" style="margin-top:4px">As logged by the family.</div></div>`})()}
     ${(()=>{const rn=recentNotes();if(!rn.length)return'';return `<div class="keep"><h2>Notes from the log · last 7 days</h2><table><tbody>${rn.map(e=>`<tr><td style="white-space:nowrap">${esc(fmtD2(e.start))}</td><td>${esc(noteType(e))}</td><td>${esc(e.details.note)}</td></tr>`).join('')}</tbody></table></div>`})()}
     <div class="keep"><h2>Growth</h2>${gRows?`<table><thead><tr><th></th><th class="n">Latest</th><th>Change since last measurement</th><th class="n">WHO percentile</th></tr></thead><tbody>${gRows}</tbody></table>`:'<div class="meta">No measurements logged yet.</div>'}</div>`;
@@ -1794,7 +1961,7 @@ async function callAppleFn(action, extra={}){
 // auth screen
 let authMode='in';
 // health-data consent: required to create an account (email, sign-in link or Apple); never pre-ticked
-const CONSENT_VERSION='2026-11-25';
+const CONSENT_VERSION='2026-11-25b'; // b: consent text names supplements
 const consentData=()=>({health_consent_at:new Date().toISOString(),health_consent_version:CONSENT_VERSION});
 function needConsent(m){if($('#aConsent').checked){$('#consentBox').classList.remove('need');return true}
   $('#consentBox').classList.add('need');setMsg(m,"Please tick the box to agree to how Babyway stores your baby's information.");return false}
@@ -2035,7 +2202,7 @@ async function boot(forceAuth){
   const {data}=await sb.auth.getSession();
   if(data.session){user=data.session.user;startCloud()}else showAuth();
 }
-window.__littledays={get mode(){return MODE},get data(){return D},get queue(){return Q},startDemo,sampleEntries,demoSampleStale,refreshDemoSample};
+window.__littledays={get mode(){return MODE},get data(){return D},get queue(){return Q},startDemo,sampleEntries,demoSampleStale,refreshDemoSample,docText};
 boot();
 })();
 </script>
