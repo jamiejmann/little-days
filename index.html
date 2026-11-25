@@ -517,7 +517,9 @@ const SUPABASE_CDN='https://esm.sh/@supabase/supabase-js@2';
 const VAPID_PUBLIC_KEY='BJbwZLxJLiYgjQ9YIhb3STsQ8kFhXaZN_hD685Vziz6kq-byEsmx1TZjdokl0Gk9sLCPB9bLlUfDjSTrkK7aSwo'; // public half only; the private key lives in Supabase Vault
 const ALARM_FN=SUPABASE_URL+'/functions/v1/feed-alarm';
 const APPLE_FN=SUPABASE_URL+'/functions/v1/apple-auth';
-const WEB_APP_URL='https://jamiejmann.github.io/little-days/'; // where email links land when the app runs inside the iPhone app
+const WEB_APP_URL='https://jamiejmann.github.io/little-days/'; // where email and invite links land when the app runs inside the iPhone app
+// the page's own address on the web; inside the iPhone app (capacitor://localhost) that address can't be opened from an email or a text, so use the web app
+const appLinkBase=()=>/^https?:$/.test(location.protocol)?location.origin+location.pathname:WEB_APP_URL;
 const FEEDBACK_EMAIL='hello@getbabyway.com';
 const BETA_SURVEY_URL=''; // TODO(Jamie): paste the Google Form link for the beta survey here; the button stays hidden while this is empty
 const WEB_VERSION='web-v30'; // keep in step with the CACHE number in sw.js
@@ -946,7 +948,7 @@ function bars(labels,data,suffix=''){
     g+=`<text x="${x+bw/2}" y="${H-5}" text-anchor="middle" font-size="11">${labels[i]}</text>`});
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img">${g}</svg>`;
 }
-function inviteLink(code){return location.origin+location.pathname+'?invite='+code}
+function inviteLink(code){return appLinkBase()+'?invite='+code}
 function renderFamily(){
   renderAlarmCard();
   const isOwner=MODE==='cloud'&&(D.people.find(p=>p.id===D.me)||{}).role==='owner';
@@ -1598,7 +1600,7 @@ $('#aGo').onclick=async()=>{
   $('#aGo').disabled=true;setMsg(m,'One moment…',true);
   try{await loadSupabase()}catch(e){$('#aGo').disabled=false;return setMsg(m,"Can't reach the internet right now. You can still try the demo.")}
   let r;
-  if(authMode==='up')r=await sb.auth.signUp({email,password,options:{data:{display_name:$('#aName').value.trim()||email.split('@')[0],...consentData()},emailRedirectTo:location.origin+location.pathname}});
+  if(authMode==='up')r=await sb.auth.signUp({email,password,options:{data:{display_name:$('#aName').value.trim()||email.split('@')[0],...consentData()},emailRedirectTo:appLinkBase()}});
   else r=await sb.auth.signInWithPassword({email,password});
   $('#aGo').disabled=false;
   if(r.error)return setMsg(m,authFriendly(r.error,authMode==='up'));
@@ -1607,7 +1609,7 @@ $('#aGo').onclick=async()=>{
 };
 $('#aForgot').onclick=async()=>{const email=$('#aEmail').value.trim(),m=$('#aMsg');if(!email)return setMsg(m,'Type your email above first, then tap Forgot password.');
   try{await loadSupabase()}catch(e){return setMsg(m,"Can't reach the internet right now.")}
-  const redirectTo=/^https?:$/.test(location.protocol)?location.origin+location.pathname:WEB_APP_URL;
+  const redirectTo=appLinkBase();
   const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo});
   setMsg(m,error&&/rate|too many|security purposes/i.test(error.message||'')?'Please wait a minute before asking for another reset email.':'If that email has a Babyway account, a link to set a new password is on its way. Check your email 💌',!error)};
 function openNewPassword(){
@@ -1622,7 +1624,7 @@ function openNewPassword(){
 $('#aMagic').onclick=async()=>{const email=$('#aEmail').value.trim(),m=$('#aMsg');if(!email)return setMsg(m,'Type your email first.');
   if(!needConsent(m))return; // a sign-in link can create a new account
   try{await loadSupabase()}catch(e){return setMsg(m,"Can't reach the internet right now.")}
-  const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:true,data:consentData()}});
+  const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:appLinkBase(),shouldCreateUser:true,data:consentData()}});
   setMsg(m,error?authFriendly(error,false).replace(/^That email and password.*$/,"We couldn't send a sign-in link. Please check the email address and try again."):'If that email can sign in, a sign-in link is on its way. Check your email ✨',!error)};
 
 $('#appleBtn')&&($('#appleBtn').onclick=async()=>{
