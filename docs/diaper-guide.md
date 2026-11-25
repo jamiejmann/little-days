@@ -31,6 +31,16 @@ Day 1–2: 1–2 stools, 1–2 wet. Day 3–5: 2–3 stools, 3–5 wet. Day 6–
 - After ~6 months: none of the sources give counts once solids start, so nothing is shown from day 183.
 - Today's goals previously used day 5+ 6–8 wet / 3+ poops and day 4 2–4 poops. They now use this table (feeds unchanged); after 6 weeks the poop row reads "varies" with no target dots or checkmark.
 
+## Typical poop look (one line inside the ⓘ sheet only)
+Matched to the baby's age, e.g. "At day 4, poop is usually changing from greenish-brown to yellow." No new fields, screens or buttons; the existing optional poop color (with red/pale/black noted for the pediatrician summary) is unchanged.
+| Day of life | Line |
+|---|---|
+| 1–2 | thick, sticky and black or dark green |
+| 3–5 | changing from greenish-brown to yellow |
+| 6–42 | soft and yellow, often seedy if breastfed, or thicker and yellow to tan with formula |
+| 43–182 | soft, like pudding, and yellow, tan or brown |
+Starting point: the same physician friend's notes (day 1–2 thick, sticky, black/dark green; day 3–5 greenish/brown to yellow; day 6–14+ soft, yellow, seedy if breastfed, or pasty/tan; 6 weeks+ soft/pudding-like, yellow/tan or brown). Cross-checked with AAP HealthyChildren.org ("How to Tell if Your Breastfed Baby is Getting Enough Milk": blackish tarry on days 1–2, greenish to yellow on days 3–4, yellow and loose with small curds by days 5–7; "The Many Colors of Baby Poop": mustard yellow breastfed, yellow-tan formula; Symptom Checker: meconium days 1–3, greenish-brown transitional days 4–5, milk stools from day 6, formula stools like peanut butter), NHS trust nappy charts (meconium days 1–2, brown/green/yellow and looser days 3–4, yellow from day 5) and La Leche League (greenish transitional by day 3, loose bright yellow seedy by day 5; pudding-like mustard yellow later). All agree; wording only made plainer ("pasty" became "thicker", "pudding-like" became "like pudding").
+
 ## Wording and compliance
 - Line: `Typical at day N: X wet, Y dirty`. Neutral secondary text, no color change, never compared with the baby's counts, no alerts.
 - Sheet: "This is a general guide drawn from common pediatric and breastfeeding guidance. It isn't medical advice, and Babyway doesn't judge your baby's counts." / "Every baby is different. Breastfed and formula-fed babies often poop on different schedules, and many babies poop less often after about 6 weeks." / "If you have any concerns, call your pediatrician."

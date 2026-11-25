@@ -40,3 +40,17 @@ test("Today's goals use the same wet and dirty ranges", () => {
   assert.equal(ctx.goalTargets(57), null);
 });
 test('feeds goals unchanged', () => { assert.deepEqual({ ...ctx.goalTargets(1).feeds }, { min: 6, plus: 1 }); assert.deepEqual({ ...ctx.goalTargets(3).feeds }, { min: 10, max: 12 }); assert.deepEqual({ ...ctx.goalTargets(20).feeds }, { min: 8, plus: 1 }); });
+test('typical poop look matches the age band', () => {
+  assert.equal(g(1).look, 'At day 1, poop is usually thick, sticky and black or dark green.');
+  assert.equal(g(2).look, 'At day 2, poop is usually thick, sticky and black or dark green.');
+  for (const d of [3, 4, 5]) assert.match(g(d).look, /changing from greenish-brown to yellow\.$/);
+  for (const d of [6, 14, 42]) assert.match(g(d).look, /soft and yellow, often seedy if breastfed, or thicker and yellow to tan with formula\.$/);
+  for (const d of [43, 182]) assert.match(g(d).look, /soft, like pudding, and yellow, tan or brown\.$/);
+  for (let d = 1; d <= 182; d++) assert.doesNotMatch(g(d).look, /red|white|pale|blood|warning|abnormal|dehydrat/i);
+});
+test('poop look adds no new UI: it lives only inside the info sheet', () => {
+  const sheet = html.slice(html.indexOf('function openDiaperGuideInfo'), html.indexOf('function renderToday'));
+  assert.match(sheet, /g\.look/);
+  const line = html.slice(html.indexOf('function renderDiaperGuide'), html.indexOf('function openDiaperGuideInfo'));
+  assert.doesNotMatch(line, /look/);
+});

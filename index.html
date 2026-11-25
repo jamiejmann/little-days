@@ -901,18 +901,18 @@ function describe(e){
    General guide only. Reconciled from common pediatric and breastfeeding guidance (AAP HealthyChildren.org,
    NHS, La Leche League, CDC); see docs/diaper-guide.md. Shown quietly next to the counts; never judged or alerted on. */
 const DIAPER_GUIDE=[
-  {from:1,to:2,wet:[1,2],dirty:[1,2]},
-  {from:3,to:4,wet:[3,5],dirty:[2,3]},
-  {from:5,to:5,wet:[5,6],dirty:[2,4]},
-  {from:6,to:42,wet:[6,8],dirty:[2,5]},
-  {from:43,to:182,wet:[6,0],dirty:null} // after 6 weeks: 6+ wet; dirty varies (every 2-3 days up to 5 a day)
+  {from:1,to:2,wet:[1,2],dirty:[1,2],look:'thick, sticky and black or dark green'},
+  {from:3,to:4,wet:[3,5],dirty:[2,3],look:'changing from greenish-brown to yellow'},
+  {from:5,to:5,wet:[5,6],dirty:[2,4],look:'changing from greenish-brown to yellow'},
+  {from:6,to:42,wet:[6,8],dirty:[2,5],look:'soft and yellow, often seedy if breastfed, or thicker and yellow to tan with formula'},
+  {from:43,to:182,wet:[6,0],dirty:null,look:'soft, like pudding, and yellow, tan or brown'} // after 6 weeks: 6+ wet; dirty varies (every 2-3 days up to 5 a day)
 ];
 function diaperGuide(day){
   if(!Number.isInteger(day)||day<1)return null;
   const b=DIAPER_GUIDE.find(x=>day>=x.from&&day<=x.to);if(!b)return null;
   const r=a=>a[1]?a[0]+'\u2013'+a[1]:a[0]+'+';
   const wet=r(b.wet),dirty=b.dirty?r(b.dirty):null;
-  return {day,wetMin:b.wet[0],wetMax:b.wet[1]||null,dirtyMin:b.dirty?b.dirty[0]:null,dirtyMax:b.dirty?b.dirty[1]:null,wet,dirty,
+  return {day,look:'At day '+day+', poop is usually '+b.look+'.',wetMin:b.wet[0],wetMax:b.wet[1]||null,dirtyMin:b.dirty?b.dirty[0]:null,dirtyMax:b.dirty?b.dirty[1]:null,wet,dirty,
     text:'Typical at day '+day+': '+wet+' wet, '+(dirty?dirty+' dirty':'dirty varies')};
 }
 /* DIAPER_GUIDE_END */
@@ -989,10 +989,12 @@ function renderDiaperGuide(){
   $('#dgInfo').onclick=openDiaperGuideInfo;
 }
 function openDiaperGuideInfo(){
+  const g=D.baby.birthdate&&diaperGuide(lifeDay(curWindow()));
   const rows=[['Days 1\u20132','1\u20132','1\u20132'],['Days 3\u20134','3\u20135','2\u20133'],['Day 5','5\u20136','2\u20134'],['Day 6 to 6 weeks','6\u20138','2\u20135'],['After 6 weeks','6+','Every 2\u20133 days up to 5 a day']];
   openSheet(`<h2 style="text-align:center">Typical diaper counts</h2>
     <div class="muted" style="text-align:center">Per 24 hours, by baby\u2019s age</div>
     <table class="dgtab"><thead><tr><th scope="col">Age</th><th scope="col">Wet</th><th scope="col">Dirty</th></tr></thead><tbody>${rows.map(r=>`<tr><th scope="row" style="font-size:inherit;color:inherit">${r[0]}</th><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</tbody></table>
+    ${g?`<p style="margin:0 0 8px;line-height:1.45" id="dgLook">${esc(g.look)}</p>`:''}
     <p style="margin:0 0 8px;line-height:1.45">This is a general guide drawn from common pediatric and breastfeeding guidance. It isn\u2019t medical advice, and Babyway doesn\u2019t judge your baby\u2019s counts.</p>
     <p style="margin:0 0 8px;line-height:1.45">Every baby is different. Breastfed and formula-fed babies often poop on different schedules, and many babies poop less often after about 6 weeks.</p>
     <p style="margin:0 0 14px;line-height:1.45">If you have any concerns, call your pediatrician.</p>
