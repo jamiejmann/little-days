@@ -213,6 +213,22 @@ textarea.note{margin-top:10px;min-height:0;resize:none;font-size:0.8824rem}
 .medRow .lastMed span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
 .medRow .lastMed b{flex:none;background:var(--yellow);border-radius:999px;padding:3px 10px;color:var(--ink)}
 .medRow button:active{transform:scale(.97)}
+.micBtn{flex:none;margin-left:auto;width:max(44px,2.6rem);height:max(44px,2.6rem);border:none;border-radius:50%;background:var(--card);box-shadow:var(--shadow);color:var(--ink);cursor:pointer;display:grid;place-items:center;padding:0}
+.lastMed:not(.hidden)+.micBtn{margin-left:0}
+.micGlyph{width:1.3rem;height:1.3rem}
+.vMic{display:grid;place-items:center;width:max(96px,5.6rem);height:max(96px,5.6rem);margin:12px auto 4px;border:none;border-radius:50%;background:#E5484D;color:#fff;cursor:pointer;box-shadow:var(--shadow);animation:rec 1.4s ease-in-out infinite}
+.vMic .micGlyph{width:2.4rem;height:2.4rem}
+@keyframes rec{50%{box-shadow:0 0 0 12px rgba(229,72,77,.18)}}
+@media (prefers-reduced-motion:reduce){.vMic{animation:none}}
+.vRec{text-align:center;font-size:0.7647rem;font-weight:800;color:#C93C41;letter-spacing:.3px}
+.vRec i{display:inline-block;width:8px;height:8px;border-radius:50%;background:#E5484D;margin-right:6px;vertical-align:middle}
+.vHeard{text-align:center;font-weight:700;color:var(--soft);margin:10px 4px;min-height:1.5em;font-size:0.9412rem}
+.vHeard.live{color:var(--ink);font-weight:800}
+.vHeard.small{font-size:0.7647rem;color:var(--soft);font-weight:700;margin:0 4px 8px}
+.vPriv{text-align:center;font-size:0.7059rem;font-weight:700;color:var(--soft);margin-top:4px}
+.vManual{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.textlink{display:block;margin:10px auto 0;border:none;background:none;font:inherit;font-weight:800;font-size:0.8235rem;color:var(--soft);cursor:pointer;min-height:44px;padding:0 16px}
+#vSave:disabled{opacity:.45}
 html,body{max-width:100%;overflow-x:hidden}
 .lastMed{border:none;font:inherit;font-weight:700;cursor:pointer}
 .side.hint{box-shadow:0 0 0 5px var(--lav),var(--shadow)}
@@ -385,7 +401,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
       <button class="bigbtn diaper" id="bDiaper"><div class="em" aria-hidden="true">🧷</div>Diaper<small>pee · poop</small></button>
       <button class="bigbtn sleep" id="bSleep"><div class="em" aria-hidden="true">🌙</div><span id="sleepLbl">Sleep</span><small id="sSleep">tap to log</small></button>
     </div>
-    <div class="medRow"><button class="medBtn" id="addMed">💊 Medicine</button><button class="lastMed hidden" id="lastMed" aria-label="Log the last medicine again"></button></div>
+    <div class="medRow"><button class="medBtn" id="addMed">💊 Medicine</button><button class="lastMed hidden" id="lastMed" aria-label="Log the last medicine again"></button><button class="micBtn hidden" id="micBtn" aria-label="Log by voice" title="Log by voice"><svg class="micGlyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 14.5a3.5 3.5 0 0 0 3.5-3.5V5.5a3.5 3.5 0 0 0-7 0V11a3.5 3.5 0 0 0 3.5 3.5Z"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M18.25 11a6.25 6.25 0 0 1-12.5 0M12 17.25V21m-3 0h6"/></svg></button></div>
     <button class="again hidden" id="bAgain" aria-label="Log the same bottle again"></button>
     <div class="card hidden" id="goalsCard"></div>
     <div class="card" id="l24card">
@@ -508,6 +524,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="alarmBannerWrap"></div>
+<script src="voice.js"></script>
 <script>
 (function(){
 /* ======== CONFIG (public values only: the publishable key is safe in a web page; RLS protects the data) ======== */
@@ -522,7 +539,7 @@ const WEB_APP_URL='https://jamiejmann.github.io/little-days/'; // where email an
 const appLinkBase=()=>/^https?:$/.test(location.protocol)?location.origin+location.pathname:WEB_APP_URL;
 const FEEDBACK_EMAIL='hello@getbabyway.com';
 const BETA_SURVEY_URL=''; // TODO(Jamie): paste the Google Form link for the beta survey here; the button stays hidden while this is empty
-const WEB_VERSION='web-v31'; // keep in step with the CACHE number in sw.js
+const WEB_VERSION='web-v32'; // keep in step with the CACHE number in sw.js
 const appVersion=()=>window.__ldBuild?('ios '+__ldBuild.version+' '+__ldBuild.web):WEB_VERSION;
 
 /* ---------- private error log (migration 012) ----------
@@ -1099,9 +1116,9 @@ async function removePerson(id){
 function leaveDemo(){teardown();MODE=null;localStorage.removeItem(MODE_KEY);boot(true)}
 
 /* ======================= SHEETS ======================= */
-let sheetTick;
-function openSheet(html,bind){$('#sheet').innerHTML='<div class="grab"></div>'+html;$('#scrim').onclick=e=>{if(e.target.id==='scrim')closeSheet()};$('#scrim').classList.add('on');bind&&bind()}
-function closeSheet(){$('#scrim').classList.remove('on');clearInterval(sheetTick)}
+let sheetTick,sheetOnClose=null;
+function openSheet(html,bind){sheetOnClose=null;$('#sheet').innerHTML='<div class="grab"></div>'+html;$('#scrim').onclick=e=>{if(e.target.id==='scrim')closeSheet()};$('#scrim').classList.add('on');bind&&bind()}
+function closeSheet(){$('#scrim').classList.remove('on');clearInterval(sheetTick);if(sheetOnClose){const f=sheetOnClose;sheetOnClose=null;f()}}
 $('#scrim').onclick=e=>{if(e.target.id==='scrim')closeSheet()};
 function feedSide(e,s){const d=e.details;return (d.acc?.[s]||0)+(d.side===s?(Date.now()-d.since)/1000:0)}
 function feedTotal(e){return feedSide(e,'L')+feedSide(e,'R')}
@@ -1384,9 +1401,116 @@ function editEntry(id){
   });
 }
 
+/* ======================= VOICE LOGGING ======================= */
+/* Tap the mic, say one short thing ("4 ounces at 2pm"), check it, save it. voice.js turns speech into text
+   (on the iPhone: Apple's on-device recognizer) and parses it with plain local rules. Audio is never stored or
+   sent to Babyway; only the entry you confirm is saved, exactly like a tap on the buttons. */
+const V_EXAMPLES=['4 ounces at 2pm','Nursed 15 minutes on the left','Wet diaper','Poopy diaper 20 minutes ago','Fell asleep','Woke up','Napped 45 minutes','Gave Vitamin D'];
+let vCtl=null,vSupported=false;
+function voiceInit(){if(!window.LDVoice)return;LDVoice.supported().then(ok=>{vSupported=!!ok;$('#micBtn').classList.toggle('hidden',!ok)}).catch(()=>{})}
+function voiceStopAll(){if(vCtl){const c=vCtl;vCtl=null;try{c.cancel()}catch(x){}}}
+function voiceListen(){
+  if(!window.LDVoice||!vSupported)return;
+  voiceStopAll();
+  const local=LDVoice.onDevice,mic=$('#micBtn').innerHTML;
+  openSheet(`<div class="vRec" role="status"><i aria-hidden="true"></i>Listening</div>
+    <button class="vMic" id="vStop" aria-label="Stop listening">${mic}</button>
+    <div class="vHeard" id="vHeard" aria-live="polite">Try “${esc(V_EXAMPLES[Math.floor(Math.random()*V_EXAMPLES.length)])}”</div>
+    <div class="vPriv">${local?'Turned into text on this device. Nothing is recorded.':'Your browser turns speech into text. Babyway never gets the audio.'}</div>
+    <button class="textlink" id="vCancel">Cancel</button>`,()=>{
+    sheetOnClose=voiceStopAll;
+    let heard='';
+    const ctl=vCtl=LDVoice.listen(t=>{heard=t;const h=$('#vHeard');if(h){h.textContent='“'+t+'”';h.classList.add('live')}});
+    $('#vStop').onclick=()=>ctl.stop();
+    $('#vCancel').onclick=()=>closeSheet();
+    ctl.result.then(text=>{if(vCtl!==ctl)return;vCtl=null;voiceHandle(text||heard)})
+      .catch(err=>{if(vCtl!==ctl)return;vCtl=null;voiceMiss('',err&&err.code||'error')});
+  });
+}
+function voiceOpts(){return {unit:P.unit,meds:medNames()}}
+function voiceHandle(text){
+  const r=parseVoice(text,Date.now(),voiceOpts());
+  if(!r.kind)return voiceMiss(text,r.reason);
+  voiceConfirm(r);
+}
+function voiceMiss(heard,reason){
+  const msg={empty:'I didn’t hear anything that time.',multiple:'That sounded like more than one thing. Try one at a time.',
+    denied:window.LDNative?'Voice needs Microphone and Speech Recognition. You can turn them on in Settings › Babyway.':'Voice needs the microphone. You can allow it in your browser’s settings for this site.',
+    ondevice:'This phone can’t turn speech into text on the device yet, so voice is off. The buttons work the same.',
+    network:'This browser needs a connection for voice. The buttons work offline.',nomic:'I couldn’t find a microphone.'}[reason]||'Sorry, I didn’t catch that. Try something like “4 ounces at 2pm.”';
+  const retry=reason!=='denied'&&reason!=='ondevice';
+  openSheet(`<h2 style="text-align:center">Let’s try that again</h2>
+    <div class="muted" style="text-align:center">${esc(msg)}</div>
+    ${heard?`<div class="vHeard live">“${esc(heard)}”</div>`:'<div style="height:10px"></div>'}
+    ${retry?'<button class="btn peach full" id="vAgain">Try again</button>':''}
+    <div class="muted" style="text-align:center;margin:14px 0 8px">Or tap instead</div>
+    <div class="vManual"><button class="chip" data-vm="feed">🍼 Feed</button><button class="chip" data-vm="diaper">🧷 Diaper</button><button class="chip" data-vm="sleep">🌙 Sleep</button><button class="chip" data-vm="med">💊 Medicine</button></div>`,()=>{
+    if($('#vAgain'))$('#vAgain').onclick=voiceListen;
+    $$('[data-vm]').forEach(b=>b.onclick=()=>{closeSheet();({feed:feedStart,diaper:diaperSheet,sleep:sleepStart,med:()=>medSheet()})[b.dataset.vm]()});
+  });
+}
+function voiceConfirm(r){
+  const v=Object.assign({},r);
+  const ambiguousFeed=v.kind==='feed';
+  if(ambiguousFeed)v.kind=P.lastFeedTab==='bottle'?'bottle':'breast';
+  if(v.kind==='breast'&&v.action==='start'&&running('feed','breast'))v.warn='A breastfeeding timer is already running.';
+  if(v.kind==='sleep'){const rs=running('sleep');
+    if(v.action==='start'&&rs)v.warn='A sleep timer is already running since '+fmtT(rs.start)+'. Say “woke up” to end it first.';
+    if(v.action==='end'&&!rs){v.action='log';v.end=v.end||Date.now();v.at=null}}
+  if(v.kind==='medicine'&&v.name&&!v.dose)v.dose=lastDose(v.name);
+  const unit=v.unit||P.unit;
+  const timeField=(id,label,t,req)=>`<label class="f" for="${id}">${label}</label><input type="datetime-local" id="${id}" value="${t!=null?toLocalInput(t):(req?'':toLocalInput(Date.now()))}" max="${toLocalInput(Date.now())}">`;
+  const amountRow=(a,u)=>`<div class="row"><div><label class="f" for="vAmt">Amount</label><input type="number" inputmode="decimal" step="0.5" min="0" id="vAmt" value="${a??''}"></div><div><label class="f" for="vUnit">Unit</label><select id="vUnit"><option ${u==='oz'?'selected':''}>oz</option><option ${u==='ml'?'selected':''}>ml</option></select></div></div>`;
+  const chips=(name,opts,cur,label)=>`<div class="chips" role="group" aria-label="${label}">${opts.map(([k,l])=>`<button class="chip ${cur===k?'on':''}" aria-pressed="${cur===k}" data-${name}="${k}">${l}</button>`).join('')}</div>`;
+  let body='',title='';
+  if(v.kind==='bottle'){title='🍼 Bottle';body=amountRow(v.amount,unit)+chips('vmilk',[['Formula','Formula'],['Breast milk','Breast milk']],v.milk||P.lastMilk||'Formula','Milk')+timeField('vT','Time',v.at)}
+  else if(v.kind==='breast'&&v.action==='start'){title='🤱 Start breastfeeding';body=chips('vside',[['L','Left'],['R','Right']],v.side||nextSide()||'L','Side')+timeField('vT','Started',v.at)}
+  else if(v.kind==='breast'){title='🤱 Breastfeed';body=`<div class="row"><div><label class="f" for="vL">Left (min)</label><input type="number" inputmode="numeric" min="0" max="${BREAST_MAX_MIN}" id="vL" value="${v.left??''}"></div><div><label class="f" for="vR">Right (min)</label><input type="number" inputmode="numeric" min="0" max="${BREAST_MAX_MIN}" id="vR" value="${v.right??''}"></div></div>`+timeField('vT','Started at',v.at)}
+  else if(v.kind==='pump'){title='🧴 Pumping';body=amountRow(v.amount,unit)+`<label class="f" for="vMin">Minutes (optional)</label><input type="number" inputmode="numeric" min="0" max="180" id="vMin" value="${v.minutes??''}">`+timeField('vT','Started at',v.at)}
+  else if(v.kind==='diaper'){title='🧷 Diaper';body=chips('vdk',[['pee','💧 Pee'],['poop','💩 Poop'],['both','💧💩 Both']],v.subtype,'Diaper type')+timeField('vT','Time',v.at)}
+  else if(v.kind==='sleep'&&v.action==='start'){title='🌙 Fell asleep';body=timeField('vT','Fell asleep',v.at)}
+  else if(v.kind==='sleep'&&v.action==='end'){const rs=running('sleep');title='☀️ Woke up';body=`<div class="muted" style="text-align:center">Ends the sleep that started at ${fmtT(rs.start)}</div>`+timeField('vE','Woke up',v.end)}
+  else if(v.kind==='sleep'){title='🌙 Sleep';body=timeField('vT','Fell asleep',v.at,true)+timeField('vE','Woke up',v.end)}
+  else if(v.kind==='medicine'){title='💊 Medicine';body=`<label class="f" for="vMName">What</label><input id="vMName" maxlength="40" list="vMedList" value="${esc(v.name||'')}" placeholder="e.g. Vitamin D"><datalist id="vMedList">${medNames().map(n=>`<option value="${esc(n)}">`).join('')}</datalist><label class="f" for="vMDose">Dose (optional)</label><input id="vMDose" maxlength="40" value="${esc(v.dose||'')}">`+timeField('vT','Time',v.at)}
+  openSheet(`<h2 style="text-align:center;margin-bottom:2px">${title}</h2>
+    <div class="vHeard small">“${esc(r.heard)}”</div>
+    ${ambiguousFeed?chips('vk',[['bottle','Bottle'],['breast','Breast']],v.kind,'Feed type'):''}
+    ${body}
+    ${v.warn?`<div class="pnote">${esc(v.warn)}</div>`:''}<div class="perr" id="vErr" role="alert"></div>
+    <button class="btn peach full" id="vSave" ${v.warn?'disabled':''}>Save</button>
+    <button class="textlink" id="vNo">Cancel</button>`,()=>{
+    const pick=name=>$$(`[data-${name}]`).forEach(b=>b.onclick=()=>{$$(`[data-${name}]`).forEach(x=>{x.classList.remove('on');x.setAttribute('aria-pressed','false')});b.classList.add('on');b.setAttribute('aria-pressed','true')});
+    ['vmilk','vside','vdk'].forEach(pick);
+    const on=n=>{const b=document.querySelector(`[data-${n}].on`);return b?b.getAttribute('data-'+n):null};
+    $$('[data-vk]').forEach(b=>b.onclick=()=>{const k=b.dataset.vk;if(k===v.kind)return;P.lastFeedTab=k;const t=$('#vT')&&$('#vT').value?new Date($('#vT').value).getTime():v.at;voiceConfirm(Object.assign({},r,{at:t}))});
+    $('#vNo').onclick=closeSheet;
+    const tv=id=>$('#'+id)&&$('#'+id).value?new Date($('#'+id).value).getTime():NaN;
+    const err=m=>{$('#vErr').textContent=m};
+    $('#vSave').onclick=()=>{let ne=null,msg='',upd=null;const t=tv('vT');
+      if(v.kind==='bottle'){const amt=+$('#vAmt').value;if(!(amt>0))return err('Add the amount');const u=$('#vUnit').value,milk=on('vmilk')||'Formula',e=pastErr(t,t);if(e)return err(e);
+        P.lastAmount=amt;P.lastMilk=milk;savePrefs();ne={type:'feed',subtype:'bottle',start:t,end:t,amount:amt,unit:u,details:{milk}};msg='Bottle saved 🍼 '+amt+' '+u}
+      else if(v.kind==='breast'&&v.action==='start'){if(running('feed','breast'))return err('A breastfeeding timer is already running');const s=on('vside')||'L';const st=isNaN(t)?Date.now():t,e=pastErr(st,st);if(e)return err(e);
+        ne={type:'feed',subtype:'breast',start:st,end:null,details:{acc:{L:0,R:0},side:s,since:st}};msg='Feeding on the '+(s==='L'?'left':'right')+' ⏱'}
+      else if(v.kind==='breast'){const L=Math.max(0,Math.round(+$('#vL').value||0)),R=Math.max(0,Math.round(+$('#vR').value||0));if(!(L+R))return err('Add the minutes for at least one side');if(L+R>BREAST_MAX_MIN)return err('That’s longer than '+BREAST_MAX_MIN+' minutes');
+        const end=t+(L+R)*6e4,e=pastErr(t,end);if(e)return err(e);ne={type:'feed',subtype:'breast',start:t,end,details:{left:L*60,right:R*60,acc:{L:L*60,R:R*60},lastSide:v.lastSide&&((v.lastSide==='L'&&L)||(v.lastSide==='R'&&R))?v.lastSide:(R&&!L?'R':(L&&!R?'L':null)),past:true}};msg='Feed saved 🤱 '+(L+R)+' min'}
+      else if(v.kind==='pump'){const amt=+$('#vAmt').value||0,u=$('#vUnit').value,mn=Math.round(+$('#vMin').value||0);if(mn<0||mn>180)return err('Minutes should be between 0 and 180');if(!amt)return err('Add the amount');
+        const end=t+mn*6e4,e=pastErr(t,end);if(e)return err(e);const d={};if(v.side)d.pside=v.side;if(mn)d.past=true;ne={type:'pump',start:t,end,amount:amt,unit:u,details:d};msg='Pumping saved 🧴 '+amt+' '+u}
+      else if(v.kind==='diaper'){const k=on('vdk');if(!k)return err('Pick pee, poop or both');const e=pastErr(t,t);if(e)return err(e);ne={type:'diaper',subtype:k,start:t,end:t,details:{}};msg='Diaper saved 🧷'}
+      else if(v.kind==='sleep'&&v.action==='start'){if(running('sleep'))return err('A sleep timer is already running');const st=isNaN(t)?Date.now():t,e=pastErr(st,st);if(e)return err(e);ne={type:'sleep',start:st,end:null,details:{}};msg='Sweet dreams 🌙'}
+      else if(v.kind==='sleep'&&v.action==='end'){const rs=running('sleep');if(!rs)return err('No sleep timer is running');const en=tv('vE');if(isNaN(en))return err('Please pick a time');if(en<=rs.start)return err('Woke up has to be after fell asleep');const e=pastErr(rs.start,en);if(e)return err(e);
+        rs.end=en;upd=rs;msg='Good morning! Slept '+dur(rs.end-rs.start)+' ☀️'}
+      else if(v.kind==='sleep'){const en=tv('vE');if(isNaN(t)||isNaN(en))return err('Please pick both times');if(en<=t)return err('Woke up has to be after fell asleep');if(en-t>SLEEP_MAX_H*36e5)return err('That’s longer than '+SLEEP_MAX_H+' hours');const e=pastErr(t,en);if(e)return err(e);
+        ne={type:'sleep',start:t,end:en,details:{past:true}};msg='Sleep saved · '+dur(en-t)+' 🌙'}
+      else if(v.kind==='medicine'){const nm=$('#vMName').value.trim().slice(0,40);if(!nm)return err('Add what was given');const ds=$('#vMDose').value.trim().slice(0,40),e=pastErr(t,t);if(e)return err(e);const d={name:nm};if(ds)d.dose=ds;ne={type:'medicine',start:t,end:t,details:d};msg='Saved 💊 '+nm+(ds?' · '+ds:'')}
+      if(upd){updEntry(upd);closeSheet();savedUndo(msg,()=>{upd.end=null;updEntry(upd)});return}
+      if(!ne)return;addEntry(ne);closeSheet();savedUndo(msg,undoAdd(ne))};
+  });
+}
+
 /* ======================= WIRING ======================= */
 $('#bFeed').onclick=()=>feedStart();$('#bDiaper').onclick=diaperSheet;$('#bSleep').onclick=sleepStart;
 $('#addMed').onclick=()=>medSheet();
+$('#micBtn').onclick=voiceListen;voiceInit();
 let medAgainAt=0;
 $('#lastMed').onclick=()=>{const lm=D.entries.find(e=>e.id===$('#lastMed').dataset.id);if(!lm||Date.now()-medAgainAt<2000)return;medAgainAt=Date.now(); // one tap logs the same medicine and dose now
   const d={name:lm.details.name};if(lm.details.dose)d.dose=lm.details.dose;const ne={type:'medicine',start:Date.now(),end:Date.now(),details:d};addEntry(ne);
