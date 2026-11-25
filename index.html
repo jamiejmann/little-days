@@ -238,6 +238,13 @@ html,body{max-width:100%;overflow-x:hidden}
 body.night .gs .p{background:rgba(0,0,0,.2)}
 .unitin{position:relative}.unitin input{padding-right:46px}.unitin span{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--soft);font-weight:700;font-size:0.8235rem;pointer-events:none}
 .disclaim{font-size:0.7059rem;color:var(--soft);margin-top:10px;line-height:1.4}
+/* typical diaper range: one quiet line under the last-24h counts. --soft2 keeps small text at 4.5:1+ contrast (5.4:1 light, 5.7:1 night) */
+:root{--soft2:#6B6684}body.night{--soft2:#A39DBB}
+.dguide{display:flex;align-items:center;gap:2px;margin:8px 0 -10px;font-size:0.7647rem;line-height:1.35;color:var(--soft2)}
+.dguide span{flex:1;min-width:0}
+.dguide .dgi{flex:none;width:44px;height:44px;margin:-10px -12px -10px 0;display:grid;place-items:center;background:none;border:0;padding:0;color:var(--soft2);font:inherit;font-size:1rem;cursor:pointer}
+.dguide .dgi:focus-visible{outline:2px solid var(--lav-d);outline-offset:-6px;border-radius:50%}
+.dgtab{width:100%;border-collapse:collapse;font-size:0.8235rem;margin:10px 0 12px}.dgtab th,.dgtab td{text-align:left;padding:7px 12px 7px 0;border-bottom:1px solid var(--line)}.dgtab th{font-size:0.7059rem;color:var(--soft2)}
 
 /* today's goals card */
 .goal{margin-bottom:12px}
@@ -247,6 +254,7 @@ body.night .gs .p{background:rgba(0,0,0,.2)}
 .goalCount{font-size:0.7647rem;font-weight:800;color:var(--soft);font-variant-numeric:tabular-nums}
 .goal.done .goalCount{color:var(--mint-d)}
 .goalMark{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:0.7059rem;font-weight:800;flex:none;border:2px solid var(--line);color:transparent;background:transparent}
+.goal.varies .goalMark{visibility:hidden}
 .goal.done .goalMark{background:var(--mint-d);border-color:var(--mint-d);color:#fff}
 .goalDots{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
 .goalDot{width:12px;height:12px;border-radius:50%;border:2px solid var(--line);background:transparent;box-sizing:border-box}
@@ -391,6 +399,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
     <div class="card" id="l24card">
       <div class="l24head"><h3>🕐 Last 24 hours</h3><span class="muted" id="l24when"></span></div>
       <div class="l24grid" id="l24"></div>
+      <div class="dguide hidden" id="dguide"></div>
     </div>
     <div class="card">
       <div class="row" style="margin-bottom:6px"><div><h3 style="margin:0" id="dayTitle">Today</h3><div class="daysub" id="daySub"></div></div>
@@ -481,7 +490,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
       <label class="f">Growth units</label>
       <div class="seg" id="gunitSeg"><button data-gu="imperial">lb · oz · in</button><button data-gu="metric">kg · cm</button></div>
       <label class="switch">Show today's goals<input type="checkbox" id="goalsOn"></label>
-      <div class="muted" id="goalsHint" style="margin-top:-4px;margin-bottom:8px">Typical newborn ranges for the first 8 weeks.</div>
+      <div class="muted" id="goalsHint" style="margin-top:-4px;margin-bottom:8px">Typical newborn ranges: goals for the first 8 weeks, and diaper ranges under Last 24 hours through 6 months.</div>
       <div class="row" style="flex-wrap:wrap" id="settingsBtns"></div>
       <div class="legal" id="legalRow"><a href="privacy.html">Privacy policy</a> · <a href="terms.html">Terms of Use</a> · <a href="mailto:hello@getbabyway.com">Contact us</a> · <button class="link" id="feedbackBtn">Send feedback</button><span id="delWrap"> · <button class="link" id="delAcct">Delete my account</button></span></div>
     </div>
@@ -522,7 +531,7 @@ const WEB_APP_URL='https://jamiejmann.github.io/little-days/'; // where email an
 const appLinkBase=()=>/^https?:$/.test(location.protocol)?location.origin+location.pathname:WEB_APP_URL;
 const FEEDBACK_EMAIL='hello@getbabyway.com';
 const BETA_SURVEY_URL=''; // TODO(Jamie): paste the Google Form link for the beta survey here; the button stays hidden while this is empty
-const WEB_VERSION='web-v31'; // keep in step with the CACHE number in sw.js
+const WEB_VERSION='web-v33'; // keep in step with the CACHE number in sw.js
 const appVersion=()=>window.__ldBuild?('ios '+__ldBuild.version+' '+__ldBuild.web):WEB_VERSION;
 
 /* ---------- private error log (migration 012) ----------
@@ -888,15 +897,33 @@ function describe(e){
   return {i:'🌙',bg:'var(--blue)',t:e.end?'Sleep':'Sleeping now',d:e.end?dur(e.end-e.start)+' · until '+fmtT(e.end):'since '+fmtT(e.start)+' · '+dur(Date.now()-e.start)}
 }
 
+/* DIAPER_GUIDE_START: typical wet and dirty diapers per 24 hours by day of life (day 1 = day of birth).
+   General guide only. Reconciled from common pediatric and breastfeeding guidance (AAP HealthyChildren.org,
+   NHS, La Leche League, CDC); see docs/diaper-guide.md. Shown quietly next to the counts; never judged or alerted on. */
+const DIAPER_GUIDE=[
+  {from:1,to:2,wet:[1,2],dirty:[1,2]},
+  {from:3,to:4,wet:[3,5],dirty:[2,3]},
+  {from:5,to:5,wet:[5,6],dirty:[2,4]},
+  {from:6,to:42,wet:[6,8],dirty:[2,5]},
+  {from:43,to:182,wet:[6,0],dirty:null} // after 6 weeks: 6+ wet; dirty varies (every 2-3 days up to 5 a day)
+];
+function diaperGuide(day){
+  if(!Number.isInteger(day)||day<1)return null;
+  const b=DIAPER_GUIDE.find(x=>day>=x.from&&day<=x.to);if(!b)return null;
+  const r=a=>a[1]?a[0]+'\u2013'+a[1]:a[0]+'+';
+  const wet=r(b.wet),dirty=b.dirty?r(b.dirty):null;
+  return {day,wetMin:b.wet[0],wetMax:b.wet[1]||null,dirtyMin:b.dirty?b.dirty[0]:null,dirtyMax:b.dirty?b.dirty[1]:null,wet,dirty,
+    text:'Typical at day '+day+': '+wet+' wet, '+(dirty?dirty+' dirty':'dirty varies')};
+}
+/* DIAPER_GUIDE_END */
 function goalTargets(n){
   if(!n||n<1||n>56)return null;
-  if(n===1)return {feeds:{min:6,plus:1},wet:{min:1},stool:{min:1}};
-  if(n===2)return {feeds:{min:8,plus:1},wet:{min:2},stool:{min:1,max:2}};
-  if(n===3)return {feeds:{min:10,max:12},wet:{min:3},stool:{min:2,max:3}};
-  if(n===4)return {feeds:{min:8,max:10},wet:{min:4},stool:{min:2,max:4}};
-  return {feeds:{min:8,plus:1},wet:{min:6,max:8},stool:{min:3,plus:1}};
+  const feeds=n===1?{min:6,plus:1}:n===2?{min:8,plus:1}:n===3?{min:10,max:12}:n===4?{min:8,max:10}:{min:8,plus:1};
+  const dg=diaperGuide(n),rng=(lo,hi)=>hi?{min:lo,max:hi}:{min:lo,plus:1};
+  // wet and dirty come from the same table as the typical-range line, so the two never disagree
+  return {feeds,wet:rng(dg.wetMin,dg.wetMax),stool:dg.dirty?rng(dg.dirtyMin,dg.dirtyMax):{min:0,varies:1}};
 }
-function goalRange(g){return g.max?g.min+'\u2013'+g.max:g.plus?g.min+'+':String(g.min)}
+function goalRange(g){return g.varies?'varies':g.max?g.min+'\u2013'+g.max:g.plus?g.min+'+':String(g.min)}
 function renderGoals(){
   const el=$('#goalsCard');if(!el)return;
   const n=lifeDay(curWindow()),g=(!P.hideGoals)&&goalTargets(n);
@@ -906,8 +933,8 @@ function renderGoals(){
   const rows=[['feeds','🍼 Feeds',s.feeds,g.feeds],['wet','💧 Wet diapers',s.pee+s.both,g.wet],['stool','💩 Poops',s.poop+s.both,g.stool]];
   el.innerHTML=`<div class="l24head"><h3>Today's goals</h3><span class="muted">Day ${n}</span></div>`+
     rows.map(([k,name,count,t])=>{
-      const done=count>=t.min,dots=Array.from({length:t.min},(_,i)=>`<i class="goalDot${i<count?' on':''}"></i>`).join('');
-      return `<div class="goal${done?' done':''}" data-k="${k}"><div class="goalTop"><span class="goalName">${name}</span><span class="goalCount">${count} / ${goalRange(t)}</span><span class="goalMark" aria-hidden="true">\u2713</span></div><div class="goalDots" aria-hidden="true">${dots}</div></div>`;
+      const done=!t.varies&&count>=t.min,dots=Array.from({length:t.min},(_,i)=>`<i class="goalDot${i<count?' on':''}"></i>`).join('');
+      return `<div class="goal${done?' done':''}${t.varies?' varies':''}" data-k="${k}"><div class="goalTop"><span class="goalName">${name}</span><span class="goalCount">${count} / ${goalRange(t)}</span><span class="goalMark" aria-hidden="true">\u2713</span></div><div class="goalDots" aria-hidden="true">${dots}</div></div>`;
     }).join('')+
     `<div class="disclaim">Typical newborn ranges, not medical advice. Ask your pediatrician if you're worried.</div>`;
 }
@@ -951,7 +978,25 @@ function renderL24(){
   $('#l24when').textContent='since '+fmtT(since)+' yesterday';$('#r24when').textContent='· since '+fmtT(since)+' yesterday';
   $('#l24').innerHTML=[['💧',s.pee+s.both,'Wet','var(--mint)'],['💩',s.poop+s.both,'Dirty','var(--mint)'],['🍼',s.feeds,'Feeds','var(--peach)'],['🥛',s.bottle?bottleTotal(s).replace(' ',''):'—','Bottle','var(--peach)'],['🌙',s.sleepMs<36e5?Math.round(s.sleepMs/6e4)+'m':(Math.round(s.sleepMs/36e5*10)/10)+'h','Sleep','var(--blue)']]
     .map(x=>`<div class="l24t" style="background:${x[3]}"><div class="l">${x[0]} ${x[2]}</div><div class="v">${x[1]}</div></div>`).join('');
+  renderDiaperGuide();
   return s;
+}
+function renderDiaperGuide(){
+  const el=$('#dguide');if(!el)return;
+  const g=!P.hideGoals&&D.baby.birthdate&&diaperGuide(lifeDay(curWindow()));
+  el.classList.toggle('hidden',!g);if(!g){el.innerHTML='';return}
+  el.innerHTML=`<span>${esc(g.text)}</span><button class="dgi" id="dgInfo" aria-label="About typical diaper ranges"><span aria-hidden="true">\u24D8</span></button>`;
+  $('#dgInfo').onclick=openDiaperGuideInfo;
+}
+function openDiaperGuideInfo(){
+  const rows=[['Days 1\u20132','1\u20132','1\u20132'],['Days 3\u20134','3\u20135','2\u20133'],['Day 5','5\u20136','2\u20134'],['Day 6 to 6 weeks','6\u20138','2\u20135'],['After 6 weeks','6+','Every 2\u20133 days up to 5 a day']];
+  openSheet(`<h2 style="text-align:center">Typical diaper counts</h2>
+    <div class="muted" style="text-align:center">Per 24 hours, by baby\u2019s age</div>
+    <table class="dgtab"><thead><tr><th scope="col">Age</th><th scope="col">Wet</th><th scope="col">Dirty</th></tr></thead><tbody>${rows.map(r=>`<tr><th scope="row" style="font-size:inherit;color:inherit">${r[0]}</th><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</tbody></table>
+    <p style="margin:0 0 8px;line-height:1.45">This is a general guide drawn from common pediatric and breastfeeding guidance. It isn\u2019t medical advice, and Babyway doesn\u2019t judge your baby\u2019s counts.</p>
+    <p style="margin:0 0 8px;line-height:1.45">Every baby is different. Breastfed and formula-fed babies often poop on different schedules, and many babies poop less often after about 6 weeks.</p>
+    <p style="margin:0 0 14px;line-height:1.45">If you have any concerns, call your pediatrician.</p>
+    <button class="btn" id="dgClose" style="width:100%">Close</button>`,()=>{$('#dgClose').onclick=closeSheet;$('#dgClose').focus()});
 }
 function renderToday(){
   const E=D.entries.slice().sort((a,b)=>b.start-a.start);
