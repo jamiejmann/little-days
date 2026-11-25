@@ -159,6 +159,11 @@ body.night .due.over{background:#7a4a35;color:#FFE3D3}
 .auth .card{text-align:left}
 .msg{border-radius:16px;padding:10px 14px;font-size:14px;margin-top:10px}
 .msg.err{background:#F8D3D3;color:#7A3A3A}.msg.ok{background:var(--mint)}
+.consent{background:#fff;border:2px solid var(--line);border-radius:18px;padding:12px 14px;margin:0 0 14px;text-align:left;font-size:13px;line-height:1.45}
+.consent.need{border-color:#E39A9A}
+.consentRow{display:flex;gap:10px;align-items:flex-start;cursor:pointer;color:var(--ink)}
+.consentRow input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--lav-d)}
+.consentTerms{margin-top:8px;color:var(--soft)}.consentTerms a{color:var(--soft);font-weight:700}
 .legal{text-align:center;margin-top:14px;font-size:13px;color:var(--soft)}.legal a,.legal .link{color:var(--soft);font-size:13px;font-weight:700;padding:4px}
 .delbox{background:#FFF4F2;border-radius:18px;padding:12px 14px;margin:10px 0;font-size:14px;line-height:1.45}.delbox p{margin:6px 0}
 .link{background:none;border:none;color:var(--lav-d);font:inherit;font-weight:700;cursor:pointer;padding:6px;text-decoration:underline}
@@ -293,6 +298,10 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
     <h1>Babyway</h1>
     <div class="muted" style="margin-bottom:16px">Feeds, diapers, sleep, pumping &amp; medicine, shared by everyone who loves your baby</div>
     <div class="msg ok hidden" id="inviteNote">💌 You've been invited to join a baby! Sign in or create an account and you'll be added automatically.</div>
+    <div class="consent" id="consentBox">
+      <label class="consentRow"><input type="checkbox" id="aConsent"><span>I agree that Babyway stores the baby information I log (feeds, diapers, sleep, pumping, medicine, growth and notes) so the caregivers I invite and I can see it. I can withdraw this anytime by deleting my account.</span></label>
+      <div class="consentTerms">By creating an account, you agree to the <a href="terms.html">Terms of Use</a> and <a href="privacy.html">Privacy policy</a>.</div>
+    </div>
     <div id="appleWrap" class="hidden">
       <button class="btn apple full" id="appleBtn" type="button"><span class="ap" aria-hidden="true"></span> Continue with Apple</button>
       <div class="or">or</div>
@@ -1520,16 +1529,23 @@ async function callAppleFn(action, extra={}){
 }
 // auth screen
 let authMode='in';
+// health-data consent: required to create an account (email, sign-in link or Apple); never pre-ticked
+const CONSENT_VERSION='2026-11-25';
+const consentData=()=>({health_consent_at:new Date().toISOString(),health_consent_version:CONSENT_VERSION});
+function needConsent(m){if($('#aConsent').checked){$('#consentBox').classList.remove('need');return true}
+  $('#consentBox').classList.add('need');setMsg(m,"Please tick the box to agree to how Babyway stores your baby's information.");return false}
+$('#aConsent').onchange=e=>{if(e.target.checked)$('#consentBox').classList.remove('need')};
 $$('#authSeg button').forEach(b=>b.onclick=()=>{authMode=b.dataset.a;$$('#authSeg button').forEach(x=>x.classList.toggle('on',x===b));
   $('#nameRow').classList.toggle('hidden',authMode!=='up');$('#aGo').textContent=authMode==='up'?'Create account':'Sign in';$('#aPass').autocomplete=authMode==='up'?'new-password':'current-password';setMsg($('#aMsg'),'')});
 $('#aGo').onclick=async()=>{
   const email=$('#aEmail').value.trim(),password=$('#aPass').value,m=$('#aMsg');
   if(!email||!password)return setMsg(m,'Please enter your email and password.');
   if(authMode==='up'&&password.length<8)return setMsg(m,'Please use at least 8 characters for your password.');
+  if(authMode==='up'&&!needConsent(m))return;
   $('#aGo').disabled=true;setMsg(m,'One moment…',true);
   try{await loadSupabase()}catch(e){$('#aGo').disabled=false;return setMsg(m,"Can't reach the internet right now. You can still try the demo.")}
   let r;
-  if(authMode==='up')r=await sb.auth.signUp({email,password,options:{data:{display_name:$('#aName').value.trim()||email.split('@')[0]},emailRedirectTo:location.origin+location.pathname}});
+  if(authMode==='up')r=await sb.auth.signUp({email,password,options:{data:{display_name:$('#aName').value.trim()||email.split('@')[0],...consentData()},emailRedirectTo:location.origin+location.pathname}});
   else r=await sb.auth.signInWithPassword({email,password});
   $('#aGo').disabled=false;
   if(r.error)return setMsg(m,authFriendly(r.error,authMode==='up'));
@@ -1537,13 +1553,15 @@ $('#aGo').onclick=async()=>{
   setMsg(m,''); // onAuthStateChange starts the app
 };
 $('#aMagic').onclick=async()=>{const email=$('#aEmail').value.trim(),m=$('#aMsg');if(!email)return setMsg(m,'Type your email first.');
+  if(!needConsent(m))return; // a sign-in link can create a new account
   try{await loadSupabase()}catch(e){return setMsg(m,"Can't reach the internet right now.")}
-  const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:true}});
+  const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:true,data:consentData()}});
   setMsg(m,error?authFriendly(error,false).replace(/^That email and password.*$/,"We couldn't send a sign-in link. Please check the email address and try again."):'If that email can sign in, a sign-in link is on its way. Check your email ✨',!error)};
 
 $('#appleBtn')&&($('#appleBtn').onclick=async()=>{
   const m=$('#aMsg'), btn=$('#appleBtn');
   if(!window.LDNative||!LDNative.appleSignIn)return setMsg(m,'Sign in with Apple is only available in the iPhone app.');
+  if(!needConsent(m))return; // Apple can create a new account
   btn.disabled=true; setMsg(m,'One moment…',true);
   try{
     try{await loadSupabase()}catch(e){setMsg(m,"Can't reach the internet right now. You can still try the demo.");return}
@@ -1553,6 +1571,8 @@ $('#appleBtn')&&($('#appleBtn').onclick=async()=>{
     if(apple.error){setMsg(m,"We couldn't sign in with Apple. Please try again, or use email.");return}
     const r=await sb.auth.signInWithIdToken({provider:'apple',token:apple.idToken,nonce:raw});
     if(r.error){setMsg(m,"We couldn't sign in with Apple. Please try again, or use email.");return}
+    const meta=(r.data&&r.data.user&&r.data.user.user_metadata)||{};
+    if(!meta.health_consent_at){try{await sb.auth.updateUser({data:consentData()})}catch(e){}}
     const name=[apple.givenName,apple.familyName].filter(Boolean).join(' ').trim();
     if(name&&r.data&&r.data.user){
       try{await sb.from('profiles').update({display_name:name.slice(0,40)}).eq('id',r.data.user.id)}catch(e){}
