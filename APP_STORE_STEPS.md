@@ -5,7 +5,7 @@ The iOS app is ready to build. These are the steps only you can do, because they
 **Bundle ID:** `com.jamiejmann.littledays`
 
 > **Renamed from Little Days.** The bundle ID stays `com.jamiejmann.littledays` because Apple doesn't let you change it, and users never see it. If the app record already exists in App Store Connect as "Little Days", rename it under **App Information → Name** (and the subtitle on the version page). Steps below that say "Apps → Little Days" mean the same app record.
-**App name:** Babyway (App Store name: "Babyway: Baby Tracker") · **Price:** $9.99 one-time, whole family, no in-app purchases · **Devices:** iPhone only
+**App name:** Babyway (App Store name: "Babyway: Baby Tracker") · **Price:** free download, 14-day trial, then a one-time $9.99 Family Unlock in-app purchase for the whole family · **Countries:** US, CA, AU, NZ · **Devices:** iPhone only
 
 > **Keep keys out of chat.** Apple gives you two secret files (`.p8`) and a few IDs. Never paste them into a chat, email, or the code. Paste them yourself into the two places listed in step 5: GitHub's **Secrets** page and Supabase's **Edge Function Secrets** page. If you'd like me to do it for you, ask me for a **secure form** and I'll send one. Don't paste them in a message.
 
@@ -127,13 +127,14 @@ Two more pieces live in the code, but they are not live until you apply them:
 
 You can run the workflow again any time. Each run uploads a new build number automatically.
 
-## 7. Set the price: $9.99
-1. First, in App Store Connect, go to **Business** (or **Agreements, Tax, and Banking**). Accept the **Paid Apps Agreement** and add your bank account and tax forms. **Paid apps can't go on sale until this shows "Active".**
-2. Then open **Apps → Little Days → Pricing and Availability**.
-3. Under Price Schedule, click **Add Pricing**. Set the base country to **United States (USD)** and the price to **$9.99**. Apple fills in matching prices for other countries. Click Confirm.
-4. Availability: all countries, or only the ones you want.
-5. Don't add any in-app purchases. The whole family shares one purchase, because invited parents use the same account system.
-   - Note: each parent who wants the iPhone app needs it on their phone. Turn **Family Sharing** on for this app in Pricing and Availability. A paid app can then be shared through Apple Family Sharing, so people in your Apple Family can download it without paying again. Partners outside your Apple Family would buy it once themselves.
+## 7. Price: free app, a 14-day trial, then a $9.99 Family Unlock (updated Nov 25, 2026)
+1. First, in App Store Connect, go to **Business** (or **Agreements, Tax, and Banking**). Accept the **Paid Apps Agreement** and add your bank account and tax forms. In-app purchases can't go on sale until this shows "Active".
+2. Open **Apps → Babyway → Pricing and Availability**. Leave the app itself **Free**.
+3. Availability: **United States, Canada, Australia and New Zealand only.** No UK and no EU at first launch.
+4. In-app purchases (created in December with the paywall build; see /workspace/little-days-marketing/plans/trial-family-unlock-tech-plan.md):
+   - `com.jamiejmann.littledays.trial14`: non-consumable, **Free**, display name **14-day Trial** (Apple guideline 3.1.1 naming).
+   - `com.jamiejmann.littledays.family_unlock`: non-consumable, **$9.99**, display name **Babyway Family Unlock**. Turn on **Family Sharing** (it can't be turned off later).
+5. Price wording anywhere (site, emails, listing, videos): "$9.99, paid once". Don't call any price "regular" and don't advertise a later higher price until about Jan 22, 2027 (Massachusetts 940 CMR 6.05 60-day rule). Any scheduled price change must be checked against /workspace/little-days-marketing/plans/price-bearing-assets.md first.
 
 ## 8. App Privacy ("nutrition label")
 Go to **Apps → Little Days → App Privacy**, then **Get Started**.

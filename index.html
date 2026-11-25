@@ -775,7 +775,7 @@ function renderGoals(){
       const done=count>=t.min,dots=Array.from({length:t.min},(_,i)=>`<i class="goalDot${i<count?' on':''}"></i>`).join('');
       return `<div class="goal${done?' done':''}" data-k="${k}"><div class="goalTop"><span class="goalName">${name}</span><span class="goalCount">${count} / ${goalRange(t)}</span><span class="goalMark" aria-hidden="true">\u2713</span></div><div class="goalDots" aria-hidden="true">${dots}</div></div>`;
     }).join('')+
-    `<div class="disclaim">Typical ranges from a hospital newborn guide. Not medical advice; ask your pediatrician if you're worried.</div>`;
+    `<div class="disclaim">Typical newborn ranges, not medical advice. Ask your pediatrician if you're worried.</div>`;
 }
 function render(){
   if(!D)return;
