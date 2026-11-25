@@ -522,7 +522,7 @@ const WEB_APP_URL='https://jamiejmann.github.io/little-days/'; // where email an
 const appLinkBase=()=>/^https?:$/.test(location.protocol)?location.origin+location.pathname:WEB_APP_URL;
 const FEEDBACK_EMAIL='hello@getbabyway.com';
 const BETA_SURVEY_URL=''; // TODO(Jamie): paste the Google Form link for the beta survey here; the button stays hidden while this is empty
-const WEB_VERSION='web-v30'; // keep in step with the CACHE number in sw.js
+const WEB_VERSION='web-v31'; // keep in step with the CACHE number in sw.js
 const appVersion=()=>window.__ldBuild?('ios '+__ldBuild.version+' '+__ldBuild.web):WEB_VERSION;
 
 /* ---------- private error log (migration 012) ----------
@@ -610,41 +610,120 @@ const JOIN_FAIL="That code didn't work. Check the 6 letters, or ask for a new co
 /* ======================= DEMO MODE (this device only) ======================= */
 function demoSeed(){
   const people=[{id:'c1',name:'Mom',role:'owner',color:COLORS[0]},{id:'c2',name:'Dad',role:'caregiver',color:COLORS[1]},{id:'c3',name:'Grandma',role:'caregiver',color:COLORS[2]}];
-  return {baby:{id:'demo',name:'Olive (sample)',birthdate:new Date(Date.now()-42*864e5).toISOString().slice(0,10),emoji:'🐣',birth_time:'15:12',day_start:'midnight',feed_alarm_enabled:true,feed_interval_min:180,feed_alarm_night:true,sex:'female',doctor_notes:''},people,me:'c1',shareCode:'DEMO42',entries:sampleEntries(people),growth:sampleGrowth(people,new Date(Date.now()-42*864e5).toISOString().slice(0,10))};
+  const birth=new Date(Date.now()-42*864e5).toISOString().slice(0,10);
+  return {baby:{id:'demo',name:'Olive (sample)',birthdate:birth,emoji:'🐣',birth_time:'15:12',day_start:'midnight',feed_alarm_enabled:true,feed_interval_min:180,feed_alarm_night:true,sex:'female',doctor_notes:''},people,me:'c1',shareCode:'DEMO42',autoBirth:true,entries:sampleEntries(people),growth:sampleGrowth(people,birth)};
 }
 function sampleGrowth(people,birth){ // a typical-looking first six weeks (sample only)
   const day=n=>{const d=new Date(birth+'T12:00');d.setDate(d.getDate()+n);return localDate(d)};
   return [[0,3400,50.5,34.5],[4,3260,null,null],[14,3650,52,35.6],[30,4250,54.5,37.1],[41,4720,56,38]]
     .map(([n,w,l,h],i)=>({id:uuid(),date:day(n),w,l,h,by:people[i%people.length].id,sample:true}))}
-function sampleEntries(people){
+// Seeded, realistic week of sample entries ending in the last few hours, at any time of day.
+function sampleEntries(people,now){
+  now=now==null?Date.now():now;
   let s=7;const r=()=>{s=(s*9301+49297)%233280;return s/233280};
-  const out=[],now=Date.now(),today=startOfDay(new Date()),pick=()=>people[Math.floor(r()*people.length)].id;
-  for(let d=6;d>=0;d--){
-    const day=today.getTime()-d*864e5;
-    const ns=day-(2+r()*1.5)*36e5, ne=day+(5+r()*2)*36e5;
-    if(ns<now) out.push({id:uuid(),type:'sleep',start:ns,end:Math.min(ne,now-6e5),details:{},by:people[r()<.5?0:1].id,sample:true});
-    for(let h=7;h<23;h+=2.5+r()){
-      const t=day+h*36e5; if(t>now) break; const who=pick();
-      if(r()<.55){const L=Math.round(6+r()*10),R=Math.round(5+r()*9);
-        out.push({id:uuid(),type:'feed',subtype:'breast',start:t,end:t+(L+R)*6e4,details:{left:L*60,right:R*60,lastSide:r()<.5?'L':'R'},by:who,sample:true});}
-      else out.push({id:uuid(),type:'feed',subtype:'bottle',start:t,end:t,amount:Math.round((2.5+r()*2)*2)/2,unit:'oz',details:{milk:r()<.5?'Formula':'Breast milk'},by:who,sample:true});
-      const dt=t+25*6e4; if(dt<now){const x=r(),sub=x<.5?'pee':x<.78?'poop':'both',pd={};if(sub!=='pee'&&r()<.7){pd.color=r()<.75?'yellow':r()<.6?'green':'brown';pd.texture=r()<.7?'soft':'runny';pd.amount=['little','medium','big'][Math.floor(r()*3)]}
-        out.push({id:uuid(),type:'diaper',subtype:sub,start:dt,end:dt,details:pd,by:who,sample:true});}
-      if(h>=7&&h<9.6){const vt=day+9*36e5+Math.round(r()*20)*6e4;if(vt<now)out.push({id:uuid(),type:'medicine',start:vt,end:vt,details:{name:'Vitamin D',dose:'1 drop'},by:people[0].id,sample:true});
-        const ps=day+(10+r())*36e5,pm=Math.round(12+r()*8);if(ps+pm*6e4<now)out.push({id:uuid(),type:'pump',start:ps,end:ps+pm*6e4,amount:Math.round((2.5+r()*2)*2)/2,unit:'oz',details:{pside:'both'},by:people[0].id,sample:true})}
-      if(h>8&&h<19&&r()<.6){const ss=t+50*6e4,se=ss+(35+r()*70)*6e4; if(se<now) out.push({id:uuid(),type:'sleep',start:ss,end:se,details:{},by:who,sample:true});}
-    }
+  const out=[],day0=startOfDay(new Date(now)).getTime(),pick=()=>people[Math.floor(r()*people.length)].id;
+  let lastFeedAt=now-(1.5+r())*36e5; // 1.5–2.5h ago
+  if(lastFeedAt<day0&&now-day0>45*6e4) lastFeedAt=day0+20*6e4+r()*Math.max(0,Math.min(40*6e4,now-day0-40*6e4));
+  let lastDiaperAt=now-(0.7+r()*0.5)*36e5; // ~42–72 min ago
+  if(lastDiaperAt<=lastFeedAt) lastDiaperAt=Math.min(now-10*6e4,lastFeedAt+(20+r()*25)*6e4);
+  if(lastDiaperAt>now-8*6e4) lastDiaperAt=now-(10+r()*15)*6e4;
+  const roomForNap=now-lastDiaperAt>25*6e4,napping=roomForNap&&r()<0.35;
+  const napStart=napping?Math.min(now-(20+r()*40)*6e4,now-15*6e4):null;
+  const lastWakeAt=napping?null:Math.min(now-(15+r()*60)*6e4,lastDiaperAt>now-90*6e4?lastDiaperAt-(5+r()*10)*6e4:now-(15+r()*60)*6e4);
+  function addFeed(t,who){
+    if(t>now||t<now-7.5*864e5)return;
+    if(r()<.55){const L=Math.round(6+r()*10),R=Math.round(5+r()*9),end=Math.min(now-6e4,t+(L+R)*6e4);
+      out.push({id:uuid(),type:'feed',subtype:'breast',start:t,end:Math.max(t+6e4,end),details:{left:L*60,right:R*60,lastSide:r()<.5?'L':'R'},by:who,sample:true});}
+    else out.push({id:uuid(),type:'feed',subtype:'bottle',start:t,end:t,amount:Math.round((2.5+r()*2)*2)/2,unit:'oz',details:{milk:r()<.5?'Formula':'Breast milk'},by:who,sample:true});
+  }
+  function addDiaper(t,who){
+    if(t>now||t<now-7.5*864e5)return;
+    const x=r(),sub=x<.5?'pee':x<.78?'poop':'both',pd={};
+    if(sub!=='pee'&&r()<.7){pd.color=r()<.75?'yellow':r()<.6?'green':'brown';pd.texture=r()<.7?'soft':'runny';pd.amount=['little','medium','big'][Math.floor(r()*3)]}
+    out.push({id:uuid(),type:'diaper',subtype:sub,start:t,end:t,details:pd,by:who,sample:true});
+  }
+  const whoLast=pick();addFeed(lastFeedAt,whoLast);addDiaper(lastDiaperAt,whoLast);
+  // Vitamin D today, always in the past on this calendar day when possible
+  let vitT=day0+9*36e5+Math.round(r()*20)*6e4;
+  if(vitT>=now){const span=now-day0;vitT=span>25*6e4?day0+10*6e4+r()*(span-20*6e4):now-5*6e4}
+  if(vitT<now) out.push({id:uuid(),type:'medicine',start:vitT,end:vitT,details:{name:'Vitamin D',dose:'1 drop'},by:people[0].id,sample:true});
+  for(let d=1;d<=6;d++){const vt=day0-d*864e5+9*36e5+Math.round(r()*20)*6e4;
+    out.push({id:uuid(),type:'medicine',start:vt,end:vt,details:{name:'Vitamin D',dose:'1 drop'},by:people[0].id,sample:true})}
+  // Earlier feeds, around the clock, plus a diaper after most of them
+  for(let t=lastFeedAt-(2.5+r())*36e5;t>now-7*864e5;t-=(2.5+r())*36e5){
+    const who=pick();addFeed(t,who);
+    const dt=t+(20+r()*20)*6e4;if(dt<lastDiaperAt&&dt<now)addDiaper(dt,who);
+    const d=startOfDay(new Date(t)).getTime(),hour=(t-d)/36e5;
+    if(hour>=7&&hour<9.6){const ps=d+(10+r())*36e5,pm=Math.round(12+r()*8);
+      if(ps+pm*6e4<lastFeedAt) out.push({id:uuid(),type:'pump',start:ps,end:ps+pm*6e4,amount:Math.round((2.5+r()*2)*2)/2,unit:'oz',details:{pside:'both'},by:people[0].id,sample:true});}
+  }
+  // Closed sleeps in the gaps between feeds, plus the current nap or last wake
+  const feeds=out.filter(e=>e.type==='feed').sort((a,b)=>a.start-b.start);
+  const cap=napping&&napStart?napStart:lastWakeAt;
+  for(let i=0;i<feeds.length;i++){
+    const gapStart=(feeds[i].end||feeds[i].start)+5*6e4,gapEnd=(feeds[i+1]?feeds[i+1].start:cap)-5*6e4;
+    if(!gapEnd||gapEnd-gapStart<40*6e4)continue;
+    const hour=new Date(gapStart).getHours(),night=hour>=19||hour<7;
+    if(!(night||r()<.6))continue;
+    const ss=gapStart+(night?10:15+r()*15)*6e4;
+    const se=Math.min(night?ss+(3.5+r()*2.5)*36e5:ss+(35+r()*70)*6e4,gapEnd,now-6e4);
+    if(se>ss+20*6e4) out.push({id:uuid(),type:'sleep',start:ss,end:se,details:{},by:people[r()<.5?0:1].id,sample:true});
+  }
+  if(napping&&napStart&&napStart<now) out.push({id:uuid(),type:'sleep',start:napStart,end:null,details:{},by:people[r()<.5?0:1].id,sample:true});
+  else if(lastWakeAt&&!out.some(e=>e.type==='sleep'&&e.end&&Math.abs(e.end-lastWakeAt)<10*6e4)){
+    const ss=lastWakeAt-(40+r()*50)*6e4;
+    if(ss>lastFeedAt) out.push({id:uuid(),type:'sleep',start:ss,end:lastWakeAt,details:{},by:people[r()<.5?0:1].id,sample:true});
+  }
+  // Make sure today has some progress when the day is long enough
+  const hoursOpen=(now-day0)/36e5,wantF=hoursOpen<4?2:hoursOpen<8?3:4,wantD=hoursOpen<4?2:3;
+  const todayOf=type=>out.filter(e=>e.type===type&&e.start>=day0&&e.start<=now);
+  let extra=day0+30*6e4;
+  while(todayOf('feed').length<wantF&&extra<lastFeedAt-30*6e4){
+    if(!out.some(e=>e.type==='feed'&&Math.abs(e.start-extra)<40*6e4)) addFeed(extra,pick());
+    extra+=75*6e4;
+  }
+  extra=day0+50*6e4;
+  while(todayOf('diaper').length<wantD&&extra<lastDiaperAt-20*6e4){
+    if(!out.some(e=>e.type==='diaper'&&Math.abs(e.start-extra)<30*6e4)) addDiaper(extra,pick());
+    extra+=80*6e4;
   }
   return out;
+}
+function sampleNewest(entries){
+  let t=0;(entries||[]).forEach(e=>{if(e.start>t)t=e.start;if(e.end>t)t=e.end});return t;
+}
+function demoSampleStale(data){
+  const samples=(data&&data.entries||[]).filter(e=>e.sample);
+  if(!samples.length)return false; // cleared, or only the person's own demo entries
+  if(Date.now()-sampleNewest(samples)>3*36e5)return true;
+  return samples.some(e=>!e.end&&(e.type==='sleep'||e.type==='feed')&&Date.now()-e.start>90*6e4);
+}
+function refreshDemoSample(data){
+  if(data.autoBirth!==false&&data.baby&&data.baby.id==='demo'){
+    data.baby.birthdate=new Date(Date.now()-42*864e5).toISOString().slice(0,10);
+    data.autoBirth=true;
+  }
+  const people=data.people||[];
+  data.entries=(data.entries||[]).filter(e=>!e.sample).concat(sampleEntries(people));
+  data.growth=(data.growth||[]).filter(g=>!g.sample).concat(data.baby&&data.baby.birthdate?sampleGrowth(people,data.baby.birthdate):[]);
+  return data;
+}
+function maybeRefreshDemo(){
+  if(MODE!=='demo'||!D||!demoSampleStale(D))return false;
+  if(typeof updSafe==='function'&&!updSafe())return false;
+  refreshDemoSample(D);saveDemo();render();return true;
 }
 function startDemo(){
   MODE='demo';localStorage.setItem(MODE_KEY,'demo');
   try{D=JSON.parse(localStorage.getItem(DEMO_KEY))}catch(e){D=null}
   if(!D||!D.baby)D=demoSeed();
   if(!D.growth)D.growth=[]; // demo data saved by older versions
+  if(D.autoBirth==null&&D.baby&&D.baby.id==='demo'&&D.baby.name==='Olive (sample)')D.autoBirth=true;
+  if(demoSampleStale(D))refreshDemoSample(D);
   saveDemo();show('app');render();
 }
 function saveDemo(){if(MODE==='demo')localStorage.setItem(DEMO_KEY,JSON.stringify(D))}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')maybeRefreshDemo()});
 
 /* ======================= CLOUD MODE (Supabase) ======================= */
 const fromRow=r=>({id:r.id,type:r.type,subtype:r.subtype,start:Date.parse(r.start_at),end:r.end_at?Date.parse(r.end_at):null,amount:r.amount==null?null:+r.amount,unit:r.unit,details:r.details||{},by:r.logged_by});
@@ -992,7 +1071,7 @@ function renderFamily(){
     ?`<button class="btn ghost" id="loadSample">Reload sample data</button><button class="btn danger" id="clearAll">Clear demo data</button><button class="btn" id="exitDemo">Sign in instead</button>`
     :`<button class="btn ghost" id="addBaby">+ Add or join another baby</button>${isOwner?'':`<button class="btn ghost" id="leaveBaby">Leave this baby</button>`}<button class="btn" id="signOut">Sign out</button>`;
   if(MODE==='demo'){
-    $('#loadSample').onclick=()=>{D.entries=D.entries.filter(e=>!e.sample).concat(sampleEntries(D.people));D.growth=(D.growth||[]).filter(g=>!g.sample).concat(D.baby.birthdate?sampleGrowth(D.people,D.baby.birthdate):[]);saveDemo();render();toast('Sample data loaded')};
+    $('#loadSample').onclick=()=>{refreshDemoSample(D);saveDemo();render();toast('Sample data loaded')};
     $('#clearAll').onclick=()=>{if(confirm('Remove all demo entries?')){D.entries=[];D.growth=[];saveDemo();render();toast('Demo data cleared')}};
     $('#exitDemo').onclick=leaveDemo;
   }else{
@@ -1320,7 +1399,7 @@ $$('#dayStartSeg button').forEach(b=>b.onclick=()=>{const ds=b.dataset.ds;
   D.baby.day_start=ds;viewOffset=0;saveBaby();toast(ds==='birth'?'Days now start at '+fmtT(windowStart(Date.now()))+' 🌙':'Days now start at midnight')});
 $$('nav button').forEach(b=>b.onclick=()=>{$$('nav button').forEach(x=>x.classList.toggle('on',x===b));
   $$('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+b.dataset.v));window.scrollTo(0,0);render()});
-$('#saveProfile').onclick=()=>{D.baby.name=$('#pName').value.trim()||'Baby';D.baby.birthdate=$('#pBirth').value||null;D.baby.birth_time=$('#pBirthTime').value||null;if(!D.baby.birth_time||!D.baby.birthdate)D.baby.day_start='midnight';viewOffset=0;saveBaby();toast('Profile saved 💜')};
+$('#saveProfile').onclick=()=>{const bd=$('#pBirth').value||null;if(MODE==='demo'&&bd!==(D.baby.birthdate||null))D.autoBirth=false;D.baby.name=$('#pName').value.trim()||'Baby';D.baby.birthdate=bd;D.baby.birth_time=$('#pBirthTime').value||null;if(!D.baby.birth_time||!D.baby.birthdate)D.baby.day_start='midnight';viewOffset=0;saveBaby();toast('Profile saved 💜')};
 $('#addCg').onclick=()=>{const n=$('#cgName').value.trim();if(!n)return toast('Type a name first');D.people.push({id:uuid(),name:n,role:'caregiver',color:COLORS[D.people.length%COLORS.length]});$('#cgName').value='';saveDemo();render();toast(n+' added')};
 $$('#unitSeg button').forEach(b=>b.onclick=()=>{P.unit=b.dataset.u;P.lastAmount=null;savePrefs();render()});
 $('#goalsOn').onchange=e=>{P.hideGoals=!e.target.checked;savePrefs();render();toast(e.target.checked?"Today's goals on":"Today's goals hidden")};
@@ -1826,7 +1905,7 @@ async function boot(forceAuth){
   const {data}=await sb.auth.getSession();
   if(data.session){user=data.session.user;startCloud()}else showAuth();
 }
-window.__littledays={get mode(){return MODE},get data(){return D},get queue(){return Q}};
+window.__littledays={get mode(){return MODE},get data(){return D},get queue(){return Q},startDemo,sampleEntries,demoSampleStale,refreshDemoSample};
 boot();
 })();
 </script>
