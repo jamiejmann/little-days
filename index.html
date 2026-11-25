@@ -399,7 +399,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
     <div class="card"><h3>📋 For the pediatrician</h3>
       <button class="btn peach full" id="docBtn" style="margin:4px 0 12px">🩺 Pediatrician summary · print or share</button>
       <div class="muted" id="avgText" style="margin-bottom:10px"></div>
-      <div class="row"><button class="btn mint" id="copySum">Copy summary</button><button class="btn blue" id="csvBtn">Download CSV</button></div></div>
+      <div class="row"><button class="btn mint" id="copySum">Copy summary</button><button class="btn blue" id="csvBtn">Export all (CSV)</button></div></div>
   </section>
 
   <section class="view" id="v-family">
@@ -1274,8 +1274,30 @@ $('#copySum').onclick=()=>{const now=Date.now(),cw=curWindow();
   `${useBirthDay()?windowTitle(cw):'Today (since midnight)'} so far: ${summaryLine(dayStats(cw.getTime(),now))}\n`+
   $('#avgText').textContent;
   copy(txt,'Summary copied')};
-$('#csvBtn').onclick=()=>{const rows=[['date','time','day_of_life','day_window','type','details','note','logged_by']].concat(D.entries.slice().sort((a,b)=>a.start-b.start).map(e=>{const x=describe(e),ws=windowStart(e.start);return [new Date(e.start).toLocaleDateString(),fmtT(e.start),lifeDay(ws)??'',useBirthDay()?ws.toLocaleDateString()+' '+fmtT(ws)+' – '+shiftWindow(ws,1).toLocaleDateString()+' '+fmtT(shiftWindow(ws,1)):ws.toLocaleDateString(),x.t.replace(/<[^>]+>/g,''),x.d,(e.details&&e.details.note)||'',person(e.by).name]}));
-  const blob=new Blob([rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='baby-log.csv';a.click()};
+/* CSV export: every entry and growth measurement for this baby (not just the last 31 days on screen) */
+async function allEntries(){
+  if(MODE!=='cloud')return D.entries.slice();
+  let out=[],from=0;
+  for(;;){const {data,error}=await sb.from('entries').select('*').eq('baby_id',D.baby.id).order('start_at',{ascending:true}).range(from,from+999);
+    if(error)throw error;out=out.concat(data.map(fromRow));if(data.length<1000)break;from+=1000}
+  const have=new Set(out.map(e=>e.id));D.entries.forEach(e=>{if(!have.has(e.id))out.push(e)}); // entries still waiting to sync
+  return out}
+async function allGrowth(){
+  if(MODE!=='cloud')return (D.growth||[]).slice();
+  const {data,error}=await sb.from('growth').select('*').eq('baby_id',D.baby.id).order('measured_on');if(error)throw error;return data.map(fromG)}
+function csvText(entries,growth){
+  const rows=[['date','time','day_of_life','day_window','type','details','note','logged_by']].concat(entries.slice().sort((a,b)=>a.start-b.start).map(e=>{const x=describe(e),ws=windowStart(e.start);return [new Date(e.start).toLocaleDateString(),fmtT(e.start),lifeDay(ws)??'',useBirthDay()?ws.toLocaleDateString()+' '+fmtT(ws)+' – '+shiftWindow(ws,1).toLocaleDateString()+' '+fmtT(shiftWindow(ws,1)):ws.toLocaleDateString(),x.t.replace(/<[^>]+>/g,''),x.d,(e.details&&e.details.note)||'',person(e.by).name]}));
+  growth.slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).forEach(g=>{const d=[g.w!=null?'weight '+g.w+' g':'',g.l!=null?'length '+g.l+' cm':'',g.h!=null?'head '+g.h+' cm':''].filter(Boolean).join(', ');rows.push([g.date,'','','','Growth',d,'',person(g.by).name])});
+  return '\ufeff'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n')}
+$('#csvBtn').onclick=async()=>{
+  const b=$('#csvBtn');if(b.disabled)return;b.disabled=true;
+  try{
+    const text=csvText(await allEntries(),await allGrowth());
+    const name='babyway-'+(String(D.baby.name||'baby').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'baby')+'-'+new Date().toISOString().slice(0,10)+'.csv';
+    if(window.LDNative&&LDNative.shareFile){await LDNative.shareFile(name,text,'Babyway export');return}
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/csv'}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),10000);
+  }catch(e){console.warn('export',e);toast('Could not export right now. Try again with a connection.')}
+  finally{b.disabled=false}};
 /* ======================= ONE-TAP "AGAIN" (repeat the last bottle) ======================= */
 let againAt=0;
 function lastBottle(){let b=null;for(const e of D.entries)if(e.type==='feed'&&e.subtype==='bottle'&&e.amount!=null&&(!b||e.start>b.start))b=e;return b}

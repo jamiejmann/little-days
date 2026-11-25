@@ -350,6 +350,18 @@
     }
   }
   const printDoc = shareDoc; // the iOS share sheet has Print in it
+  /* ---------- data export: a download link does nothing in the iOS app, so write the CSV to a file and open the share sheet (Save to Files, Mail, AirDrop) ---------- */
+  async function shareFile(name, text, title) {
+    try {
+      if (!FS || !SH) throw new Error('share unavailable');
+      const w = await FS.writeFile({ path: name, data: text, directory: 'CACHE', encoding: 'utf8' });
+      await SH.share({ title, dialogTitle: title, files: [w.uri] });
+    } catch (e) {
+      if (/cancel/i.test(String(e && (e.message || e)))) return;
+      log('shareFile', e);
+      app() && app().toast('Could not export right now');
+    }
+  }
 
-  window.LDNative = { shareDoc, printDoc, refreshPushStatus, pushOn, enableAlerts, test, dropThisDevice, scheduleLocal, reset, onLogged, onAlarmChanged, appleSignIn, _state: st, _plan: plan };
+  window.LDNative = { shareDoc, printDoc, shareFile, refreshPushStatus, pushOn, enableAlerts, test, dropThisDevice, scheduleLocal, reset, onLogged, onAlarmChanged, appleSignIn, _state: st, _plan: plan };
 })();
