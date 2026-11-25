@@ -213,9 +213,14 @@ textarea.note{margin-top:10px;min-height:0;resize:none;font-size:0.8824rem}
 .medRow .lastMed span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
 .medRow .lastMed b{flex:none;background:var(--yellow);border-radius:999px;padding:3px 10px;color:var(--ink)}
 .medRow button:active{transform:scale(.97)}
-.micBtn{flex:none;margin-left:auto;width:max(44px,2.6rem);height:max(44px,2.6rem);border:none;border-radius:50%;background:var(--card);box-shadow:var(--shadow);color:var(--ink);cursor:pointer;display:grid;place-items:center;padding:0}
-.lastMed:not(.hidden)+.micBtn{margin-left:0}
-.micGlyph{width:1.3rem;height:1.3rem}
+.micBtn{flex:none;margin-left:auto;width:clamp(52px,3rem,60px);height:clamp(52px,3rem,60px);border:none;border-radius:50%;background:#0E7C7B;color:#fff;box-shadow:var(--shadow);cursor:pointer;display:grid;place-items:center;padding:0}
+.micBtn:active{transform:scale(.95)}
+.micBtn:focus-visible{outline:3px solid var(--lav-d);outline-offset:2px}
+body.night .micBtn{background:#2E6E6C}
+.micBtn:not(.hidden)+.iconbtn{margin-left:0}
+header>div:nth-child(2){min-width:0;flex:0 1 auto}
+.hname,.hage{overflow-wrap:break-word}
+.micGlyph{width:1.5rem;height:1.5rem}
 .vMic{display:grid;place-items:center;width:max(96px,5.6rem);height:max(96px,5.6rem);margin:12px auto 4px;border:none;border-radius:50%;background:#E5484D;color:#fff;cursor:pointer;box-shadow:var(--shadow);animation:rec 1.4s ease-in-out infinite}
 .vMic .micGlyph{width:2.4rem;height:2.4rem}
 @keyframes rec{50%{box-shadow:0 0 0 12px rgba(229,72,77,.18)}}
@@ -383,6 +388,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
   <header>
     <div class="avatar" id="avatar"><img src="icons/icon-192.png" alt=""></div>
     <div><div class="hname" id="hname">Baby</div><div class="hage" id="hage"></div></div>
+    <button class="micBtn hidden" id="micBtn" aria-label="Log by voice" title="Log by voice"><svg class="micGlyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 14.5a3.5 3.5 0 0 0 3.5-3.5V5.5a3.5 3.5 0 0 0-7 0V11a3.5 3.5 0 0 0 3.5 3.5Z"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M18.25 11a6.25 6.25 0 0 1-12.5 0M12 17.25V21m-3 0h6"/></svg></button>
     <button class="iconbtn" id="nightBtn" title="Night mode (dim for night feeds)" aria-label="Night mode">🌙</button>
   </header>
 
@@ -401,7 +407,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
       <button class="bigbtn diaper" id="bDiaper"><div class="em" aria-hidden="true">🧷</div>Diaper<small>pee · poop</small></button>
       <button class="bigbtn sleep" id="bSleep"><div class="em" aria-hidden="true">🌙</div><span id="sleepLbl">Sleep</span><small id="sSleep">tap to log</small></button>
     </div>
-    <div class="medRow"><button class="medBtn" id="addMed">💊 Medicine</button><button class="lastMed hidden" id="lastMed" aria-label="Log the last medicine again"></button><button class="micBtn hidden" id="micBtn" aria-label="Log by voice" title="Log by voice"><svg class="micGlyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 14.5a3.5 3.5 0 0 0 3.5-3.5V5.5a3.5 3.5 0 0 0-7 0V11a3.5 3.5 0 0 0 3.5 3.5Z"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M18.25 11a6.25 6.25 0 0 1-12.5 0M12 17.25V21m-3 0h6"/></svg></button></div>
+    <div class="medRow"><button class="medBtn" id="addMed">💊 Medicine</button><button class="lastMed hidden" id="lastMed" aria-label="Log the last medicine again"></button></div>
     <button class="again hidden" id="bAgain" aria-label="Log the same bottle again"></button>
     <div class="card hidden" id="goalsCard"></div>
     <div class="card" id="l24card">
