@@ -478,7 +478,7 @@ body.night .goal[data-k=stool] .goalDot.on{background:#A48462}
       <textarea id="docNotes" maxlength="4000" placeholder="Write questions as they come up, e.g. “Is 2 dirty diapers a day OK?”. Shared with your family."></textarea>
       <div class="notesPrint" id="docNotesPrint"></div><div class="saved" id="docSaved"></div></div>
     <div class="fine" id="docFine"></div>
-    <div class="credit">Made with Babyway · <a href="https://thelittledaysapp.com">thelittledaysapp.com</a></div>
+    <div class="credit">Made with Babyway · <a href="https://getbabyway.com">getbabyway.com</a></div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -1433,7 +1433,7 @@ function docText(){const {d24,d7,span,days}=docData(),b=D.baby,n=lifeDay(curWind
   const md=recentMeds();if(md.length){L.push('','MEDICINE (last 7 days)');md.forEach(e=>L.push(fmtD2(e.start)+' · '+[e.details.name,e.details.dose].filter(Boolean).join(', ')))}
   const rn=recentNotes();if(rn.length){L.push('','NOTES FROM THE LOG (last 7 days)');rn.forEach(e=>L.push(fmtD2(e.start)+' · '+noteType(e)+': '+e.details.note))}
   const nt=(b.doctor_notes||'').trim();if(nt)L.push('','QUESTIONS FOR THE DOCTOR',nt);
-  L.push('','Made with Babyway · thelittledaysapp.com');
+  L.push('','Made with Babyway · getbabyway.com');
   return L.join('\n')}
 function renderDoc(){
   const {d24,d7,span,days}=docData(),b=D.baby,n=lifeDay(curWindow()),k=span;

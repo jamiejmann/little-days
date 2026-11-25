@@ -333,7 +333,7 @@
       put(l, 11, false, [30, 30, 30]);
     });
     if (y + 40 > Hh - M) { doc.addPage(); y = M; }
-    y += 14; put('Made with Babyway · thelittledaysapp.com', 9, false, [140, 135, 155]);
+    y += 14; put('Made with Babyway · getbabyway.com', 9, false, [140, 135, 155]);
     return doc.output('datauristring').split(',')[1];
   }
   async function shareDoc(text, title) {

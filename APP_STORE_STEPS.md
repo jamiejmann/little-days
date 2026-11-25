@@ -152,9 +152,9 @@ Go to **Apps → Little Days → App Privacy**, then **Get Started**.
 - For each type, the purpose is **App Functionality** only. Don't tick Analytics, Advertising, Product Personalization, or Other.
 - **Tracking:** No. The app has no ads, no analytics, and no third-party SDKs. Data is stored in your Supabase database and shared only with the family members you invite.
 - Don't tick these: Location, Contacts, Photos, Purchases, Financial info, Browsing history, Search history, Diagnostics, Usage data, or Device ID. The push-notification token is used only to deliver your alerts, and Apple doesn't count it as a "Device ID".
-- **Privacy Policy URL (current):** `https://thelittledaysapp.com/privacy.html` (marketing site) or `https://jamiejmann.github.io/little-days/privacy.html` (in-app copy). Both are drafts for a lawyer to review. After getbabyway.com is pointed at the site, switch this to `https://getbabyway.com/privacy.html`.
-- **Terms of Use URL (current):** `https://thelittledaysapp.com/terms.html` or `https://jamiejmann.github.io/little-days/terms.html`. After the new domain is pointed, use `https://getbabyway.com/terms.html`. Add this link in the App Store listing (description or the Terms of Use field). These pages are also drafts for a lawyer to review.
-- **Support URL / contact:** https://thelittledaysapp.com/support.html and hello@getbabyway.com.
+- **Privacy Policy URL (current):** `https://getbabyway.com/privacy.html` (marketing site) or `https://jamiejmann.github.io/little-days/privacy.html` (in-app copy). Both are drafts for a lawyer to review.
+- **Terms of Use URL (current):** `https://getbabyway.com/terms.html` or `https://jamiejmann.github.io/little-days/terms.html`. Add this link in the App Store listing (description or the Terms of Use field). These pages are also drafts for a lawyer to review.
+- **Support URL / contact:** https://getbabyway.com/support.html and hello@getbabyway.com.
 
 ## 9. Age rating
 Go to **Apps → Little Days → App Information → Age Rating → Edit**. Answer **None** or **No** to everything:
